@@ -1,8 +1,10 @@
 <?php
-namespace App\Constants;
+namespace App;
 
 final class Env
 {
+    public const DELIMITER = ',';
+
     public static function version(): string {
         return static::env('VERSION');
     }
@@ -36,7 +38,7 @@ final class Env
     }
 
     public static function viewExtension(): string {
-        return static::env('VIEW_EXT');
+        return static::env('VIEW_EXTENSION');
     }
 
     public static function accessTokenSecret(): string {
@@ -55,12 +57,20 @@ final class Env
         return static::env('CSRF_SECRET');
     }
 
-    /**
-     * @return string[]
-     */
-    public static function corsOrigin(): array {
-        $origin = static::envOrDefault('CORS_ORIGIN', '');
-        return static::envStringToArray($origin);
+    public static function corsOrigin() {
+        $origin = static::envOrDefault('CORS_ORIGIN');
+        $origin = trim($origin);
+        if ($origin === '') {
+            return [];
+        }
+        
+        $origins = static::envStringToArray($origin);
+        if (count($origins) === 1) {
+            return $origins[0];
+        }
+        else {
+            return $origins;
+        }
     }
 
     private static function env(string $name): string {
@@ -71,13 +81,16 @@ final class Env
         return $value;
     }
 
-    private static function envOrDefault(string $name, string $default): string {
+    private static function envOrDefault(string $name, string $default = ''): string {
         $value = getenv($name);
         return $value !== false ? $value : $default;
     }
 
+    /**
+     * @return string[]
+     */
     private static function envStringToArray(string $envStr): array {
-        $strs = explode(Delimiter::ENV, $envStr);
+        $strs = explode(static::DELIMITER, $envStr);
         return array_map('trim', $strs);
     }
 }

@@ -4,7 +4,6 @@ namespace App;
 use App\Configs\ContainerConfig;
 use App\Configs\GlobalMiddlewareConfig;
 use App\Configs\RouteConfig;
-use App\Constants\Env;
 use App\Core\Application;
 use App\Core\Di\Contracts\DiContainer;
 use App\Core\Di\Contracts\ReadonlyDiContainer;
@@ -45,11 +44,24 @@ class AppProvider
     public static function get(): Application {
         if (!static::$app) {
             $container = new ServiceContainer();
+            static::populateEnv($container);
             static::configCore($container);
             static::configApplication($container);
             static::$app = $container->get(Application::class);
         }
         return static::$app;
+    }
+
+    private static function populateEnv(DiContainer $container) {
+        $reflector = new \ReflectionClass(Env::class);
+        $methods = $reflector->getMethods(\ReflectionMethod::IS_PUBLIC);
+        foreach ($methods as $method) {
+            if (!$method->isStatic() || $method->getNumberOfRequiredParameters() !== 0) {
+                continue;
+            }
+            $prop = $method->getName();
+            $container->bind($prop)->toFactory(fn() => $method->invoke(null))->inSingletonScope();
+        }
     }
 
     private static function configCore(DiContainer $container) {
@@ -114,11 +126,10 @@ class AppProvider
             ->bind(TemplateEngine::class)
             ->toFactory(function (InjectionContext $injectionContext) {
                 $container = $injectionContext->container();
-                $parser = $container->get(TemplateParser::class);
                 $template = new HurrycanTemplateEngine(
-                    $parser,
-                    Env::viewPath(),
-                    Env::viewExtension()
+                    $container->get(TemplateParser::class),
+                    $container->get('viewPath'),
+                    $container->get('viewExtension')
                 );
                 $template->setIgnoreCache(!isProduction());
                 return $template;

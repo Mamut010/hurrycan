@@ -29,7 +29,7 @@ class Application
     }
 
     public function run(?callable $fallback = null) {
-        $response = $this->dispatchRouter($this->request);
+        $response = $this->dispatch();
         if ($response !== false) {
             $response->send();
         }
@@ -38,15 +38,18 @@ class Application
         }
     }
 
-    private function dispatchRouter() {
-        $resolvedResult = $this->routeResolver->resolve($this->request->path(), $this->request->method());
+    private function dispatch() {
+        $resolvedResult = $this->routeResolver->resolve(
+            $this->request->path(),
+            $this->request->method()
+        );
 
         if (!$resolvedResult) {
             return false;
         }
         $this->request->addRouteParams($resolvedResult->routeParams());
 
-        $middlewares = $this->instantiateMiddlewares(
+        $middlewares = $this->getRouteMiddlewares(
             $resolvedResult->middlewares(),
             $resolvedResult->excludedMiddlewares()
         );
@@ -57,29 +60,15 @@ class Application
     /**
      * @param string[] $routeMiddlewares
      * @param string[] $excluded
-     * @return Middleware[]
+     * @return string[]
      */
-    private function instantiateMiddlewares(array $routeMiddlewares, array $excluded): array {
+    private function getRouteMiddlewares(array $routeMiddlewares, array $excluded): array {
         $routeMiddlewares = $this->interpretRouteMiddlewares($routeMiddlewares);
         $excluded = $this->interpretRouteMiddlewares($excluded);
 
         $middlewares = array_merge($this->middlewares->getMiddlewares(), $routeMiddlewares);
         $middlewares = array_diff($middlewares, $excluded);
-        
-        $instances = [];
-        foreach ($middlewares as $middleware) {
-            try {
-                $instance = $this->container->get($middleware);
-            }
-            catch (\Exception $e) {
-                throw new UnexpectedValueException("Unable to resolve middleware [$middleware]", 0, $e);
-            }
-            if (!$instance instanceof Middleware) {
-                throw new UnexpectedValueException("Given id [$middleware] is not a Middleware");
-            }
-            $instances[] = $instance;
-        }
-        return $instances;
+        return $middlewares;
     }
 
     /**
@@ -101,7 +90,7 @@ class Application
     }
     
     /**
-     * @param Middleware[] $middlewares
+     * @param string[] $middlewares
      * @param RouteResolvedResult $resolvedResult
      * @return Response
      */
@@ -118,9 +107,9 @@ class Application
 
                 $catched = false;
                 if ($middlewareIdx < count($middlewares)) {
-                    $currentIdx = $middlewareIdx;
-                    $middlewareIdx++;
-                    return $middlewares[$currentIdx]->handle($this->request, $next);
+                    $middleware = $middlewares[$middlewareIdx++];
+                    $middleware = $this->instantiateMiddleware($middleware);
+                    return $middleware->handle($this->request, $next);
                 }
                 else {
                     $action = $this->bindParamsToAction($resolvedResult);
@@ -141,6 +130,16 @@ class Application
         };
 
         return $next();
+    }
+
+    private function instantiateMiddleware(string $middleware) {
+        try {
+            $instance = $this->container->get($middleware);
+        }
+        catch (\Exception $e) {
+            throw new UnexpectedValueException("Unable to resolve middleware [$middleware]", 0, $e);
+        }
+        return $instance;
     }
 
     private function bindParamsToAction(RouteResolvedResult $resolvedResult) {

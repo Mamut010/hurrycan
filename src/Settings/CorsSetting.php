@@ -1,7 +1,6 @@
 <?php
 namespace App\Settings;
 
-use App\Constants\Env;
 use App\Constants\HttpCode;
 use App\Constants\HttpHeader;
 use App\Constants\HttpMethod;
@@ -9,13 +8,6 @@ use App\Constants\HttpMethod;
 final class CorsSetting
 {
     const WILDCARD = '*';
-
-    /**
-     * @return string|string[]
-     */
-    public static function origin(): string|array {
-        return Env::corsOrigin();
-    }
 
     /**
     * @return string|string[]

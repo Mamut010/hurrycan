@@ -9,12 +9,12 @@ class MysqlDatabaseHandler implements DatabaseHandler
 {
     protected $dbHandler = null;
 
-    public function __construct(string $host, string $dbName, string $user, string $password)
+    public function __construct(string $dbHost, string $dbName, string $dbUser, string $dbPassword)
     {
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
         try {
-            $this->dbHandler = new \mysqli($host, $user, $password, $dbName);
+            $this->dbHandler = new \mysqli($dbHost, $dbUser, $dbPassword, $dbName);
             if (mysqli_connect_errno()) {
                 throw new DatabaseException("Could not connect to database.");
             }
