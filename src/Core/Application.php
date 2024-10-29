@@ -29,7 +29,7 @@ class Application
     }
 
     public function run(?callable $fallback = null) {
-        $response = $this->dispatchRouter($this->request);
+        $response = $this->dispatch();
         if ($response !== false) {
             $response->send();
         }
@@ -38,8 +38,11 @@ class Application
         }
     }
 
-    private function dispatchRouter() {
-        $resolvedResult = $this->routeResolver->resolve($this->request->path(), $this->request->method());
+    private function dispatch() {
+        $resolvedResult = $this->routeResolver->resolve(
+            $this->request->path(),
+            $this->request->method()
+        );
 
         if (!$resolvedResult) {
             return false;
