@@ -7,10 +7,10 @@ use App\Core\Di\Contracts\DiContainer;
 use App\Core\Di\Exceptions\CycleDetectedException;
 use App\Core\Di\Exceptions\DepthLimitReachException;
 use App\Core\Di\Syntax\DefaultBindingToSyntax;
+use App\Utils\Arrays;
 use App\Utils\Reflections;
 
-
-class ServiceContainer implements DiContainer
+class ServiceContainer implements DiContainer // NOSONAR
 {
     public const DEPTH_LIMIT = 1024;
 
@@ -314,17 +314,19 @@ class ServiceContainer implements DiContainer
 
     private function resolveClassDependency(\ReflectionParameter $parameter) {
         $dependency = null;
+        $typeName = Reflections::getTypeName($parameter->getType());
         try {
-            $name = Reflections::getTypeName($parameter->getType());
-            if ($name === false) {
-                $msg = "Parameter [$parameter] does not have a single type";
-                throw new \UnexpectedValueException($parameter);
+            $dependency = $this->resolveClassDependencyByTypeImpl($typeName);
+            if ($dependency === false) {
+                $msg = "Unresolvable type of parameter [$parameter] in class "
+                    . "{$parameter->getDeclaringClass()->getName()}";
+                throw new \UnexpectedValueException($msg);
             }
-            $dependency = $this->get($name);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             if ($parameter->isOptional() || $parameter->allowsNull()) {
                 $dependency = $parameter->isOptional() ? $parameter->getDefaultValue() : null;
-                $this->trySaveCache($name, $dependency);
+                $this->trySaveCacheByType($typeName, $dependency);
             }
             else {
                 $msg = "Unresolvable dependency [$parameter] in class {$parameter->getDeclaringClass()->getName()}";
@@ -332,5 +334,42 @@ class ServiceContainer implements DiContainer
             }
         }
         return $dependency;
+    }
+
+    private function resolveClassDependencyByTypeImpl(string|array|false $typeName) {
+        if ($typeName === false) {
+            return false;
+        }
+
+        $dependency = null;
+        if (is_string($typeName)) {
+            try {
+                $dependency = $this->get($typeName);
+            }
+            catch (\Exception $e) {
+                return false;
+            }
+        }
+        else {
+            foreach ($typeName as $name) {
+                try {
+                    $dependency = $this->get($name);
+                    break;
+                }
+                catch (\Exception $e) {
+                    // Skip this case
+                }
+            }
+        }
+        return $dependency ?? false;
+    }
+
+    private function trySaveCacheByType(string|array|false $typeName, mixed $dependency) {
+        if ($typeName === false) {
+            return;
+        }
+        $typeNames = Arrays::asArray($typeName);
+        $key = implode('|', $typeNames);
+        $this->trySaveCache($key, $dependency);
     }
 }

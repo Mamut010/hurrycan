@@ -11,8 +11,26 @@ class Reflections
         return $type instanceof \ReflectionNamedType && $type->isBuiltin();
     }
 
-    public static function getTypeName(\ReflectionType $type): string|false {
-        return $type instanceof \ReflectionNamedType ? $type->getName() : false;
+    /**
+     * @return string|string[]|false
+     */
+    public static function getTypeName(\ReflectionType $type): string|array|false {
+        if ($type instanceof \ReflectionNamedType) {
+            return $type->getName();
+        }
+        elseif ($type instanceof \ReflectionUnionType) {
+            $names = [];
+            $subtypes = $type->getTypes();
+            foreach ($subtypes as $subtype) {
+                if ($subtype instanceof \ReflectionNamedType) {
+                    $names[] = $subtype;
+                }
+            }
+            return $names;
+        }
+        else {
+            return false;
+        }
     }
 
     public static function instantiateClass(string $class, mixed ...$args): object|false {

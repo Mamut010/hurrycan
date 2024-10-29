@@ -108,7 +108,8 @@ class Application
                 $catched = false;
                 if ($middlewareIdx < count($middlewares)) {
                     $middleware = $middlewares[$middlewareIdx++];
-                    return $this->instantiateMiddleware($middleware)->handle($this->request, $next);
+                    $middleware = $this->instantiateMiddleware($middleware);
+                    return $middleware->handle($this->request, $next);
                 }
                 else {
                     $action = $this->bindParamsToAction($resolvedResult);
