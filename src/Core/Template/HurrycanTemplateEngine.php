@@ -15,15 +15,15 @@ class HurrycanTemplateEngine implements TemplateEngine
     private const PHP_FILE_EXTENSION = '.php';
 
     private TemplateParser $parser;
-    private string $viewsPath;
+    private string $viewPath;
     private string $viewExtension;
     private array $sharedData;
     private bool $ignoreCache;
 
-    public function __construct(TemplateParser $parser, string $viewsPath, string $viewExtension)
+    public function __construct(TemplateParser $parser, string $viewPath, string $viewExtension)
     {
         $this->parser = $parser;
-        $this->viewsPath = Paths::normalize($viewsPath);
+        $this->viewPath = Paths::normalize($viewPath);
         $this->viewExtension = $viewExtension;
         $this->sharedData = [];
         $this->ignoreCache = false;
@@ -63,7 +63,7 @@ class HurrycanTemplateEngine implements TemplateEngine
     }
 
     private function getCachePath(string $subpath) {
-        $path = rtrim($this->viewsPath, DIRECTORY_SEPARATOR);
+        $path = rtrim($this->viewPath, DIRECTORY_SEPARATOR);
         $pathSegments = explode(DIRECTORY_SEPARATOR, $path);
         $lastIdx = count($pathSegments) - 1;
 
@@ -90,10 +90,10 @@ class HurrycanTemplateEngine implements TemplateEngine
      */
     private function parseView(string $actualViewName)
     {
-        $file = $this->viewsPath . $actualViewName . $this->viewExtension;
+        $file = $this->viewPath . $actualViewName . $this->viewExtension;
         if (!file_exists($file)) {
             throw new \UnexpectedValueException(
-                "The view $actualViewName could not be found on $this->viewsPath"
+                "The view $actualViewName could not be found on $this->viewPath"
             );
         }
 

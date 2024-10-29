@@ -11,7 +11,6 @@ use Closure;
 use App\Core\Http\Response\Response;
 use App\Settings\CorsSetting;
 use App\Utils\Arrays;
-use App\Utils\Regexes;
 
 /**
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS }
@@ -20,6 +19,13 @@ use App\Utils\Regexes;
  */
 class CorsMiddleware implements Middleware
 {
+    /**
+     * @param string|string[] $corsOrigin
+     */
+    public function __construct(private readonly string|array $corsOrigin) {
+        
+    }
+
     public function handle(Request $request, Closure $next): Response {
         $isPreflight = static::isPreflight($request);
         if ($isPreflight && !CorsSetting::preflightContinue()) {
@@ -29,7 +35,7 @@ class CorsMiddleware implements Middleware
             $response = $next();
         }
 
-        static::handleGeneralCors($request, $response);
+        $this->handleGeneralCors($request, $response);
         if ($isPreflight) {
             static::handlePreflight($request, $response);
         }
@@ -43,8 +49,8 @@ class CorsMiddleware implements Middleware
             && $request->hasHeader(HttpHeader::ACCESS_CONTROL_REQUEST_METHOD);
     }
 
-    private static function handleGeneralCors(Request $request, Response $response) {
-        $trusted = static::setAllowOrigin($request, $response);
+    private function handleGeneralCors(Request $request, Response $response) {
+        $trusted = $this->setAllowOrigin($request, $response);
 
         // Only add credentials if the origin is trusted
         if ($trusted && CorsSetting::credentials()) {
@@ -59,21 +65,21 @@ class CorsMiddleware implements Middleware
         }
     }
 
-    private static function setAllowOrigin(Request $request, Response $response) {
-        $origin = CorsSetting::origin();
+    private function setAllowOrigin(Request $request, Response $response) {
+        $origin = $this->corsOrigin;
         if ($origin === CorsSetting::WILDCARD) {
             static::handleWildCardOrigin($request, $response);
             // Only trusted if a specific origin is set, not wildcard
             return false;
         }
 
-        $origins = Arrays::asArray(CorsSetting::origin());
+        $origins = Arrays::asArray($origin);
         if (empty($origins)) {
             // No origin is trusted
             return false;
         }
         else {
-            return static::handleSpecificOrigins($request, $response, $origins);
+            return $this->handleSpecificOrigins($request, $response);
         }
     }
 
@@ -83,11 +89,11 @@ class CorsMiddleware implements Middleware
         }
     }
 
-    private static function handleSpecificOrigins(Request $request, Response $response, array $origins) {
+    private function handleSpecificOrigins(Request $request, Response $response) {
         $trusted = false;
-        $requestedOrigin = $request->header(HttpHeader::ORIGIN);
-        if ($requestedOrigin !== null && static::isOriginAllowed($requestedOrigin, $origins)) {
-            $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_ORIGIN, $requestedOrigin);
+        $origin = $request->header(HttpHeader::ORIGIN);
+        if ($origin !== null && $this->isOriginAllowed($origin)) {
+            $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_ORIGIN, $origin);
             // Only allowed origins are trusted
             $trusted = true;
         }
@@ -95,13 +101,11 @@ class CorsMiddleware implements Middleware
         return $trusted;
     }
 
-    /**
-     * @param string[] $allowedOrigins
-     */
-    private static function isOriginAllowed(string $origin, array $allowedOrigins) {
-        foreach ($allowedOrigins as $allowedOrigin) {
-            $allowedOriginPattern = static::replaceWildcard($allowedOrigin);
-            if (preg_match($allowedOriginPattern, $origin)) {
+    private function isOriginAllowed(string $origin) {
+        $corsOrigins = Arrays::asArray($this->corsOrigin);
+        foreach ($corsOrigins as $corsOrigin) {
+            $corsOriginPattern = static::replaceWildcard($corsOrigin);
+            if (preg_match($corsOriginPattern, $origin)) {
                 return true;
             }
         }

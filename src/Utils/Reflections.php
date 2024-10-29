@@ -11,6 +11,10 @@ class Reflections
         return $type instanceof \ReflectionNamedType && $type->isBuiltin();
     }
 
+    public static function getTypeName(\ReflectionType $type): string|false {
+        return $type instanceof \ReflectionNamedType ? $type->getName() : false;
+    }
+
     public static function instantiateClass(string $class, mixed ...$args): object|false {
         $reflector = new \ReflectionClass($class);
         if (!$reflector->isInstantiable()) {

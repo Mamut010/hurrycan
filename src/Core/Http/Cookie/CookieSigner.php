@@ -6,10 +6,14 @@ use App\Utils\Crypto;
 
 class CookieSigner implements CookieReader, CookieWriter
 {
+    public function __construct(private readonly string $cookieSecret) {
+
+    }
+
     #[\Override]
     public function write(string $value): string {
         $encodedValue = Crypto::base64UrlEncode($value);
-        $signature = Crypto::generateSignature($encodedValue, Env::cookieSecret());
+        $signature = Crypto::generateSignature($encodedValue, $this->cookieSecret);
         return $encodedValue . '.' . $signature;
     }
 
@@ -22,7 +26,7 @@ class CookieSigner implements CookieReader, CookieWriter
 
         $encodedValue = $parts['encodedValue'];
         $signature = $parts['signature'];
-        if (!Crypto::isValidSignature($signature, $encodedValue, Env::cookieSecret())) {
+        if (!Crypto::isValidSignature($signature, $encodedValue, $this->cookieSecret)) {
             return false;
         }
 

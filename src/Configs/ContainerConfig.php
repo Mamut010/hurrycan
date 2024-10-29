@@ -3,6 +3,7 @@ namespace App\Configs;
 
 use App\Constants\Env;
 use App\Core\Di\Contracts\DiContainer;
+use App\Core\Di\InjectionContext;
 use App\Dal\Contracts\UserRepo;
 use App\Dal\DatabaseHandler;
 use App\Dal\DatabaseHandlers\MysqlDatabaseHandler;
@@ -22,16 +23,16 @@ class ContainerConfig
     public static function register(DiContainer $container) {
         $container
             ->bind(DatabaseHandler::class)
-            ->toFactory(function () {
-                $host = Env::dbHost();
-                $dbName = Env::dbName();
-                $user = Env::dbUser();
-                // Read the password file path from an environment variable
-                $passwordFilePath = Env::passwordFilePath();
+            ->toFactory(function (InjectionContext $injectionContext) {
+                $container = $injectionContext->container();
+                $dbHost = $container->get('dbHost');
+                $dbName = $container->get('dbName');
+                $dbUser = $container->get('dbUser');
+                $passwordFilePath = $container->get('passwordFilePath');
                 // Read the password from the file
                 $password = file_get_contents($passwordFilePath);
                 $password = trim($password);
-                return new MysqlDatabaseHandler($host, $dbName, $user, $password);
+                return new MysqlDatabaseHandler($dbHost, $dbName, $dbUser, $password);
             })
             ->inSingletonScope();
 

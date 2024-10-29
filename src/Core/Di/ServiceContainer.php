@@ -261,11 +261,22 @@ class ServiceContainer implements DiContainer
         $dependencies = [];
         foreach ($parameters as $parameter) {
             $type = $parameter->getType();
-            if (Reflections::isPrimitiveType($type)) {
-                $dependencies[] = $this->resolvePrimitiveDependency($parameter);
+            try {
+                if (Reflections::isPrimitiveType($type)) {
+                    $dependencies[] = $this->resolvePrimitiveDependency($parameter);
+                }
+                else {
+                    $dependencies[] = $this->resolveClassDependency($parameter);
+                }
             }
-            else {
-                $dependencies[] = $this->resolveClassDependency($parameter);
+            catch (\Exception $e) {
+                $name = $parameter->getName();
+                if ($this->isBound($name)) {
+                    $dependencies[] = $this->get($name);
+                }
+                else {
+                    throw $e;
+                }
             }
         }
         return $dependencies;
@@ -302,9 +313,13 @@ class ServiceContainer implements DiContainer
     }
 
     private function resolveClassDependency(\ReflectionParameter $parameter) {
-        $name = $parameter->getType()->getName();
         $dependency = null;
         try {
+            $name = Reflections::getTypeName($parameter->getType());
+            if ($name === false) {
+                $msg = "Parameter [$parameter] does not have a single type";
+                throw new \UnexpectedValueException($parameter);
+            }
             $dependency = $this->get($name);
         } catch (\Exception $e) {
             if ($parameter->isOptional() || $parameter->allowsNull()) {

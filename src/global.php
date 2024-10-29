@@ -1,7 +1,6 @@
 <?php
 
 use App\AppProvider;
-use App\Constants\Env;
 use App\Constants\HttpCode;
 use App\Constants\HttpHeader;
 use App\Core\Http\Cookie\CookieQueue;
@@ -9,6 +8,7 @@ use App\Core\Http\Request\Request;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
+use App\Env;
 use App\Utils\Strings;
 
 if (!function_exists('resources')) {
