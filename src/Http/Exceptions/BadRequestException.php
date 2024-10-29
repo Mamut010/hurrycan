@@ -1,0 +1,12 @@
+<?php
+namespace App\Http\Exceptions;
+
+use App\Constants\HttpCode;
+use App\Core\Exceptions\HttpException;
+
+class BadRequestException extends HttpException
+{
+    public function __construct(string $message = '') {
+        parent::__construct(HttpCode::BAD_REQUEST, $message);
+    }
+}

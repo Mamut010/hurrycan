@@ -1,0 +1,69 @@
+services:
+  server:
+    build:
+      context: .
+      target: development
+    container_name: php-apache
+    ports:
+      - 9000:80
+    depends_on:
+      db:
+        condition: service_healthy
+    secrets:
+      - db-password
+    volumes:
+      - ./.docker/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+      - ./.docker/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+    env_file: ".env"
+    environment:
+      - PASSWORD_FILE_PATH=/run/secrets/db-password
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /var/www/html
+        - action: sync
+          path: ./resources
+          target: /var/www/html/resources
+
+
+  db:
+    image: mariadb
+    container_name: db
+    restart: always
+    user: root
+    secrets:
+      - db-password
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d  # Mount SQL files for initialization
+      - db-data:/var/lib/mysql
+    environment:
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db-password
+      - MARIADB_DATABASE=${DB_NAME}
+    expose:
+      - 3306
+    healthcheck:
+      test:  ["CMD", "/usr/local/bin/healthcheck.sh", "--su-mysql", "--connect",  "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - 8888:80
+    depends_on:
+      - db
+    environment:
+      - PMA_HOST=db
+
+
+volumes:
+  db-data:
+secrets:
+  db-password:
+    file: ./secrets/password.txt

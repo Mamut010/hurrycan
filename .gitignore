@@ -1,2 +1,4 @@
-db/
-README.Docker.md
+**/secrets/*
+!**/secrets/*.example.*
+**/.env
+**/README.Docker.md
