@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Http\Middleware\Impl;
 
+use App\Core\Di\Exceptions\CycleDetectedException;
 use App\Core\Http\Middleware\ErrorMiddleware;
 use App\Core\Http\Middleware\Middleware;
 use App\Core\Http\Middleware\MiddlewareStack;
@@ -39,7 +40,7 @@ class MiddlewareArrayStack implements MiddlewareStack
         return $this->getMiddlewaresByNameImpl($name, []);
     }
 
-    private function getMiddlewaresByNameImpl(string $name, array $finding): array|false { // NOSONAR
+    private function getMiddlewaresByNameImpl(string $name, array $finding) {
         $finding[$name] = true;
 
         $middlewares = $this->namedMiddlewares->get($name);
@@ -50,12 +51,9 @@ class MiddlewareArrayStack implements MiddlewareStack
         $result = [];
         foreach ($middlewares as $middleware) {
             if (isset($finding[$middleware])) {
-                return false;
+                throw new CycleDetectedException("A cycle detected when trying to resolve middleware [$name]");
             }
             $resolvedMiddlewares = $this->getMiddlewaresByNameImpl($middleware, $finding);
-            if ($resolvedMiddlewares === false) {
-                return false;
-            }
             array_push($result, ...$resolvedMiddlewares);
         }
         return $result;
