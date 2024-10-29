@@ -60,8 +60,7 @@ class AppProvider
                 continue;
             }
             $prop = $method->getName();
-            $propValue = $method->invoke(null);
-            $container->bind($prop)->toConstant($propValue);
+            $container->bind($prop)->toFactory(fn() => $method->invoke(null))->inSingletonScope();
         }
     }
 
