@@ -1,7 +1,6 @@
 <?php
 namespace App\Configs;
 
-use App\Constants\Env;
 use App\Core\Di\Contracts\DiContainer;
 use App\Core\Di\InjectionContext;
 use App\Dal\Contracts\UserRepo;

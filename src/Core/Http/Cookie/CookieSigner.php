@@ -1,7 +1,6 @@
 <?php
 namespace App\Core\Http\Cookie;
 
-use App\Constants\Env;
 use App\Utils\Crypto;
 
 class CookieSigner implements CookieReader, CookieWriter

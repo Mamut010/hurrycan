@@ -1,7 +1,6 @@
 <?php
 namespace App\Support\Csrf;
 
-use App\Constants\Env;
 use App\Utils\Crypto;
 use App\Utils\Randoms;
 

@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Services;
 
-use App\Constants\Env;
 use App\Dal\Contracts\UserRepo;
 use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AccessTokenPayloadDto;

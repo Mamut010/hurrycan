@@ -4,12 +4,10 @@ namespace App\Configs;
 use App\Constants\HttpCode;
 use App\Core\Http\Request\Request;
 use App\Core\Routing\Contracts\RouteBuilder;
-use App\Core\Routing\Contracts\RouteGroupBuilder;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MemeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UserController;
-use App\Http\Middlewares\AuthUserMiddleware;
 
 class RouteConfig
 {
