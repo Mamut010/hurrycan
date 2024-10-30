@@ -8,17 +8,13 @@ use App\Core\Http\Request\Request;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
-use App\Env;
 use App\Utils\Strings;
 
 if (!function_exists('resources')) {
     function resources(?string $path = null): string {
-        /**
-         * @var Request
-         */
-        $request = AppProvider::get()->container()->get(Request::class);
-
-        $resourcesPath = trim(Env::resourcesPath(), DIRECTORY_SEPARATOR);
+        $container = AppProvider::get()->container();
+        $request = $container->get(Request::class);
+        $resourcesPath = trim($container->get('resourcesPath'), DIRECTORY_SEPARATOR);
         $resourceUrl = $request->schemeAndHost() . DIRECTORY_SEPARATOR . $resourcesPath;
         if (!$path) {
             return $resourceUrl;
@@ -85,14 +81,20 @@ if (!function_exists('isToStringable')) {
 }
 
 if (!function_exists('sanitize')) {
+    /**
+     * Sanitize a given value. If the value is a string, the function applies the sanitization;
+     * otherwise, the value is returned as is.
+     * @param mixed $value The value to apply sanitization
+     * @return mixed The sanitization string or the value itself
+     */
     function sanitize(mixed $value) {
-        return isToStringable($value) ? htmlspecialchars(strval($value)) : $value;
+        return is_string($value) ? htmlspecialchars($value) : $value;
     }
 }
 
 if (!function_exists('isProduction')) {
     function isProduction(): string {
-        $environment = strtolower(Env::appEnv());
+        $environment = strtolower(AppProvider::get()->container()->get('appEnv'));
         return $environment === 'prod' || $environment === 'production';
     }
 }
