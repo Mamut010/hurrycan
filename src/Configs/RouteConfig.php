@@ -133,7 +133,7 @@ class RouteConfig
 
         $route->middleware('auth')->group(static::registerProtectedRoutes($route));
 
-        $route->any('*', fn() => response()->errView(HttpCode::NOT_FOUND,'not-found'));
+        $route->any('*', fn() => response()->errView(HttpCode::NOT_FOUND, 'not-found'));
     }
 
     private static function registerProtectedRoutes(RouteBuilder $route) {

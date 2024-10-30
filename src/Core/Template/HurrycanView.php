@@ -3,6 +3,7 @@ namespace App\Core\Template;
 
 use App\Core\Exceptions\ViewRenderException;
 use App\Core\Template\Contracts\RenderableView;
+use App\Utils\Arrays;
 
 class HurrycanView implements RenderableView
 {
@@ -33,7 +34,7 @@ class HurrycanView implements RenderableView
 
     private function createViewContext(): array {
         return array_merge($this->parameters, array(
-            '_view' => new class ($this->parameters)  {
+            '_view' => new class ($this->parameters) {
                 public function __construct(private array $parameters)
                 {
                     
@@ -41,7 +42,7 @@ class HurrycanView implements RenderableView
 
                 public function get(string $key)
                 {
-                    return $this->parameters[$key] ?? null;
+                    return Arrays::getOrDefaultExists($this->parameters, $key);
                 }
             }
         ));
