@@ -98,7 +98,7 @@ class Application
         $middlewareIdx = 0;
         $catched = false;
         
-        $next = function (?\Exception $e = null)
+        $next = function (?\Throwable $e = null)
             use (&$middlewareIdx, &$catched, $middlewares, $resolvedResult, &$next) {
             try {
                 if ($e !== null) {
@@ -117,7 +117,7 @@ class Application
                     return static::wrapActionResult($result);
                 }
             }
-            catch (\Exception $e) {
+            catch (\Throwable $e) {
                 if (!$catched) {
                     $catched = true;
                     $errorMiddleware = $this->middlewares->getErrorMiddleware();

@@ -6,12 +6,12 @@ use App\Core\Http\Middleware\ErrorMiddleware;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Response\Response;
 use Closure;
-use Exception;
+use Throwable;
 
 class DefaultErrorMiddleware implements ErrorMiddleware
 {
     #[\Override]
-    public function handle(Exception $e, Request $request, Closure $next): Response {
+    public function handle(Throwable $e, Request $request, Closure $next): Response {
         if ($e instanceof HttpException) {
             return response()->err($e->getStatusCode(), $e->getMessage());
         }

@@ -75,8 +75,11 @@ if (!function_exists('isNullOrEmpty')) {
 
 if (!function_exists('isToStringable')) {
     function isToStringable(mixed $value) {
-        return is_scalar($value)
-            || ((is_object($value) || is_array($value)) && method_exists($value, '__toString'));
+        if (is_array($value)) {
+            return false;
+        }
+        return (!is_object($value) && settype($value, 'string') !== false)
+            || (is_object($value) && method_exists($value, '__toString'));
     }
 }
 

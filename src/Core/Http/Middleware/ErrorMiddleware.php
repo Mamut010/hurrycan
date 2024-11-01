@@ -4,7 +4,7 @@ namespace App\Core\Http\Middleware;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Response\Response;
 use Closure;
-use Exception;
+use Throwable;
 
 /**
  * Represents an error handling middleware in a request-response chain.
@@ -22,10 +22,10 @@ interface ErrorMiddleware
     /**
      * Perform certain action when an exception occured, given the exception, incoming request and
      * the next() function to resume the flow.
-     * @param Exception $e The exception that occured
+     * @param Throwable $e The exception that occured
      * @param Request $request The incoming request
      * @param Closure(?Exception $e = null):Response $next The next() function
      * @return Response The response from the middleware
      */
-    function handle(Exception $e, Request $request, Closure $next): Response;
+    function handle(Throwable $e, Request $request, Closure $next): Response;
 }

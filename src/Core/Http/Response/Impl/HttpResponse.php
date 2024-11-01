@@ -115,7 +115,7 @@ class HttpResponse implements Response
             $this->sendStatusCode();
             $this->cookieQueue->dispatch();
             $this->sendData();
-            $this->sent = true;
+            $this->sent = $this->data !== null;
         }
     }
 

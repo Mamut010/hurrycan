@@ -8,10 +8,10 @@ require_once __DIR__ . '/vendor/autoload.php';
 try {
     AppProvider::get()->run(fn() => abort('404 Not Found'));
 }
-catch (\Exception $e) {
+catch (\Throwable $e) {
     if (isProduction()) {
         error_log($e->getMessage());
-        abort('Internal Server Error', \App\Constants\HttpCode::INTERNAL_SERVER_ERROR);
+        abort('500 Internal Server Error', \App\Constants\HttpCode::INTERNAL_SERVER_ERROR);
     }
     else {
         throw $e;
