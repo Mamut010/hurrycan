@@ -131,6 +131,8 @@ class RouteConfig
                 $route->post('/token', 'reissueTokens'),
             ]);
 
+        static::registerTestingRoutes($route);
+
         $route->middleware('auth')->group(static::registerProtectedRoutes($route));
 
         $route->any('*', fn() => response()->errView(HttpCode::NOT_FOUND, 'not-found'));
@@ -153,5 +155,96 @@ class RouteConfig
                     $route->post('', 'store'),
                 ]),
         ];
+    }
+
+    private static function registerTestingRoutes(RouteBuilder $route) {
+        $route->prefix('/testdb')->group([
+            $route->prefix('/sp')->group([
+                $route->get('/in', function (\App\Core\Dal\DatabaseHandler $db) {
+                    $db->execute("DROP TABLE IF EXISTS test");
+                    $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
+
+                    $ids = [1, 2, 3, 4];
+                    $db->execute("INSERT INTO test(id) VALUES (?), (?), (?), (?)", ...$ids);
+                    
+                    $db->execute("DROP PROCEDURE IF EXISTS p");
+                    $db->query('CREATE PROCEDURE p(IN step INT) READS SQL DATA
+                                BEGIN
+                                    SELECT id FROM test;
+                                    SELECT id + step FROM test;
+                                END;
+                                ');
+                    
+                    $result = $db->callProcedure('p', 10);
+                    return response()->json($result);
+                }),
+                $route->get('/in-gen', function (\App\Core\Dal\DatabaseHandler $db) {
+                    $db->execute("DROP TABLE IF EXISTS test");
+                    $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
+
+                    $ids = [1, 2, 3];
+                    $db->execute("INSERT INTO test(id) VALUES (?), (?), (?)", ...$ids);
+                    
+                    $db->execute("DROP PROCEDURE IF EXISTS p");
+                    $db->query('CREATE PROCEDURE p(IN step INT) READS SQL DATA
+                                BEGIN
+                                    SELECT id FROM test;
+                                    SELECT id + step FROM test;
+                                END;
+                                ');
+                    
+                    $result = [];
+                    $gen = $db->callProcedureRow('p', 10);
+                    foreach ($gen as $rows) {
+                        $accu = [];
+                        foreach ($rows as $row) {
+                            $accu[] = $row;
+                        }
+                        $result[] = $accu;
+                    }
+                    return response()->json($result);
+                }),
+                $route->get('/out', function (\App\Core\Dal\DatabaseHandler $db) {
+                    $db->execute("DROP TABLE IF EXISTS test");
+                    $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
+
+                    $ids = [[1], [2], [3]];
+                    $db->queryMany("INSERT INTO test(id) VALUES (?)", ...$ids);
+                    
+                    $db->execute("DROP PROCEDURE IF EXISTS p");
+                    $db->query('CREATE PROCEDURE p(OUT msg VARCHAR(50))
+                                    BEGIN
+                                        SELECT "Hi!" INTO msg;
+                                    END;'
+                                );
+                    
+                    $db->execute('SET @foo = "ABC"');
+                    $db->execute('CALL p(@foo)');
+                    $rows = $db->query('SELECT @foo as _p_out');
+                    return response()->json($rows);
+                }),
+            ]),
+            $route->prefix('/transaction')->group([
+                $route->get('/insert', function (\App\Core\Dal\DatabaseHandler $db) {
+                    $db->execute("DROP TABLE IF EXISTS test_transaction");
+                    $db->execute("CREATE TABLE test_transaction(id INT PRIMARY KEY)");
+
+                    $db->beginTransaction();
+                    try {
+                        $db->execute('INSERT INTO test_transaction(id) VALUES (?)', 1);
+                        if (!$db->execute('INSERT INTO test_transaction(id) VALUES (?)', 'abc')) {
+                            throw new \App\Http\Exceptions\InternalServerErrorException();
+                        }
+                        $db->commit();
+                    }
+                    catch (\Exception $e) {
+                        $db->rollback();
+                    }
+
+                    $result = $db->query('SELECT * FROM test_transaction');
+                    return response()->json($result);
+                }),
+            ])
+        ]);
     }
 }

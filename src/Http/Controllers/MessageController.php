@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\HttpCode;
-use App\Dal\DatabaseHandler;
+use App\Core\Dal\DatabaseHandler;
 
 class MessageController
 {
@@ -11,15 +11,15 @@ class MessageController
     }
 
     public function index() {
-        $rows = $this->db->queryAll("SELECT * FROM messages");
+        $rows = $this->db->query("SELECT * FROM messages");
         return response()->json($rows);
     }
 
     public function store() {
-        $rows = $this->db->queryAll("SELECT COUNT(*) as count FROM messages");
+        $rows = $this->db->query("SELECT COUNT(*) as count FROM messages");
         $row = $rows[0];
         $count = $row['count'];
-        $this->db->execute("
+        $success = $this->db->execute("
             INSERT INTO messages (message)
             SELECT CONCAT('message-', '$count')
             WHERE NOT EXISTS (
@@ -27,6 +27,8 @@ class MessageController
             )
         ");
 
-        return response()->make()->statusCode(HttpCode::CREATED);
+        return $success
+            ? response()->make()->statusCode(HttpCode::CREATED)
+            : response()->err(HttpCode::CONFLICT);
     }
 }
