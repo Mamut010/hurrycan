@@ -18,6 +18,7 @@ final class HttpHeader
     const CONTENT_DISPOSITION = 'Content-Disposition';
     const CONTENT_TYPE = 'Content-Type';
     const CONTENT_LANGUAGE = 'Content-Language';
+    const CONTENT_LENGTH = 'Content-Length';
     const HOST = 'Host';
     const LOCATION = 'Location';
     const ORIGIN = 'Origin';

@@ -11,15 +11,11 @@ class ViewResponse extends HttpResponse
     public function __construct(CookieQueue $cookieQueue, Renderable $view)
     {
         parent::__construct($cookieQueue, $view->render());
-        parent::header(HttpHeader::CONTENT_TYPE, MimeType::TEXT_HTML);
     }
 
     #[\Override]
-    public function header(string $headerName, ?string $value, bool $replace = true): self
-    {
-        if ($headerName !== HttpHeader::CONTENT_TYPE) {
-            parent::header($headerName, $value, $replace);
-        }
-        return $this;
+    public function send(): void {
+        parent::header(HttpHeader::CONTENT_TYPE, MimeType::TEXT_HTML);
+        parent::send();
     }
 }
