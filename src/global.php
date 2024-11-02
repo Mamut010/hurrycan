@@ -25,12 +25,21 @@ if (!function_exists('url')) {
     }
 }
 
+if (!function_exists('assetsUrl')) {
+    function assetsUrl(?string $path = null): string {
+        $container = AppProvider::get()->container();
+        $assetsPath = trim($container->get('assetsPath'), DIRECTORY_SEPARATOR);
+        $path = $path !== null ? $assetsPath . Strings::prependIf($path, DIRECTORY_SEPARATOR) : $assetsPath;
+        return url($path);
+    }
+}
+
 if (!function_exists('assets')) {
     function assets(?string $path = null): string {
         $container = AppProvider::get()->container();
         $assetsPath = trim($container->get('assetsPath'), DIRECTORY_SEPARATOR);
         $path = $path !== null ? $assetsPath . Strings::prependIf($path, DIRECTORY_SEPARATOR) : $assetsPath;
-        return url($path);
+        return "public/$path";
     }
 }
 

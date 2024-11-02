@@ -5,7 +5,7 @@
 </head>
 
 <body>
-    <img src="{{ assets('images/cat-meme-1.png') }}" alt="A cat thinking of eating snack"/>
+    <img src="{{ assetsUrl('images/cat-meme-1.png') }}" alt="A cat thinking of eating snack"/>
 </body>
 
 </html>

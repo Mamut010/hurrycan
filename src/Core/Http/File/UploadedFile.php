@@ -78,7 +78,7 @@ class UploadedFile extends \SplFileInfo
     }
 
     private static function generateRandomUniqueFileName() {
-        return date("Y-m-d-H-i-s") . '_' . Randoms::uuidv4();
+        return Randoms::hexString();
     }
 
     private function storeImpl(string $tmpPath, string $storingPath, string $name): string|false {

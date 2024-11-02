@@ -43,13 +43,13 @@ class Randoms
     public static function randomString(int $length, ?string $characters = null) {
         $characters ??= '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
-        $randomString = '';
+        $randomChar = [];
         
         for ($i = 0; $i < $length; $i++) {
             $randomIndex = random_int(0, $charactersLength - 1);
-            $randomString .= $characters[$randomIndex];
+            $randomChar[] = $characters[$randomIndex];
         }
         
-        return $randomString;
+        return implode('', $randomChar);
     }
 }

@@ -50,15 +50,14 @@ class DefaultResponseFactory implements ResponseFactory
     }
 
     private function handleDataNormalCases(mixed $data) {
-        if (is_scalar($data)) {
-            $response = new HttpResponse($this->cookieQueue, strval($data));
-            return $response->header(HttpHeader::CONTENT_TYPE, MimeType::TEXT_HTML);
+        if (is_scalar($data) || isToStringable($data)) {
+            return new HttpResponse($this->cookieQueue, strval($data));
         }
         elseif (is_array($data) || is_object($data)) {
             return new JsonResponse($this->cookieQueue, $data);
         }
         else {
-            return new HttpResponse($this->cookieQueue);
+            throw new \InvalidArgumentException('Unsendable data given');
         }
     }
 
@@ -110,7 +109,7 @@ class DefaultResponseFactory implements ResponseFactory
     #[\Override]
     public function downloadContent(string $fileContent, ?string $downloadedFilename = null): Response {
         if (!$downloadedFilename) {
-            $downloadedFilename = Randoms::uuidv4() . '.' . Files::getFileContentExtension($fileContent);
+            $downloadedFilename = Randoms::hexString() . '.' . Files::getFileContentExtension($fileContent);
         }
         $contentDisposition = new DownloadContentDisposition($downloadedFilename);
         return new ContentResponse($this->cookieQueue, $contentDisposition, $fileContent);

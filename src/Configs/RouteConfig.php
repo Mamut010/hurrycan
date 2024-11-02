@@ -157,12 +157,12 @@ class RouteConfig
         ];
     }
 
-    private static function registerTestingRoutes(RouteBuilder $route) {
+    private static function registerTestingRoutes(RouteBuilder $route) { // NOSONAR
         $route->prefix('/testdb')->group([
             $route->prefix('/sp')->group([
                 $route->get('/in', function (\App\Core\Dal\DatabaseHandler $db) {
-                    $db->execute("DROP TABLE IF EXISTS test");
-                    $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
+                    $db->execute("DROP TABLE IF EXISTS test"); // NOSONAR
+                    $db->execute("CREATE TABLE test(id INT PRIMARY KEY)"); // NOSONAR
 
                     $ids = [1, 2, 3, 4];
                     $db->execute("INSERT INTO test(id) VALUES (?), (?), (?), (?)", ...$ids);
@@ -303,12 +303,12 @@ class RouteConfig
                     return response()->make('Missing or invalid file')->statusCode(HttpCode::BAD_REQUEST);
                 }
 
-                $storedFilename = $file->store('public/assets/uploads');
+                $storedFilename = $file->store(assets('uploads'));
                 if (!$storedFilename) {
                     return response()->err(HttpCode::CONFLICT, 'Unable to save file');
                 }
 
-                return response()->download($storedFilename);
+                return response()->download($storedFilename, $file->getClientOriginalName());
             }),
             $route->post('up-save-display', function (Request $request) {
                 $file = $request->file('my-file');
@@ -316,12 +316,12 @@ class RouteConfig
                     return response()->make('Missing or invalid file')->statusCode(HttpCode::BAD_REQUEST);
                 }
 
-                $storedFilename = $file->store('public/assets/uploads');
+                $storedFilename = $file->store(assets('uploads'));
                 if (!$storedFilename) {
                     return response()->err(HttpCode::CONFLICT, 'Unable to save file');
                 }
 
-                return response()->file($storedFilename);
+                return response()->file($storedFilename, $file->getClientOriginalName());
             }),
         ]);
 
