@@ -5,9 +5,6 @@ use App\Constants\MimeType;
 
 class MimeTypes
 {
-    private const FINFO_EXTENSION_NOT_FOUND = '???';
-    private const FINFO_EXTENSION_SEPARATOR = '/';
-
     private function __construct() {
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
@@ -35,7 +32,7 @@ class MimeTypes
     }
 
     public static function getFileMimeTypeByExtension(string $filePath) {
-        $extensionToMimeType = [
+        static $extensionToMimeType = [
             'pdf'   =>  MimeType::APPLICATION_PDF,
             'jpg'   =>  MimeType::IMAGE_JPEG,
             'jpeg'  =>  MimeType::IMAGE_JPEG,
@@ -81,13 +78,16 @@ class MimeTypes
      * @return string[]|false All appropriate extensions of the file, or false if not found.
      */
     public static function getFileContentExtensions(string $fileContent): array|false {
+        static $finfo_ext_not_found = '???';
+        static $finfo_ext_separator = '/';
+
         $finfo = new \finfo(FILEINFO_EXTENSION);
         $extension = $finfo->buffer($fileContent);
-        if ($extension === static::FINFO_EXTENSION_NOT_FOUND) {
+        if ($extension === $finfo_ext_not_found) {
             return false;
         }
 
-        return explode(static::FINFO_EXTENSION_SEPARATOR, $extension);
+        return explode($finfo_ext_separator, $extension);
     }
 
     /**
