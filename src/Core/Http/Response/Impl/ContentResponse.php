@@ -3,7 +3,7 @@ namespace App\Core\Http\Response\Impl;
 
 use App\Core\Http\Cookie\CookieQueue;
 use App\Core\Http\Response\Helpers\ContentDisposition;
-use App\Utils\Files;
+use App\Utils\MimeTypes;
 
 class ContentResponse extends FileDataResponseBase
 {
@@ -22,7 +22,7 @@ class ContentResponse extends FileDataResponseBase
 
     #[\Override]
     protected function getMimeType(): string {
-        return Files::getFileContentMimeType($this->fileContent);
+        return MimeTypes::getFileContentMimeType($this->fileContent);
     }
 
     #[\Override]

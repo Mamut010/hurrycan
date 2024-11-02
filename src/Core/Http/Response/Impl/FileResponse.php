@@ -1,11 +1,9 @@
 <?php
 namespace App\Core\Http\Response\Impl;
 
-use App\Constants\HttpHeader;
-use App\Constants\MimeType;
 use App\Core\Http\Cookie\CookieQueue;
 use App\Core\Http\Response\Helpers\ContentDisposition;
-use App\Utils\Files;
+use App\Utils\MimeTypes;
 
 class FileResponse extends FileDataResponseBase
 {
@@ -23,7 +21,7 @@ class FileResponse extends FileDataResponseBase
 
     #[\Override]
     protected function getMimeType(): string {
-        return Files::getFileMimeType($this->filename);
+        return MimeTypes::getFileMimeType($this->filename);
     }
 
     #[\Override]

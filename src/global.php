@@ -9,7 +9,7 @@ use App\Core\Http\Request\Request;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
-use App\Utils\Files;
+use App\Utils\MimeTypes;
 use App\Utils\Strings;
 
 if (!function_exists('url')) {
@@ -41,7 +41,7 @@ if (!function_exists('favicon')) {
         if (!file_exists($fullpath) || !$fileContent = file_get_contents($fullpath)) {
             return '';
         }
-        $mimeType = Files::getFileContentMimeType($fileContent) ?: MimeType::IMAGE_X_ICON;
+        $mimeType = MimeTypes::getFileContentMimeType($fileContent) ?: MimeType::IMAGE_X_ICON;
         $base64Content = base64_encode($fileContent);
         return "data:$mimeType;base64,$base64Content";
     }

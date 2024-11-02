@@ -14,7 +14,7 @@ use App\Core\Http\Response\Response;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\Renderable;
 use App\Core\Template\Contracts\TemplateEngine;
-use App\Utils\Files;
+use App\Utils\MimeTypes;
 use App\Utils\Randoms;
 
 class DefaultResponseFactory implements ResponseFactory
@@ -110,7 +110,7 @@ class DefaultResponseFactory implements ResponseFactory
     #[\Override]
     public function downloadContent(string $fileContent, ?string $downloadedFilename = null): Response {
         if (!$downloadedFilename) {
-            $downloadedFilename = Randoms::uuidv4() . '.' . Files::getFileContentExtension($fileContent);
+            $downloadedFilename = Randoms::uuidv4() . '.' . MimeTypes::getFileContentExtension($fileContent);
         }
         $contentDisposition = new DownloadContentDisposition($downloadedFilename);
         return new ContentResponse($this->cookieQueue, $contentDisposition, $fileContent);
