@@ -22,9 +22,16 @@ RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
     && docker-php-ext-install \
         mysqli \
     && docker-php-ext-enable mysqli
+# Copy source code
 COPY ./src /var/www/html
+# Copy .htaccess
 COPY ./.docker/apache/.htaccess /var/www/html
+# Copy public directory
 COPY ./public /var/www/html/public
+# Copy the favicon.ico
+RUN favicon=$(find ./public/ -maxdepth 1 -name 'favicon.ico' | head -n 1) && \
+    if [ -n "$favicon" ]; then cp "$favicon" /var/www/html/; else echo "No favicon file found."; fi
+# Copy resources directory
 COPY ./resources /var/www/html/resources
 
 FROM base AS development

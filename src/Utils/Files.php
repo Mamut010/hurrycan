@@ -51,19 +51,20 @@ class Files
 
     private static function getFileMimeTypeByExtension(string $filePath) {
         $extensionToMimeType = [
-            'pdf'  =>   MimeType::APPLICATION_PDF,
-            'jpg'  =>   MimeType::IMAGE_JPEG,
-            'jpeg' =>   MimeType::IMAGE_JPEG,
-            'png'  =>   MimeType::IMAGE_PNG,
-            'gif'  =>   MimeType::IMAGE_GIF,
-            'txt'  =>   MimeType::TEXT_PLAIN,
-            'html' =>   MimeType::TEXT_HTML,
-            'css'  =>   MimeType::TEXT_CSS,
-            'js'   =>   MimeType::APPLICATION_JSON,
-            'zip'  =>   MimeType::APPLICATION_JSON,
-            'mp4'  =>   MimeType::VIDEO_MP4,
-            'mp3'  =>   MimeType::AUDIO_MPEG,
-            'json' =>   MimeType::APPLICATION_JSON,
+            'pdf'   =>  MimeType::APPLICATION_PDF,
+            'jpg'   =>  MimeType::IMAGE_JPEG,
+            'jpeg'  =>  MimeType::IMAGE_JPEG,
+            'png'   =>  MimeType::IMAGE_PNG,
+            'gif'   =>  MimeType::IMAGE_GIF,
+            'ico'   =>  MimeType::IMAGE_X_ICON,
+            'txt'   =>  MimeType::TEXT_PLAIN,
+            'html'  =>  MimeType::TEXT_HTML,
+            'css'   =>  MimeType::TEXT_CSS,
+            'js'    =>  MimeType::APPLICATION_JSON,
+            'zip'   =>  MimeType::APPLICATION_JSON,
+            'mp4'   =>  MimeType::VIDEO_MP4,
+            'mp3'   =>  MimeType::AUDIO_MPEG,
+            'json'  =>  MimeType::APPLICATION_JSON,
         ];
 
         // Get the file extension

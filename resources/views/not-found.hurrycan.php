@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <title>Page Not Found</title>
+    <link rel="icon" href="{{ favicon('cropped-Favicon.png') }}">
 </head>
 
 <body>

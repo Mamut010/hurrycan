@@ -30,6 +30,9 @@ services:
         - action: sync
           path: ./resources
           target: /var/www/html/resources
+        - action: sync
+          path: ./public
+          target: /var/www/html/public
 
 
   db:

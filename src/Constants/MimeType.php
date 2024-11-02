@@ -21,6 +21,7 @@ final class MimeType
     const IMAGE_JPEG = 'image/jpeg';
     const IMAGE_PNG = 'image/png';
     const IMAGE_GIF = 'image/gif';
+    const IMAGE_X_ICON = 'image/x-icon';
     
     const AUDIO_MPEG = 'audio/mpeg';
     const VIDEO_MP4 = 'video/mp4';

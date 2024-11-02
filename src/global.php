@@ -3,24 +3,47 @@
 use App\AppProvider;
 use App\Constants\HttpCode;
 use App\Constants\HttpHeader;
+use App\Constants\MimeType;
 use App\Core\Http\Cookie\CookieQueue;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
+use App\Utils\Files;
 use App\Utils\Strings;
+
+if (!function_exists('url')) {
+    function url(?string $path = null): string {
+        $container = AppProvider::get()->container();
+        $request = $container->get(Request::class);
+        $url = $request->schemeAndHost();
+        if (!$path) {
+            return $url;
+        }
+        $path = Strings::prependIf($path, DIRECTORY_SEPARATOR);
+        return $url . $path;
+    }
+}
 
 if (!function_exists('assets')) {
     function assets(?string $path = null): string {
         $container = AppProvider::get()->container();
-        $request = $container->get(Request::class);
         $assetsPath = trim($container->get('assetsPath'), DIRECTORY_SEPARATOR);
-        $assetsUrl = $request->schemeAndHost() . DIRECTORY_SEPARATOR . $assetsPath;
-        if (!$path) {
-            return $assetsUrl;
+        $path = $path !== null ? $assetsPath . Strings::prependIf($path, DIRECTORY_SEPARATOR) : $assetsPath;
+        return url($path);
+    }
+}
+
+if (!function_exists('favicon')) {
+    function favicon(?string $path = null) {
+        $path ??= 'favicon.ico';
+        $fullpath = "public/$path";
+        if (!file_exists($fullpath) || !$fileContent = file_get_contents($fullpath)) {
+            return '';
         }
-        $path = Strings::prependIf($path, DIRECTORY_SEPARATOR);
-        return $assetsUrl . $path;
+        $mimeType = Files::getFileContentMimeType($fileContent) ?: MimeType::IMAGE_X_ICON;
+        $base64Content = base64_encode($fileContent);
+        return "data:$mimeType;base64,$base64Content";
     }
 }
 
