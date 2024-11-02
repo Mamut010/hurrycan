@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Http\Request;
 
+use App\Core\Http\File\UploadedFile;
 use App\Core\Http\Session\SessionManager;
 
 interface UriInfoOperation
@@ -69,7 +70,13 @@ interface InputInfoOperation
     function boolean(string $name, bool $default = false): bool;
 }
 
-interface Request extends UriInfoOperation, HeaderInfoOperation, InputInfoOperation
+interface FileUploadOperation
+{
+    function hasFile(string $name): bool;
+    function file(string $name): ?UploadedFile;
+}
+
+interface Request extends UriInfoOperation, HeaderInfoOperation, InputInfoOperation, FileUploadOperation
 {
     function method(): string;
     function isMethod(string $method): bool;

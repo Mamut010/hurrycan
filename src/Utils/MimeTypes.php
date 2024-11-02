@@ -70,34 +70,4 @@ class MimeTypes
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         return $finfo->buffer($fileContent);
     }
-
-    /**
-     * Get all appropriate extensions for a file in memory.
-     *
-     * @param string $fileContent The content of the file in memory.
-     * @return string[]|false All appropriate extensions of the file, or false if not found.
-     */
-    public static function getFileContentExtensions(string $fileContent): array|false {
-        static $finfo_ext_not_found = '???';
-        static $finfo_ext_separator = '/';
-
-        $finfo = new \finfo(FILEINFO_EXTENSION);
-        $extension = $finfo->buffer($fileContent);
-        if ($extension === $finfo_ext_not_found) {
-            return false;
-        }
-
-        return explode($finfo_ext_separator, $extension);
-    }
-
-    /**
-     * Get an appropriate extension for a file in memory.
-     *
-     * @param string $fileContent The content of the file in memory.
-     * @return string|false An appropriate extension of the file, or false if not found.
-     */
-    public static function getFileContentExtension(string $fileContent): string|false {
-        $extensions = static::getFileContentExtensions($fileContent);
-        return $extensions !== false ? $extensions[0] : false;
-    }
 }

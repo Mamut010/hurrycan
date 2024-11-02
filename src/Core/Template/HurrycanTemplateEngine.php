@@ -51,7 +51,7 @@ class HurrycanTemplateEngine implements TemplateEngine
 
         if ($this->ignoreCache || !file_exists($outputFile)) {
             $content = $this->parseView($actualViewName);
-            Files::saveAsFile($content, $cachePath, $outputFilename);
+            Files::saveFileContent($content, $cachePath, $outputFilename);
         }
 
         $params = array_merge($context ?? [], $this->sharedData);

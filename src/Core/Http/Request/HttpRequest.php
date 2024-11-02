@@ -2,6 +2,7 @@
 namespace App\Core\Http\Request;
 
 use App\Core\Http\Cookie\CookieReader;
+use App\Core\Http\File\UploadedFile;
 use App\Core\Http\Request\Traits\RequestHeaderQueryable;
 use App\Core\Http\Request\Traits\RequestInputQueryable;
 use App\Core\Http\Request\Traits\RequestUriQueryable;
@@ -139,5 +140,31 @@ class HttpRequest implements Request
     #[\Override]
     public function session(): SessionManager {
         return $this->sessionManager;
+    }
+
+    #[\Override]
+    public function hasFile(string $name): bool {
+        $files = $this->global->files();
+        return isset($files[$name]);
+    }
+
+    #[\Override]
+    public function file(string $name): ?UploadedFile {
+        $files = $this->global->files();
+        if (!isset($files[$name])) {
+            return null;
+        }
+
+        $file = $files[$name];
+        try {
+            $tmpPath = $file['tmp_name'];
+            $originalName = $file['name'];
+            $mimeType = Arrays::getOrDefault($file, 'type');
+            $error = Arrays::getOrDefault($file, 'error');
+            return new UploadedFile($tmpPath, $originalName, $mimeType, $error);
+        }
+        catch (\Exception $e) {
+            return null;
+        }
     }
 }

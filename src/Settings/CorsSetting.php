@@ -40,7 +40,9 @@ final class CorsSetting
      * @return ?string[]
      */
     public static function exposedHeaders(): ?array {
-        return null;
+        return [
+            HttpHeader::CONTENT_DISPOSITION,
+        ];
     }
 
     public static function credentials(): ?bool {

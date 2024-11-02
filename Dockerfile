@@ -16,7 +16,7 @@ RUN --mount=type=bind,source=composer.json,target=composer.json \
 
 FROM php:8.2-apache AS base
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
-    && mkdir /var/www/html/public && chmod 755 /var/www/html/public \
+    && mkdir /var/www/html/public \
     && mkdir /var/www/html/resources && chmod 777 /var/www/html/resources \
     && a2enmod rewrite \
     && docker-php-ext-install \
@@ -28,11 +28,14 @@ COPY ./src /var/www/html
 COPY ./.docker/apache/.htaccess /var/www/html
 # Copy public directory
 COPY ./public /var/www/html/public
-# Copy the favicon.ico
-RUN favicon=$(find ./public/ -maxdepth 1 -name 'favicon.ico' | head -n 1) && \
-    if [ -n "$favicon" ]; then cp "$favicon" /var/www/html/; else echo "No favicon file found."; fi
 # Copy resources directory
 COPY ./resources /var/www/html/resources
+# Give permission to write into uploads directory
+RUN chown www-data:www-data /var/www/html/public/assets/uploads \
+    && chmod 775 /var/www/html/public/assets/uploads \
+    # Copy the favicon.ico
+    && favicon=$(find ./public/ -maxdepth 1 -name 'favicon.ico' | head -n 1) && \
+    if [ -n "$favicon" ]; then cp "$favicon" /var/www/html/; else echo "No favicon file found."; fi
 
 FROM base AS development
 COPY ./tests /var/www/html/tests

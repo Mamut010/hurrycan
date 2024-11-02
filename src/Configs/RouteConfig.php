@@ -167,15 +167,15 @@ class RouteConfig
                     $ids = [1, 2, 3, 4];
                     $db->execute("INSERT INTO test(id) VALUES (?), (?), (?), (?)", ...$ids);
                     
-                    $db->execute("DROP PROCEDURE IF EXISTS p");
-                    $db->query('CREATE PROCEDURE p(IN step INT) READS SQL DATA
+                    $db->execute("DROP PROCEDURE IF EXISTS t");
+                    $db->query('CREATE PROCEDURE t(IN step INT) READS SQL DATA
                                 BEGIN
                                     SELECT id FROM test;
                                     SELECT id + step FROM test;
                                 END;
                                 ');
                     
-                    $result = $db->callProcedure('p', 10);
+                    $result = $db->callProcedure('t', 10);
                     return response()->json($result);
                 }),
                 $route->get('/in-gen', function (\App\Core\Dal\DatabaseHandler $db) {
@@ -246,7 +246,7 @@ class RouteConfig
                 }),
             ]),
             $route->prefix('/file')->group([
-                $route->get('/upload', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/init', function (\App\Core\Dal\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test_file");
                     $db->execute(
                         "CREATE TABLE test_file(
@@ -255,20 +255,41 @@ class RouteConfig
                             data LONGBLOB
                         )"
                     );
-                    
-                    $data = file_get_contents(static::$filename);
-                    $success = $db->execute('INSERT INTO test_file(filename, data) VALUES (?, ?)', static::$filename, $data);
+                    return response()->make('Success');
+                }),
+                $route->post('/upload', function (Request $request, \App\Core\Dal\DatabaseHandler $db) {
+                    $file = $request->file('my-file');
+                    if (!$file) {
+                        return response()->make('Missing "my-file" file')->statusCode(HttpCode::BAD_REQUEST);
+                    }
+
+                    $filename = $file->getClientOriginalName();
+                    $data = $file->getContent();
+                    $success = $db->execute(
+                        'INSERT INTO test_file(filename, data) VALUES (?, ?)',
+                        $filename, $data
+                    );
 
                     return $success ? response()->make('Success') : response()->err(HttpCode::CONFLICT, 'Failed');
                 }),
                 $route->get('/download/{id}', function (\App\Core\Dal\DatabaseHandler $db, int $id) {
+                    $rows = $db->query('SELECT filename, data FROM test_file WHERE id = (?)', $id);
+                    if (empty($rows)) {
+                        return response()->err(HttpCode::NOT_FOUND, 'File Not Found');
+                    }
+                    $filename = $rows[0]['filename'];
+                    $data = $rows[0]['data'];
+
+                    return response()->downloadContent($data, $filename);
+                })->whereNumber('id'),
+                $route->get('/display/{id}', function (\App\Core\Dal\DatabaseHandler $db, int $id) {
                     $rows = $db->query('SELECT data FROM test_file WHERE id = (?)', $id);
                     if (empty($rows)) {
                         return response()->err(HttpCode::NOT_FOUND, 'File Not Found');
                     }
                     $data = $rows[0]['data'];
 
-                    return response()->downloadContent($data);
+                    return response()->fileContent($data);
                 })->whereNumber('id'),
             ])
         ]);
@@ -276,6 +297,32 @@ class RouteConfig
         $route->prefix('file')->group([
             $route->get('download', fn() => response()->download(static::$filename)),
             $route->get('display', fn() => response()->file(static::$filename)),
+            $route->post('up-save-download', function (Request $request) {
+                $file = $request->file('my-file');
+                if (!$file || !$file->isValid()) {
+                    return response()->make('Missing or invalid file')->statusCode(HttpCode::BAD_REQUEST);
+                }
+
+                $storedFilename = $file->store('public/assets/uploads');
+                if (!$storedFilename) {
+                    return response()->err(HttpCode::CONFLICT, 'Unable to save file');
+                }
+
+                return response()->download($storedFilename);
+            }),
+            $route->post('up-save-display', function (Request $request) {
+                $file = $request->file('my-file');
+                if (!$file || !$file->isValid()) {
+                    return response()->make('Missing or invalid file')->statusCode(HttpCode::BAD_REQUEST);
+                }
+
+                $storedFilename = $file->store('public/assets/uploads');
+                if (!$storedFilename) {
+                    return response()->err(HttpCode::CONFLICT, 'Unable to save file');
+                }
+
+                return response()->file($storedFilename);
+            }),
         ]);
 
         $route->prefix('image')->group([
@@ -284,6 +331,6 @@ class RouteConfig
         ]);
     }
 
-    private static string $filename = "resources/files/2024-Academic-Calendar-SP51-TR2-and-TR3-2024.pdf";
+    private static string $filename = "resources/files/sample.pdf";
     private static string $imageName = "resources/files/tree-of-wonders-digital-art-4k-3840x2160_899577-mm-90.jpg";
 }
