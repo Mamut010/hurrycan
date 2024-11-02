@@ -8,6 +8,8 @@ use App\Core\Http\Response\Helpers\ContentDisposition;
 
 abstract class FileDataResponseBase extends HttpResponse
 {
+    private bool $shouldSend = false;
+
     public function __construct(CookieQueue $cookieQueue, private readonly ContentDisposition $contentDisposition) {
         parent::__construct($cookieQueue, null);
     }
@@ -21,8 +23,10 @@ abstract class FileDataResponseBase extends HttpResponse
     abstract protected function sendFile(): void;
 
     #[\Override]
-    public function send(): void {
-        if ($this->shouldSendFile()) {
+    public function sendHeaders(): void {
+        $this->shouldSend = $this->shouldSendFile();
+
+        if ($this->shouldSend) {
             $mimeType = $this->getMimeType() ?: MimeType::APPLICATION_OCTET_STREAM;
             $size = $this->getSize();
 
@@ -32,13 +36,17 @@ abstract class FileDataResponseBase extends HttpResponse
                 $this->header(HttpHeader::CONTENT_LENGTH, $size);
             }
         }
-        parent::send();
+        
+        parent::sendHeaders();
     }
 
     #[\Override]
-    protected function sendData() {
-        ob_clean();
-        flush();
-        $this->sendFile();
+    protected function sendData(): bool {
+        if ($this->shouldSend) {
+            ob_clean();
+            flush();
+            $this->sendFile();
+        }
+        return $this->shouldSend;
     }
 }

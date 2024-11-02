@@ -114,16 +114,15 @@ class HttpResponse implements Response
             $this->sendCookie();
             $this->sendHeaders();
             $this->sendStatusCode();
-            $this->sendData();
-            $this->sent = $this->data !== null;
+            $this->sent = $this->sendData();
         }
     }
 
-    protected function sendCookie() {
+    protected function sendCookie(): void {
         $this->cookieQueue->dispatch();
     }
 
-    protected function sendHeaders() {
+    protected function sendHeaders(): void {
         $iter = $this->headers->iter();
         foreach ($iter as $headerName => $values) {
             $headerValue = implode(Delimiter::HTTP_HEADER_VALUE, $values);
@@ -131,13 +130,17 @@ class HttpResponse implements Response
         }
     }
 
-    protected function sendStatusCode() {
+    protected function sendStatusCode(): void {
         http_response_code($this->statusCode);
     }
 
-    protected function sendData() {
+    protected function sendData(): bool {
         if ($this->data !== null) {
             echo $this->data;
+            return true;
+        }
+        else {
+            return false;
         }
     }
 }
