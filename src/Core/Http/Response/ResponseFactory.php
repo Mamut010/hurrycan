@@ -8,4 +8,8 @@ interface ResponseFactory
     function view(string $viewName, ?array $context = null): Response;
     function err(int $statusCode, ?string $message = null): Response;
     function errView(int $statusCode, string $viewName, ?array $context = null): Response;
+    function file(string $filename): Response;
+    function download(string $filename, ?string $downloadedFilename = null): Response;
+    function fileContent(string $fileContent): Response;
+    function downloadContent(string $fileContent, ?string $downloadedFilename = null): Response;
 }

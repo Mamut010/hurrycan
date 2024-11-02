@@ -16,13 +16,22 @@ RUN --mount=type=bind,source=composer.json,target=composer.json \
 
 FROM php:8.2-apache AS base
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
+    && mkdir /var/www/html/public && chmod 755 /var/www/html/public \
     && mkdir /var/www/html/resources && chmod 777 /var/www/html/resources \
     && a2enmod rewrite \
     && docker-php-ext-install \
         mysqli \
     && docker-php-ext-enable mysqli
+# Copy source code
 COPY ./src /var/www/html
-COPY ./.docker/.htaccess /var/www/html
+# Copy .htaccess
+COPY ./.docker/apache/.htaccess /var/www/html
+# Copy public directory
+COPY ./public /var/www/html/public
+# Copy the favicon.ico
+RUN favicon=$(find ./public/ -maxdepth 1 -name 'favicon.ico' | head -n 1) && \
+    if [ -n "$favicon" ]; then cp "$favicon" /var/www/html/; else echo "No favicon file found."; fi
+# Copy resources directory
 COPY ./resources /var/www/html/resources
 
 FROM base AS development

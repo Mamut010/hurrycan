@@ -3,32 +3,47 @@
 use App\AppProvider;
 use App\Constants\HttpCode;
 use App\Constants\HttpHeader;
+use App\Constants\MimeType;
 use App\Core\Http\Cookie\CookieQueue;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
+use App\Utils\Files;
 use App\Utils\Strings;
 
-if (!function_exists('resources')) {
-    function resources(?string $path = null): string {
+if (!function_exists('url')) {
+    function url(?string $path = null): string {
         $container = AppProvider::get()->container();
         $request = $container->get(Request::class);
-        $resourcesPath = trim($container->get('resourcesPath'), DIRECTORY_SEPARATOR);
-        $resourceUrl = $request->schemeAndHost() . DIRECTORY_SEPARATOR . $resourcesPath;
+        $url = $request->schemeAndHost();
         if (!$path) {
-            return $resourceUrl;
+            return $url;
         }
         $path = Strings::prependIf($path, DIRECTORY_SEPARATOR);
-        return $resourceUrl . $path;
+        return $url . $path;
     }
 }
 
 if (!function_exists('assets')) {
     function assets(?string $path = null): string {
-        $path ??= '';
-        $path = Strings::prependIf($path, DIRECTORY_SEPARATOR);
-        return resources('assets' . $path);
+        $container = AppProvider::get()->container();
+        $assetsPath = trim($container->get('assetsPath'), DIRECTORY_SEPARATOR);
+        $path = $path !== null ? $assetsPath . Strings::prependIf($path, DIRECTORY_SEPARATOR) : $assetsPath;
+        return url($path);
+    }
+}
+
+if (!function_exists('favicon')) {
+    function favicon(?string $path = null) {
+        $path ??= 'favicon.ico';
+        $fullpath = "public/$path";
+        if (!file_exists($fullpath) || !$fileContent = file_get_contents($fullpath)) {
+            return '';
+        }
+        $mimeType = Files::getFileContentMimeType($fileContent) ?: MimeType::IMAGE_X_ICON;
+        $base64Content = base64_encode($fileContent);
+        return "data:$mimeType;base64,$base64Content";
     }
 }
 

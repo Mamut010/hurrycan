@@ -244,7 +244,46 @@ class RouteConfig
                     $result = $db->query('SELECT * FROM test_transaction');
                     return response()->json($result);
                 }),
+            ]),
+            $route->prefix('/file')->group([
+                $route->get('/upload', function (\App\Core\Dal\DatabaseHandler $db) {
+                    $db->execute("DROP TABLE IF EXISTS test_file");
+                    $db->execute(
+                        "CREATE TABLE test_file(
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            filename NVARCHAR(4096),
+                            data LONGBLOB
+                        )"
+                    );
+                    
+                    $data = file_get_contents(static::$filename);
+                    $success = $db->execute('INSERT INTO test_file(filename, data) VALUES (?, ?)', static::$filename, $data);
+
+                    return $success ? response()->make('Success') : response()->err(HttpCode::CONFLICT, 'Failed');
+                }),
+                $route->get('/download/{id}', function (\App\Core\Dal\DatabaseHandler $db, int $id) {
+                    $rows = $db->query('SELECT data FROM test_file WHERE id = (?)', $id);
+                    if (empty($rows)) {
+                        return response()->err(HttpCode::NOT_FOUND, 'File Not Found');
+                    }
+                    $data = $rows[0]['data'];
+
+                    return response()->downloadContent($data);
+                })->whereNumber('id'),
             ])
         ]);
+
+        $route->prefix('file')->group([
+            $route->get('download', fn() => response()->download(static::$filename)),
+            $route->get('display', fn() => response()->file(static::$filename)),
+        ]);
+
+        $route->prefix('image')->group([
+            $route->get('download', fn() => response()->download(static::$imageName)),
+            $route->get('display', fn() => response()->file(static::$imageName)),
+        ]);
     }
+
+    private static string $filename = "resources/files/2024-Academic-Calendar-SP51-TR2-and-TR3-2024.pdf";
+    private static string $imageName = "resources/files/tree-of-wonders-digital-art-4k-3840x2160_899577-mm-90.jpg";
 }

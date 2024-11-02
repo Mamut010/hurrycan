@@ -21,7 +21,7 @@ class HttpResponse implements Response
     protected MultiMap $headers;
     protected int $statusCode;
     protected ?string $data;
-    private bool $sent;
+    protected bool $sent;
     
     public function __construct(CookieQueue $cookieQueue, ?string $data = null)
     {
@@ -111,15 +111,18 @@ class HttpResponse implements Response
     #[\Override]
     public function send(): void {
         if (!$this->sent) {
+            $this->sendCookie();
             $this->sendHeaders();
             $this->sendStatusCode();
-            $this->cookieQueue->dispatch();
-            $this->sendData();
-            $this->sent = $this->data !== null;
+            $this->sent = $this->sendData();
         }
     }
 
-    private function sendHeaders() {
+    protected function sendCookie(): void {
+        $this->cookieQueue->dispatch();
+    }
+
+    protected function sendHeaders(): void {
         $iter = $this->headers->iter();
         foreach ($iter as $headerName => $values) {
             $headerValue = implode(Delimiter::HTTP_HEADER_VALUE, $values);
@@ -127,13 +130,17 @@ class HttpResponse implements Response
         }
     }
 
-    private function sendStatusCode() {
+    protected function sendStatusCode(): void {
         http_response_code($this->statusCode);
     }
 
-    private function sendData() {
+    protected function sendData(): bool {
         if ($this->data !== null) {
             echo $this->data;
+            return true;
+        }
+        else {
+            return false;
         }
     }
 }

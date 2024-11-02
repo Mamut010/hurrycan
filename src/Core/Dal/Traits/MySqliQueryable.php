@@ -137,7 +137,9 @@ trait MySqliQueryable
         for ($i = 0; $i < $paramCount; $i++) {
             if ($types[$i] === static::PARAM_TYPE_BLOB) {
                 $blob = $params[$i];
-                $this->sendBlob($stmt, $i, $blob);
+                if (!$this->sendBlob($stmt, $i, $blob)) {
+                    throw new DatabaseException("Unable to send BLOB param #$i");
+                }
             }
         }
 
@@ -177,7 +179,10 @@ trait MySqliQueryable
         $totalBytes = strlen($blob);
         for ($offset = 0; $offset < $totalBytes; $offset += $chunkSize) {
             $chunk = substr($blob, $offset, $chunkSize);
-            $stmt->send_long_data($idx, $chunk);
+            if (!$stmt->send_long_data($idx, $chunk)) {
+                return false;
+            }
         }
+        return true;
     }
 }

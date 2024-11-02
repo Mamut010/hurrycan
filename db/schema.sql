@@ -1,3 +1,5 @@
+SET GLOBAL max_allowed_packet = 128 * 1048576; -- 128MB
+
 USE mydb;
 
 -- CreateTable

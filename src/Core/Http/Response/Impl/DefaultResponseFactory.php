@@ -5,6 +5,8 @@ use App\Constants\HttpCode;
 use App\Constants\HttpHeader;
 use App\Constants\MimeType;
 use App\Core\Http\Cookie\CookieQueue;
+use App\Core\Http\Response\Helpers\DownloadContentDisposition;
+use App\Core\Http\Response\Helpers\InlineContentDisposition;
 use App\Core\Http\Response\Impl\HttpResponse;
 use App\Core\Http\Response\Impl\JsonResponse;
 use App\Core\Http\Response\Impl\ViewResponse;
@@ -12,6 +14,8 @@ use App\Core\Http\Response\Response;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\Renderable;
 use App\Core\Template\Contracts\TemplateEngine;
+use App\Utils\Files;
+use App\Utils\Randoms;
 
 class DefaultResponseFactory implements ResponseFactory
 {
@@ -54,7 +58,7 @@ class DefaultResponseFactory implements ResponseFactory
             return new JsonResponse($this->cookieQueue, $data);
         }
         else {
-            return new HttpResponse($this->cookieQueue, null);
+            return new HttpResponse($this->cookieQueue);
         }
     }
 
@@ -82,5 +86,33 @@ class DefaultResponseFactory implements ResponseFactory
     public function errView(int $statusCode, string $viewName, ?array $context = null): Response {
         $response = $this->view($viewName, $context);
         return $response->statusCode($statusCode);
+    }
+
+    #[\Override]
+    public function file(string $filename): Response {
+        $contentDisposition = new InlineContentDisposition();
+        return new FileResponse($this->cookieQueue, $contentDisposition, $filename);
+    }
+
+    #[\Override]
+    public function download(string $filename, ?string $downloadedFilename = null): Response {
+        $downloadedFilename = $downloadedFilename ?: basename($filename);
+        $contentDisposition = new DownloadContentDisposition($downloadedFilename);
+        return new FileResponse($this->cookieQueue, $contentDisposition, $filename);
+    }
+
+    #[\Override]
+    public function fileContent(string $fileContent): Response {
+        $contentDisposition = new InlineContentDisposition();
+        return new ContentResponse($this->cookieQueue, $contentDisposition, $fileContent);
+    }
+
+    #[\Override]
+    public function downloadContent(string $fileContent, ?string $downloadedFilename = null): Response {
+        if (!$downloadedFilename) {
+            $downloadedFilename = Randoms::uuidv4() . '.' . Files::getFileContentExtension($fileContent);
+        }
+        $contentDisposition = new DownloadContentDisposition($downloadedFilename);
+        return new ContentResponse($this->cookieQueue, $contentDisposition, $fileContent);
     }
 }
