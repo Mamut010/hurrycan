@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+
+# Turn rewriting on
+Options +FollowSymLinks
+RewriteEngine On
+
+# Rewrite requests to files in "public" without needing the "public" segment in the URL
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} !-d
+RewriteRule ^(.*)$ /public/$1 [L]
+
+# Redirect all other requests to index.php
+RewriteCond %{REQUEST_URI} !=/index.php
+RewriteCond %{REQUEST_URI} !^/public
+RewriteRule .* /index.php [L]
+
+</IfModule>

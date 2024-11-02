@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <title>Home</title>
+    <link rel="icon" type="image/x-icon" href="{{ assets('/favicon.ico') }}">
     <script defer src="{{ assets('/js/home.js') }}"></script>
 </head>
 

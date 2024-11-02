@@ -29,8 +29,8 @@ final class Env
         return static::env('PASSWORD_FILE_PATH');
     }
 
-    public static function resourcesPath(): string {
-        return static::env('RESOURCES_PATH');
+    public static function assetsPath(): string {
+        return static::env('ASSETS_PATH');
     }
 
     public static function viewPath(): string {

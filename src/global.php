@@ -10,25 +10,17 @@ use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
 use App\Utils\Strings;
 
-if (!function_exists('resources')) {
-    function resources(?string $path = null): string {
-        $container = AppProvider::get()->container();
-        $request = $container->get(Request::class);
-        $resourcesPath = trim($container->get('resourcesPath'), DIRECTORY_SEPARATOR);
-        $resourceUrl = $request->schemeAndHost() . DIRECTORY_SEPARATOR . $resourcesPath;
-        if (!$path) {
-            return $resourceUrl;
-        }
-        $path = Strings::prependIf($path, DIRECTORY_SEPARATOR);
-        return $resourceUrl . $path;
-    }
-}
-
 if (!function_exists('assets')) {
     function assets(?string $path = null): string {
-        $path ??= '';
+        $container = AppProvider::get()->container();
+        $request = $container->get(Request::class);
+        $assetsPath = trim($container->get('assetsPath'), DIRECTORY_SEPARATOR);
+        $assetsUrl = $request->schemeAndHost() . DIRECTORY_SEPARATOR . $assetsPath;
+        if (!$path) {
+            return $assetsUrl;
+        }
         $path = Strings::prependIf($path, DIRECTORY_SEPARATOR);
-        return resources('assets' . $path);
+        return $assetsUrl . $path;
     }
 }
 
