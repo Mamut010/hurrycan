@@ -10,7 +10,8 @@ use App\Utils\Arrays;
 use App\Utils\Strings;
 
 /**
- * The base class for Controller with Guard.
+ * The base class for Controller with various utility.\
+ * This class implements <i>HasGuard</i> and provides a fast way to incorporate Guards into the controllers.
  */
 class Controller implements HasGuard
 {
@@ -64,9 +65,26 @@ class Controller implements HasGuard
      * @return void This method throws on an authorization failure and does not return.
      * @throws UnauthorizedActionException If the action failed the authorization.
      * @throws GuardNotFoundException If no Guard exists.
+     * @throws GuardActionNotFoundException If no suitable Guard's method is found for the action.
      */
     protected function authorize(string $action, mixed ...$args): void {
         if (!$this->test($action, ...$args)) {
+            throw new UnauthorizedActionException($action);
+        }
+    }
+
+    /**
+     * Authorize an action with the guard if a suitable method is defined. This method throws a
+     * 403 Forbidden with <i>UnauthorizedActionException</i> if the authorization failed. If
+     * no suitable method for the action is defined, it is treated as a pass.
+     * @param string $action The action to authorize.
+     * @param mixed... $args The arguments to pass to the Guard.
+     * @return void This method throws on an authorization failure and does not return.
+     * @throws UnauthorizedActionException If the action failed the authorization.
+     * @throws GuardNotFoundException If no Guard exists.
+     */
+    protected function authorizeIfDefined(string $action, mixed ...$args): void {
+        if (!$this->testIfDefined($action, ...$args)) {
             throw new UnauthorizedActionException($action);
         }
     }
@@ -77,6 +95,7 @@ class Controller implements HasGuard
      * @param mixed... $args The arguments to pass to the Guard.
      * @return bool Return true if passed. False otherwise.
      * @throws GuardNotFoundException If no Guard exists.
+     * @throws GuardActionNotFoundException If no suitable Guard's method is found for the action.
      */
     protected function test(string $action, mixed ...$args): bool {
         if (!$this->guard) {
@@ -86,6 +105,28 @@ class Controller implements HasGuard
         return $this->invokeGuard($action, $args);
     }
 
+    /**
+     * Check if an action passes the guard. If no suitable method is defined for the
+     * action, it is treated as a pass.
+     * @param string $action The action to check.
+     * @param mixed... $args The arguments to pass to the Guard.
+     * @return bool Return true if passed. False otherwise.
+     * @throws GuardNotFoundException If no Guard exists.
+     */
+    protected function testIfDefined(string $action, mixed ...$args): bool {
+        if (!$this->guard) {
+            $class = static::class;
+            throw new GuardNotFoundException("Guard not exist for Controller [$class]");
+        }
+
+        try {
+            return $this->invokeGuard($action, $args);
+        }
+        catch (GuardActionNotFoundException $e) {
+            return true;
+        }
+    }
+
     private function invokeGuard(string $action, array $args): bool {
         $reflector = new \ReflectionObject($this->guard);
         $methods = static::getCorrectSignatureMethods($reflector);
@@ -93,8 +134,8 @@ class Controller implements HasGuard
         $guardMethod = $this->findGuardMethod($methods, $methodName);
         if (!$guardMethod) {
             $guardName = $reflector->getName();
-            $message = "Public non-abstract method [$methodName] for action [$action] "
-                        . "not found in Guard [$guardName]";
+            $message = "No suitable method with name [$methodName] for action [$action]"
+                     . " found in Guard [$guardName]";
             throw new GuardActionNotFoundException($message);
         }
         try {
@@ -106,6 +147,9 @@ class Controller implements HasGuard
         }
     }
 
+    /**
+     * @return \ReflectionMethod[]
+     */
     private static function getCorrectSignatureMethods(\ReflectionObject $reflector) {
         $methods = $reflector->getMethods();
         return Arrays::filterReindex(
@@ -120,16 +164,15 @@ class Controller implements HasGuard
 
     /**
      * @param \ReflectionMethod[] $methods
+     * @return \ReflectionMethod|false
      */
     private function findGuardMethod(array $methods, string $methodName) {
-        $guardMethod = false;
         foreach ($methods as $method) {
             if ($method->getName() === $methodName) {
-                $guardMethod = $method;
-                break;
+                return $methods;
             }
         }
-        return $guardMethod;
+        return false;
     }
     
     /**
@@ -145,7 +188,7 @@ class Controller implements HasGuard
     }
 
     /**
-     * Get the prefix of Guard's method names
+     * Get the prefix for Guard's method names
      * @return string The prefix
      */
     protected function getGuardMethodNamePrefix(): string {
