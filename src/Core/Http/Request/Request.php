@@ -87,6 +87,8 @@ interface Request extends UriInfoOperation, HeaderInfoOperation, InputInfoOperat
      * @return array<string,mixed>
      */
     function body(): array;
+
+    function hasCookie(string $name): bool;
     function cookie(string $name): string|false;
 
     /**

@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Http\Request;
 
+use App\Constants\HttpMethod;
 use App\Core\Http\Cookie\CookieReader;
 use App\Core\Http\File\UploadedFile;
 use App\Core\Http\Request\Traits\RequestHeaderQueryable;
@@ -18,28 +19,69 @@ class HttpRequest implements Request
     private RequestGlobalCollection $global;
     private SessionManager $sessionManager;
     private CookieReader $cookieReader;
+    private array $extraMethodFields;
     private array $routeParams = [];
     private array $extras = [];
+    private ?array $inputsCache = null;
 
+    /**
+     * @param string[] $extraMethodFields
+     */
     public function __construct(
         RequestGlobalCollection $global,
         SessionManager $sessionManager,
         CookieReader $cookieReader,
+        array $extraMethodFields = ['_method'],
     ) {
         $this->global = $global;
         $this->sessionManager = $sessionManager;
         $this->cookieReader = $cookieReader;
+        $this->extraMethodFields = $extraMethodFields;
     }
 
     public function __get($name)
     {
-        return Arrays::getOrDefaultExists($this->inputs(), $name, $this->routeParam($name));
+        $inputs = $this->inputs();
+        if (array_key_exists($name, $inputs)) {
+            return $inputs[$name];
+        }
+        else {
+            return $this->file($name);
+        }
     }
 
     #[\Override]
     public function method(): string {
         $server = $this->global->server();
-        return $server['REQUEST_METHOD'];
+        $method = $server['REQUEST_METHOD'];
+        if ($method !== HttpMethod::POST) {
+            return $method;
+        }
+
+        $body = $this->body();
+        if (empty($body)) {
+            return $method;
+        }
+        
+        $nonformMethods = Arrays::filterReindex(
+            HttpMethod::ALL_METHODS,
+            fn($method) => $method !== HttpMethod::GET && $method !== HttpMethod::POST
+        );
+        foreach ($this->extraMethodFields as $field) {
+            if (!array_key_exists($field, $body)) {
+                continue;
+            }
+            $value = $body[$field];
+            if (!is_string($value)) {
+                continue;
+            }
+            $value = strtoupper($value);
+            if (in_array($value, $nonformMethods, true)) {
+                $method = $value;
+                break;
+            }
+        }
+        return $method;
     }
 
     #[\Override]
@@ -76,6 +118,12 @@ class HttpRequest implements Request
     }
 
     #[\Override]
+    public function hasCookie(string $name): bool {
+        $value = Arrays::getOrDefault($this->global->cookie(), $name);
+        return $value !== null;
+    }
+
+    #[\Override]
     public function cookie(string $name): string|false {
         $value = Arrays::getOrDefault($this->global->cookie(), $name);
         if ($value === null) {
@@ -97,6 +145,15 @@ class HttpRequest implements Request
     #[\Override]
     public function merge(array $data): self {
         foreach ($data as $key => $value) {
+            if (array_key_exists($key, $this->extras)) {
+                $oldValue = $this->extras[$key];
+                if ($value !== $oldValue) {
+                    $this->inputsCache = null;
+                }
+                else {
+                    continue;
+                }
+            }
             $this->extras[$key] = $value;
         }
         return $this;
@@ -108,6 +165,7 @@ class HttpRequest implements Request
         foreach ($data as $key => $value) {
             if (!array_key_exists($key, $inputs)) {
                 $this->extras[$key] = $value;
+                $this->inputsCache = null;
             }
         }
         return $this;
@@ -129,7 +187,10 @@ class HttpRequest implements Request
 
     #[\Override]
     public function inputs(): array {
-        return array_merge($this->queryAll(), $this->body(), $this->extras);
+        if ($this->inputsCache === null) {
+            $this->inputsCache = array_merge($this->queryAll(), $this->body(), $this->routeParams(), $this->extras);
+        }
+        return $this->inputsCache;
     }
 
     #[\Override]
