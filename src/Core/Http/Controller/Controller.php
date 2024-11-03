@@ -138,13 +138,9 @@ class Controller implements HasGuard
                      . " found in Guard [$guardName]";
             throw new GuardActionNotFoundException($message);
         }
-        try {
-            $result = $guardMethod->invokeArgs($this->guard, $args);
-            return boolval($result);
-        }
-        catch (\ReflectionException $e) {
-            return true;
-        }
+        
+        $result = $guardMethod->invokeArgs($this->guard, $args);
+        return boolval($result);
     }
 
     /**
