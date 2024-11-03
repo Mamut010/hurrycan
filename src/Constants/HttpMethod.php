@@ -54,4 +54,6 @@ final class HttpMethod
      * @see {@link https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.1 }
      */
     const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS', 'TRACE'];
+
+    const ALL_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT'];
 }

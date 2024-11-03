@@ -34,4 +34,10 @@ class Strings
     public static function prependIf(string $str, string $prepended): string {
         return $prepended . static::ltrimSubstr($str, $prepended);
     }
+
+    public static function icontains(string $str, string $substr): bool {
+        $lowerStr = strtolower($str);
+        $lowerSubstr = strtolower($substr);
+        return str_contains($lowerStr, $lowerSubstr);
+    }
 }
