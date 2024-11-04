@@ -47,7 +47,7 @@ class RouteConfig
 
             $route->get('/{param}/{id}', function(int $id, string $param) {
                 var_dump(func_get_args());
-            })->whereNumber('id'),
+            })->whereNumber('id')->whereAlpha('param'),
 
             $route->get('/ip', function (Request $request) {
                 $serverIp = getHostByName(getHostName());
