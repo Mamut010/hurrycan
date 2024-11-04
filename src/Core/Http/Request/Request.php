@@ -92,7 +92,7 @@ interface Request extends UriInfoOperation, HeaderInfoOperation, InputInfoOperat
     function cookie(string $name): string|false;
 
     /**
-     * @return array<string,string>
+     * @return array<string,?string>
      */
     function routeParams(): array;
     function routeParam(string $name, ?string $default = null): ?string;
@@ -108,7 +108,7 @@ interface Request extends UriInfoOperation, HeaderInfoOperation, InputInfoOperat
     function mergeMissing(array $data): self;
 
     /**
-     * @param array<string,string> $params
+     * @param array<string,?string> $params
      */
     function addRouteParams(array $params): self;
 

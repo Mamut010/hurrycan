@@ -69,12 +69,10 @@ class RouteConfig
             }),
         ]);
 
-        $route->prefix('/example')->prefix('/hello')->group([
-            $route->view('/', 'hello', ['name' => 'World!']),
-            $route->get('/{name}', function(string $name) {
-                return view('hello', ['name' => ucwords($name) . '!']);
-            })
-        ]);
+        $route->get('/example/hello/{?name}', function (?string $name) {
+            $name ??= 'Unknown';
+            return view('hello', ['name' => ucwords($name) . '!']);
+        })->whereAlpha('name');
 
         $route->prefix('test')->group([
             $route->view('/list', 'test.list', ['list' => [1, 2, 3, 4]]),

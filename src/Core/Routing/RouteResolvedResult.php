@@ -5,7 +5,7 @@ final class RouteResolvedResult
 {
     /**
      * @param string|string[]|\Closure $action
-     * @param array<string,string> $routeParams
+     * @param array<string,?string> $routeParams
      * @param ?string[] $middlewares
      * @param ?string[] $excludedMiddlewares
      */
@@ -26,7 +26,7 @@ final class RouteResolvedResult
     }
 
     /**
-     * @return array<string,string>
+     * @return array<string,?string>
      */
     public function routeParams() {
         return $this->routeParams;
