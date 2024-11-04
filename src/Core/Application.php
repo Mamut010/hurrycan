@@ -114,7 +114,7 @@ class Application
                     return $middleware->handle($this->request, $next);
                 }
                 else {
-                    $action = $this->bindParamsToAction($resolvedResult);
+                    $action = $this->instantiateAction($resolvedResult);
                     $result = call_user_func($action);
                     return static::wrapActionResult($result);
                 }
@@ -144,10 +144,10 @@ class Application
         return $instance;
     }
 
-    private function bindParamsToAction(RouteResolvedResult $resolvedResult) {
+    private function instantiateAction(RouteResolvedResult $resolvedResult) {
         $action = $resolvedResult->action();
         $routeParams = $resolvedResult->routeParams();
-    
+
         $actionClosure = $this->transformActionToClosure($action);
         $injectedParams = $this->getInjectableParams($actionClosure, array_keys($routeParams));
         $actionParams = array_merge($injectedParams, $routeParams);
