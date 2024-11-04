@@ -165,7 +165,7 @@ class Controller implements HasGuard
     private function findGuardMethod(array $methods, string $methodName) {
         foreach ($methods as $method) {
             if ($method->getName() === $methodName) {
-                return $methods;
+                return $method;
             }
         }
         return false;
