@@ -28,6 +28,8 @@ class CorsMiddleware implements Middleware
 
     public function handle(Request $request, Closure $next): Response {
         $isPreflight = static::isPreflight($request);
+        // Preflight requests are standalone and should stop the chain as some other
+        // middlewares may not handle Preflight requests correctly
         if ($isPreflight && !CorsSetting::preflightContinue()) {
             $response = response()->make()->statusCode(HttpCode::NO_CONTENT);
         }
@@ -35,9 +37,11 @@ class CorsMiddleware implements Middleware
             $response = $next();
         }
 
-        $this->handleGeneralCors($request, $response);
         if ($isPreflight) {
-            static::handlePreflight($request, $response);
+            $this->handlePreflight($request, $response);
+        }
+        else {
+            $this->handleActualRequest($request, $response);
         }
 
         return $response;
@@ -49,23 +53,48 @@ class CorsMiddleware implements Middleware
             && $request->hasHeader(HttpHeader::ACCESS_CONTROL_REQUEST_METHOD);
     }
 
-    private function handleGeneralCors(Request $request, Response $response) {
+
+    private function handlePreflight(Request $request, Response $response) {
+        if (!$this->handleOriginAndCredentials($request, $response)) {
+            return;
+        }
+
+        $method = $request->header(HttpHeader::ACCESS_CONTROL_REQUEST_METHOD);
+        if (!$method || !$this->isMethodAllowed($method)) {
+            return;
+        }
+        $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_METHODS, strtoupper($method));
+
+        $headers = $this->parseRequestHeadersInRequest($request);
+        if ($headers === false || !$this->areHeadersAllowed($headers)) {
+            return;
+        }
+        $allowedHeadersStr = implode(Delimiter::HTTP_HEADER_VALUE, $headers);
+        $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_HEADERS, $allowedHeadersStr);
+
+        $maxAge = CorsSetting::maxAge();
+        if ($maxAge !== null) {
+            $maxAgeStr = (string) $maxAge;
+            $response->header(HttpHeader::ACCESS_CONTROL_MAX_AGE, $maxAgeStr);
+        }
+    }
+
+    private function handleOriginAndCredentials(Request $request, Response $response) {
         $trusted = $this->setAllowOrigin($request, $response);
+        // If method not allowed
+        if ($trusted === null) {
+            return false;
+        }
 
         // Only add credentials if the origin is trusted
         if ($trusted && CorsSetting::credentials()) {
             $credentialsStr = 'true';
             $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_CREDENTIALS, $credentialsStr);
         }
-
-        $exposedHeaders = CorsSetting::exposedHeaders();
-        if (!isNullOrEmpty($exposedHeaders)) {
-            $exposedHeadersStr = implode(Delimiter::HTTP_HEADER_VALUE, $exposedHeaders);
-            $response->header(HttpHeader::ACCESS_CONTROL_EXPOSE_HEADERS, $exposedHeadersStr);
-        }
+        return true;
     }
 
-    private function setAllowOrigin(Request $request, Response $response) {
+    private function setAllowOrigin(Request $request, Response $response): ?bool {
         $origin = $this->corsOrigin;
         if ($origin === CorsSetting::WILDCARD) {
             static::handleWildCardOrigin($request, $response);
@@ -89,15 +118,16 @@ class CorsMiddleware implements Middleware
         }
     }
 
-    private function handleSpecificOrigins(Request $request, Response $response) {
+    private function handleSpecificOrigins(Request $request, Response $response): ?bool {
         $trusted = false;
         $origin = $request->header(HttpHeader::ORIGIN);
-        if ($origin !== null && $this->isOriginAllowed($origin)) {
-            $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_ORIGIN, $origin);
-            // Only allowed origins are trusted
-            $trusted = true;
+        if ($origin === null || !$this->isOriginAllowed($origin)) {
+            return null;
         }
-        $response->header(HttpHeader::VARY,  HttpHeader::ORIGIN, false);
+
+        $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_ORIGIN, $origin);
+        $trusted = true;
+        $response->header(HttpHeader::VARY, HttpHeader::ORIGIN, false);
         return $trusted;
     }
 
@@ -131,23 +161,55 @@ class CorsMiddleware implements Middleware
         return $pattern;
     }
 
-    private static function handlePreflight(Request $request, Response $response) {
-        if ($request->hasHeader(HttpHeader::ACCESS_CONTROL_REQUEST_METHOD)) {
-            $allowedMethods = Arrays::asArray(CorsSetting::allowedMethods());
-            $allowedMethodsStr = implode(Delimiter::HTTP_HEADER_VALUE, $allowedMethods);
-            $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_METHODS, $allowedMethodsStr);
+    private function isMethodAllowed(string $method) {
+        $allowedMethods = Arrays::asArray(CorsSetting::allowedMethods());
+        if (empty($allowedMethods)) {
+            return false;
         }
 
-        if ($request->hasHeader(HttpHeader::ACCESS_CONTROL_REQUEST_HEADERS)) {
-            $allowedHeaders = Arrays::asArray(CorsSetting::allowedHeaders());
-            $allowedHeadersStr = implode(Delimiter::HTTP_HEADER_VALUE, $allowedHeaders);
-            $response->header(HttpHeader::ACCESS_CONTROL_ALLOW_HEADERS, $allowedHeadersStr);
+        if (strcasecmp($method, HttpMethod::OPTIONS) === 0) {
+            return true;
+        }
+        else {
+            return Arrays::arrayContainsCaseInsensitive($allowedMethods, $method);
+        }
+    }
+
+    /**
+     * @return string[]|false
+     */
+    private function parseRequestHeadersInRequest(Request $request) {
+        $headerStr = $request->header(HttpHeader::ACCESS_CONTROL_REQUEST_HEADERS);
+        if (!$headerStr) {
+            return false;
+        }
+        $headers = explode(',', $headerStr);
+        return array_map('trim', $headers);
+    }
+
+    /**
+     * @param string[] $headers
+     */
+    private function areHeadersAllowed(array $headers): bool {
+        $allowedHeaders = CorsSetting::allowedHeaders();
+        if ($allowedHeaders === CorsSetting::WILDCARD || empty($headers)) {
+            return true;
+        }
+        else {
+            $allowedHeaders = Arrays::asArray($allowedHeaders);
+            return Arrays::arrayContainsCaseInsensitive($allowedHeaders, ...$headers);
+        }
+    }
+
+    private function handleActualRequest(Request $request, Response $response) {
+        if (!$this->handleOriginAndCredentials($request, $response)) {
+            return;
         }
 
-        $maxAge = CorsSetting::maxAge();
-        if ($maxAge !== null) {
-            $maxAgeStr = (string) $maxAge;
-            $response->header(HttpHeader::ACCESS_CONTROL_MAX_AGE, $maxAgeStr);
+        $exposedHeaders = CorsSetting::exposedHeaders();
+        if (!isNullOrEmpty($exposedHeaders)) {
+            $exposedHeadersStr = implode(Delimiter::HTTP_HEADER_VALUE, $exposedHeaders);
+            $response->header(HttpHeader::ACCESS_CONTROL_EXPOSE_HEADERS, $exposedHeadersStr);
         }
     }
 }

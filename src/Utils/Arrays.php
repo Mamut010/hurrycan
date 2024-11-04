@@ -57,6 +57,20 @@ class Arrays
     }
 
     /**
+     * @param string[] $array
+     */
+    public static function arrayContainsCaseInsensitive(array $array, string ...$values) {
+        $lowerCasedArray = array_combine(array_map('strtolower', $array), $array);
+        foreach ($values as $value) {
+            $value = strtolower($value);
+            if (!isset($lowerCasedArray[$value])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Apply a mapping callback receiving key and value as arguments.
      * The standard array_map doesn't pass the key to the callback. But in the case of associative arrays,
      * it could be really helpful.
