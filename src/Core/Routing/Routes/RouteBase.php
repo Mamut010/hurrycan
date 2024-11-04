@@ -5,6 +5,8 @@ use App\Constants\Delimiter;
 use App\Core\Http\Middleware\Traits\ManagesMiddlewares;
 use App\Core\Routing\Contracts\Route;
 use App\Core\Routing\Contracts\RouteGroup;
+use App\Utils\Arrays;
+use App\Utils\Strings;
 
 abstract class RouteBase implements Route
 {
@@ -17,9 +19,9 @@ abstract class RouteBase implements Route
     protected string $path;
 
     /**
-    * @var array<string,\Closure(string $value):bool>
+    * @var array<string,string>
     */
-    protected array $constraints = [];
+    protected array $patterns = [];
 
     public function __construct(string $path)
     {
@@ -54,85 +56,122 @@ abstract class RouteBase implements Route
         $this->parent->removeChild($this);
     }
 
-    private function assignConstraint(string $param, \Closure $constraint): self {
-        $this->constraints[$param] = $constraint;
+    #[\Override]
+    public function where(string $param, string $pattern): self {
+        $this->patterns[$param] = $pattern;
         return $this;
     }
 
     #[\Override]
-    public function where(string $param, string $pattern): self {
-        return $this->assignConstraint($param, fn(string $value) => (bool) preg_match($pattern, $value));
-    }
-
-    #[\Override]
     public function whereNumber(string $param): self {
-        return $this->assignConstraint($param, fn(string $value) => ctype_digit($value));
+        return $this->where($param, '\d+');
     }
 
     #[\Override]
     public function whereAlpha(string $param): self {
-        return $this->assignConstraint($param, fn(string $value) => ctype_alpha($value));
+        return $this->where($param, '[a-zA-Z]+');
     }
 
     #[\Override]
     public function whereAlphaNumeric(string $param): self {
-        return $this->assignConstraint($param, fn(string $value) => ctype_alnum($value));
+        return $this->where($param, '[a-zA-Z0-9]+');
     }
 
     #[\Override]
     public function whereIn(string $param, array $values): self {
-        return $this->assignConstraint($param, fn(string $value) => in_array($value, $values));
+        if (empty($values)) {
+            $impossible = '\b\B';
+            return $this->where($param, $impossible);
+        }
+        else {
+            $orRegex = '|';
+            $valueRegex = implode($orRegex, array_map('strval', $values));
+            return $this->where($param, $valueRegex);
+        }
     }
 
+    /**
+     * @return array<string,?string>|false
+     */
     protected function matchesPath(string $path, string &$matchedPath = null) {
         $path = static::normalizePath($path);
-        $routeRegex = $this->createRouteRegex();
-        // Check if the requested route matches the current route pattern.
-        if (preg_match($routeRegex, $path, $matches))
-        {
-            if ($matchedPath !== null) {
-                $matchedPath = $matches[0];
-            }
-            
-            // Get all user requested path params values after removing the first matches.
-            array_shift($matches);
-            $routeParamsValues = $matches;
-            // Find all route params names from route and save in $routeParamsNames
-            $routeParamsNames = [];
-            if (preg_match_all('/{(\w+)}/', $this->path, $matches))
-            {
-                $routeParamsNames = $matches[1];
-            }
-
-            // Combine between route parameter names and user provided parameter values.
-            $routeParams = array_combine($routeParamsNames, $routeParamsValues);
-            if ($this->areAllConstraintsSatisfied($routeParams)) {
-                return $routeParams;
+        $routeCases = static::preprocessOptionalParams($this->path, []);
+        foreach ($routeCases as $routeCase) {
+            $route = $routeCase[0];
+            $predefinedRouteParams = $routeCase[1];
+            $result = $this->matchesPathPerCase($path, $route, $predefinedRouteParams, $matchedPath);
+            if ($result !== false) {
+                return $result;
             }
         }
         return false;
     }
 
-    private function createRouteRegex() {
-        $routeRegex = preg_replace('/{\w+}/', '([a-zA-Z0-9_-]+)', $this->path);
+    /**
+     * @return (string|array<string,null>)[][]
+     */
+    private static function preprocessOptionalParams(string $currentPath, array $predefined) {
+        // If current path does not have optional param
+        if (!preg_match('/(.*?){\?(\w+)}(.*)/', $currentPath, $matches)) {
+            return [
+                [$currentPath, $predefined]
+            ];
+        }
+
+        $prefix = $matches[1];
+        $param = $matches[2];
+        $suffix = $matches[3];
+        $retainOptionalPath = $prefix . '{' . $param . '}' . $suffix;
+        $skipOptionalPath = Strings::appendIf($prefix, Delimiter::ROUTE)
+                        . Strings::ltrimSubstr($suffix, Delimiter::ROUTE);
+        $predefinedIfSkipOptional = array_merge($predefined, [$param => null]);
+
+        $retainOptionalPathResult = static::preprocessOptionalParams($retainOptionalPath, $predefined);
+        $skipOptionalPathResult = static::preprocessOptionalParams($skipOptionalPath, $predefinedIfSkipOptional);
+
+        return array_merge($retainOptionalPathResult, $skipOptionalPathResult);
+    }
+
+    /**
+     * @return array<string,?string>|false
+     */
+    private function matchesPathPerCase(string $path, string $route, array $predefined, ?string &$matchedPath) {
+        $routeRegex = $this->createRouteRegex($route);
+        // Check if the requested route matches the current route pattern.
+        if (!preg_match($routeRegex, $path, $matches)) {
+            return false;
+        }
+
+        $matchedPath = $matches[0];
+        
+        // Get all user requested path params values after removing the first matches.
+        array_shift($matches);
+        $routeParamsValues = $matches;
+        // Find all route params names from route and save in $routeParamsNames
+        $routeParamsNames = [];
+        if (preg_match_all('/{(\w+)}/', $route, $matches)) {
+            $routeParamsNames = $matches[1];
+        }
+
+        // Combine between route parameter names and user provided parameter values.
+        $routeParams = array_combine($routeParamsNames, $routeParamsValues);
+        return array_merge($routeParams, $predefined);
+    }
+
+    private function createRouteRegex(string $route) {
+        $routeRegex = preg_replace_callback('/{(\w+)}/', function ($matches) {
+            $param = $matches[1];
+            $generalPattern = '[a-zA-Z0-9_-]+';
+            $pattern = Arrays::getOrDefault($this->patterns, $param, $generalPattern);
+            return '(' . $pattern . ')';
+        }, $route);
+
         $routeRegex = preg_replace_callback('/\*(.)?/', function ($matches) {
             return isset($matches[1]) ? '[a-zA-Z0-9_-]*?' . $matches[1] : '.*?';
         }, $routeRegex);
+
         return $this->markRouteRegexBoundary($routeRegex);
     }
 
     abstract protected function markRouteRegexBoundary(string $routeRegex): string;
-
-    private function areAllConstraintsSatisfied(array $routeParams) {
-        foreach ($routeParams as $name => $value) {
-            if (!isset($this->constraints[$name])) {
-                continue;
-            }
-            $constraint = $this->constraints[$name];
-            if (!$constraint($value)) {
-                return false;
-            }
-        }
-        return true;
-    }
 }

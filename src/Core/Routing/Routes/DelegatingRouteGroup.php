@@ -68,7 +68,6 @@ class DelegatingRouteGroup extends RouteBase implements RouteGroup
     
     #[\Override]
     public function matches(string $path, string $method): RouteResolvedResult|false {
-        $matchedPath = '';
         $matches = $this->matchesPath($path, $matchedPath);
         if ($matches === false) {
             return false;
