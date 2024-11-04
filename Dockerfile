@@ -30,9 +30,9 @@ COPY ./.docker/apache/.htaccess /var/www/html
 COPY ./public /var/www/html/public
 # Copy resources directory
 COPY ./resources /var/www/html/resources
-# Give permission to write into uploads directory
-RUN chown www-data:www-data /var/www/html/public/assets/uploads \
-    && chmod 775 /var/www/html/public/assets/uploads \
+# Give permission to write into assets directory
+RUN chown www-data:www-data /var/www/html/public/assets \
+    && chmod 775 /var/www/html/public/assets \
     # Copy the favicon.ico
     && favicon=$(find ./public/ -maxdepth 1 -name 'favicon.ico' | head -n 1) && \
     if [ -n "$favicon" ]; then cp "$favicon" /var/www/html/; else echo "No favicon file found."; fi
