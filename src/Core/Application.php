@@ -10,6 +10,7 @@ use App\Core\Http\Request\Request;
 use App\Core\Http\Response\Response;
 use App\Core\Routing\Contracts\RouteResolver;
 use App\Core\Routing\RouteResolvedResult;
+use App\Utils\Arrays;
 use App\Utils\Functions;
 use UnexpectedValueException;
 
@@ -67,7 +68,9 @@ class Application
         $excluded = $this->interpretRouteMiddlewares($excluded);
 
         $middlewares = array_merge($this->middlewares->getMiddlewares(), $routeMiddlewares);
-        $middlewares = array_diff($middlewares, $excluded);
+        if (!empty($excluded)) {
+            $middlewares = Arrays::diffReindex($middlewares, $excluded);
+        }
         return $middlewares;
     }
 
@@ -97,7 +100,6 @@ class Application
     private function executeRequestResponseChain(array $middlewares, RouteResolvedResult $resolvedResult) {
         $middlewareIdx = 0;
         $catched = false;
-        
         $next = function (?\Throwable $e = null)
             use (&$middlewareIdx, &$catched, $middlewares, $resolvedResult, &$next) {
             try {

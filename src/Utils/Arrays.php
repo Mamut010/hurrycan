@@ -35,6 +35,10 @@ class Arrays
         return array_key_exists($key, $array) ? $array[$key] : $default;
     }
 
+    public static function diffReindex(array $array, array ...$arrays) {
+        return array_values(array_diff($array, ...$arrays));
+    }
+
     public static function filterReindex(array $array, ?callable $callback, int $mode = 0) {
         return array_values(array_filter($array, $callback, $mode));
     }
