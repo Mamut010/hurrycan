@@ -139,7 +139,8 @@ class Application
             $instance = $this->container->get($middleware);
         }
         catch (\Exception $e) {
-            throw new UnexpectedValueException("Unable to resolve middleware [$middleware]", 0, $e);
+            $route = $this->getCurrentRoute();
+            throw new UnexpectedValueException("Unable to resolve middleware [$middleware] in $route", 0, $e);
         }
         return $instance;
     }
@@ -149,9 +150,8 @@ class Application
         $routeParams = $resolvedResult->routeParams();
 
         $actionClosure = $this->transformActionToClosure($action);
-        $injectedParams = $this->getInjectableParams($actionClosure, array_keys($routeParams));
-        $actionParams = array_merge($injectedParams, $routeParams);
-        return Functions::bindParams($actionClosure, $actionParams);
+        $injectedParams = $this->getInjectableParams($actionClosure, $routeParams);
+        return Functions::bindParams($actionClosure, $injectedParams);
     }
 
     private function transformActionToClosure(string|array|\Closure $action) {
@@ -163,7 +163,8 @@ class Application
                 $action = [$controller, $action[1]];
             }
             catch (\Exception $e) {
-                throw new UnexpectedActionArgumentException("Unable to resolve class [$class]", 0, $e);
+                $route = $this->getCurrentRoute();
+                throw new UnexpectedActionArgumentException("Unable to resolve class [$class] in $route", 0, $e);
             }
         }
         return \Closure::fromCallable($action);
@@ -191,18 +192,85 @@ class Application
         return $controller;
     }
     
-    private function getInjectableParams(\Closure $closure, array $skip) {
+    /**
+     * @param array<string,string|null> $routeParams
+     */
+    private function getInjectableParams(\Closure $closure, array $routeParams) {
         $reflector = new \ReflectionFunction($closure);
         $params = $reflector->getParameters();
         $injected = [];
-        foreach ($params as $param) {
-            $paramName = $param->getName();
-            $paramTypeName = $param->getType()?->getName();
-            if ($paramTypeName && $this->container->isBound($paramTypeName) && !in_array($paramName, $skip)) {
-                $injected[$paramName] = $this->container->get($paramTypeName);
+
+        $i = -1;
+        try {
+            foreach ($params as $param) {
+                $i++;
+                $paramName = $param->getName();
+                $paramTypeName = $param->getType()?->getName();
+    
+                if (!$paramTypeName || !$this->container->isBound($paramTypeName)) {
+                    $this->handleUntypedOrUnboundMethodParam($param, $routeParams, $injected);
+                    continue;
+                }
+    
+                if (!array_key_exists($paramName, $routeParams)) {
+                    $injected[$paramName] = $this->container->get($paramTypeName);
+                    continue;
+                }
+    
+                $routeParamValue = $routeParams[$paramName];
+                if ($routeParamValue !== null) {
+                    $injected[$paramName] = $routeParamValue;
+                    continue;
+                }
+    
+                if ($param->isOptional()) {
+                    $injected[$paramName] = $param->getDefaultValue();
+                }
+                elseif ($param->allowsNull()) {
+                    $injected[$paramName] = null;
+                }
+                else {
+                    throw new \InvalidArgumentException();
+                }
             }
         }
+        catch (\InvalidArgumentException $e) {
+            $route = $this->getCurrentRoute();
+            $msg = "Unable to resolve parameter #$i [$paramName] for route action in $route";
+            throw new \InvalidArgumentException($msg);
+        }
+
         return $injected;
+    }
+
+    private function handleUntypedOrUnboundMethodParam(
+        \ReflectionParameter $param,
+        array $routeParams,
+        array &$injected
+    ) {
+        $paramName = $param->getName();
+        if (array_key_exists($paramName, $routeParams)) {
+            $routeParamValue = $routeParams[$paramName];
+            if ($routeParamValue === null && $param->isDefaultValueAvailable()) {
+                $injected[$paramName] = $param->getDefaultValue();
+            }
+            else {
+                $injected[$paramName] = $routeParams[$paramName];
+            }
+        }
+        elseif ($param->isDefaultValueAvailable()) {
+            $injected[$paramName] = $param->getDefaultValue();
+        }
+        elseif ($param->allowsNull()) {
+            $injected[$paramName] = null;
+        }
+        else {
+            throw new \InvalidArgumentException();
+        }
+    }
+
+    private function getCurrentRoute() {
+        return '[' . strtoupper($this->request->method()) . ' ' . $this->request->path() . ']';
     }
 
     private static function wrapActionResult(mixed $result): Response {
