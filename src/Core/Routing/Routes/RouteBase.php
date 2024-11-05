@@ -6,6 +6,7 @@ use App\Core\Http\Middleware\Traits\ManagesMiddlewares;
 use App\Core\Routing\Contracts\Route;
 use App\Core\Routing\Contracts\RouteGroup;
 use App\Utils\Arrays;
+use App\Utils\Routes;
 use App\Utils\Strings;
 
 abstract class RouteBase implements Route
@@ -96,40 +97,38 @@ abstract class RouteBase implements Route
     protected function matchesPath(string $path, string &$matchedPath = null) {
         $path = static::normalizePath($path);
         $routeCases = static::preprocessOptionalParams($this->path, []);
-        foreach ($routeCases as $routeCase) {
-            $route = $routeCase[0];
-            $predefinedRouteParams = $routeCase[1];
-            $result = $this->matchesPathPerCase($path, $route, $predefinedRouteParams, $matchedPath);
+        foreach ($routeCases as $route => $predefinedParams) {
+            $result = $this->matchesPathPerCase($path, $route, $predefinedParams, $matchedPath);
             if ($result !== false) {
                 return $result;
             }
         }
         return false;
     }
-
-    /**
-     * @return (string|array<string,null>)[][]
-     */
+    
     private static function preprocessOptionalParams(string $currentPath, array $predefined) {
         // If current path does not have optional param
         if (!preg_match('/(.*?){\?(\w+)}(.*)/', $currentPath, $matches)) {
-            return [
-                [$currentPath, $predefined]
-            ];
+            yield $currentPath => $predefined;
+            return;
         }
 
         $prefix = $matches[1];
         $param = $matches[2];
         $suffix = $matches[3];
         $retainOptionalPath = $prefix . '{' . $param . '}' . $suffix;
-        $skipOptionalPath = Strings::appendIf($prefix, Delimiter::ROUTE)
-                        . Strings::ltrimSubstr($suffix, Delimiter::ROUTE);
+        $skipOptionalPath = Routes::combine($prefix, $suffix);
         $predefinedIfSkipOptional = array_merge($predefined, [$param => null]);
 
-        $retainOptionalPathResult = static::preprocessOptionalParams($retainOptionalPath, $predefined);
-        $skipOptionalPathResult = static::preprocessOptionalParams($skipOptionalPath, $predefinedIfSkipOptional);
+        $retains = static::preprocessOptionalParams($retainOptionalPath, $predefined);
+        foreach ($retains as $route => $routePrefined) {
+            yield $route => $routePrefined;
+        }
 
-        return array_merge($retainOptionalPathResult, $skipOptionalPathResult);
+        $skips = static::preprocessOptionalParams($skipOptionalPath, $predefinedIfSkipOptional);
+        foreach ($skips as $route => $routePrefined) {
+            yield $route => $routePrefined;
+        }
     }
 
     /**
