@@ -10,8 +10,10 @@ use App\Core\Di\Syntax\DefaultBindingToSyntax;
 use App\Utils\Arrays;
 use App\Utils\Reflections;
 
-class ServiceContainer implements DiContainer // NOSONAR
+class ServiceContainer implements DiContainer
 {
+    use Bindable;
+
     public const DEPTH_LIMIT = 1024;
 
     /** @var array<string,true> */
@@ -33,36 +35,6 @@ class ServiceContainer implements DiContainer // NOSONAR
     /** @var array<string,true> */
     private array $buildings = [];
     private int $depth = 0;
-
-    #[\Override]
-    public function isBound(string $id): bool {
-        return $this->isConstantBound($id) || $this->isFactoryBound($id) || $this->isClassBound($id);
-    }
-
-    #[\Override]
-    public function isConstantBound(string $id): bool {
-        return array_key_exists($id, $this->constantBindings);
-    }
-
-    #[\Override]
-    public function isFactoryBound(string $id): bool {
-        return isset($this->factoryBindings[$id]);
-    }
-
-    #[\Override]
-    public function isClassBound(string $id): bool {
-        return isset($this->classBindings[$id]);
-    }
-
-    #[\Override]
-    public function isSingletonScoped(string $id): bool {
-        return isset($this->scoped[$id]);
-    }
-
-    #[\Override]
-    public function isTransientScoped(string $id): bool {
-        return !$this->isSingletonScoped($id);
-    }
 
     #[\Override]
     public function bind(string $id): BindingToSyntax
@@ -187,6 +159,17 @@ class ServiceContainer implements DiContainer // NOSONAR
         }
     }
 
+    #[\Override]
+    public function tryResolve(\ReflectionParameter $parameter, mixed &$result): bool {
+        try {
+            $result = $this->resolveParameter($parameter);
+            return true;
+        }
+        catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     private function getImpl(string $id): mixed
     {
         if ($this->isConstantBound($id)) {
@@ -226,7 +209,8 @@ class ServiceContainer implements DiContainer // NOSONAR
     {
         try {
             $reflector = new \ReflectionClass($class);
-        } catch (\ReflectionException $e) {
+        }
+        catch (\ReflectionException $e) {
             throw new \UnexpectedValueException("Target class [$class] does not exist.", 0, $e);
         }
 
@@ -260,44 +244,50 @@ class ServiceContainer implements DiContainer // NOSONAR
     private function buildDependencies(array $parameters) {
         $dependencies = [];
         foreach ($parameters as $parameter) {
-            $type = $parameter->getType();
-            try {
-                if (Reflections::isPrimitiveType($type)) {
-                    $dependencies[] = $this->resolvePrimitiveDependency($parameter);
-                }
-                else {
-                    $dependencies[] = $this->resolveClassDependency($parameter);
-                }
-            }
-            catch (\Throwable $e) {
-                $name = $parameter->getName();
-                if ($this->isBound($name)) {
-                    $dependencies[] = $this->get($name);
-                }
-                else {
-                    throw $e;
-                }
-            }
+            $dependency = $this->resolveParameter($parameter);
+            $dependencies[] = $dependency;
         }
         return $dependencies;
     }
 
-    private function resolvePrimitiveDependency(\ReflectionParameter $parameter) {
+    private function resolveParameter(\ReflectionParameter $parameter) {
+        $type = $parameter->getType();
         try {
-            $result = null;
-            if ($this->resolveTrivialPrimitiveDependency($parameter, $result)) {
-                return $result;
-            } else {
-                return $this->get($parameter->getName());
+            if (Reflections::isPrimitiveType($type)) {
+                return $this->resolvePrimitive($parameter);
+            }
+            else {
+                return $this->resolveClass($parameter);
             }
         }
         catch (\Throwable $e) {
-            $msg = "Unresolvable dependency [$parameter] in class {$parameter->getDeclaringClass()->getName()}";
-            throw new \UnexpectedValueException($msg, 0, $e);
+            $name = $parameter->getName();
+            if ($this->isBound($name)) {
+                return $this->get($name);
+            }
+            else {
+                throw $e;
+            }
         }
     }
 
-    private function resolveTrivialPrimitiveDependency(\ReflectionParameter $parameter, mixed &$result) {
+    private function resolvePrimitive(\ReflectionParameter $parameter) {
+        $paramName = $parameter->getName();
+        try {
+            $result = null;
+            if ($this->resolveTrivialPrimitive($parameter, $result)) {
+                return $result;
+            }
+            else {
+                return $this->get($paramName);
+            }
+        }
+        catch (\Throwable $e) {
+            throw new \UnexpectedValueException(static::getErrorMessage($parameter), 0, $e);
+        }
+    }
+
+    private function resolveTrivialPrimitive(\ReflectionParameter $parameter, mixed &$result) {
         $resolved = false;
         if ($parameter->isDefaultValueAvailable()) {
             $result = $parameter->getDefaultValue();
@@ -314,39 +304,39 @@ class ServiceContainer implements DiContainer // NOSONAR
         return $resolved;
     }
 
-    private function resolveClassDependency(\ReflectionParameter $parameter) {
-        $dependency = null;
+    private function resolveClass(\ReflectionParameter $parameter) {
+        $instance = null;
         $typeName = Reflections::getTypeName($parameter->getType());
         try {
-            $dependency = $this->resolveClassDependencyByTypeImpl($typeName);
-            if ($dependency === false) {
-                $msg = "Unresolvable type of parameter [$parameter] in class "
-                    . "{$parameter->getDeclaringClass()->getName()}";
-                throw new \UnexpectedValueException($msg);
+            $instance = $this->resolveClassByTypeImpl($typeName);
+            if ($instance === false) {
+                throw new \UnexpectedValueException(static::getErrorMessage($parameter));
             }
         }
         catch (\Throwable $e) {
             if ($parameter->isOptional() || $parameter->allowsNull()) {
-                $dependency = $parameter->isOptional() ? $parameter->getDefaultValue() : null;
-                $this->trySaveCacheByType($typeName, $dependency);
+                $instance = $parameter->isOptional() ? $parameter->getDefaultValue() : null;
+                $this->trySaveCacheByType($typeName, $instance);
+            }
+            elseif (!$e instanceof \UnexpectedValueException) {
+                throw new \UnexpectedValueException(static::getErrorMessage($parameter), 0, $e);
             }
             else {
-                $msg = "Unresolvable dependency [$parameter] in class {$parameter->getDeclaringClass()->getName()}";
-                throw new \UnexpectedValueException($msg, 0, $e);
+                throw $e;
             }
         }
-        return $dependency;
+        return $instance;
     }
 
-    private function resolveClassDependencyByTypeImpl(string|array|false $typeName) {
+    private function resolveClassByTypeImpl(string|array|false $typeName) {
         if ($typeName === false) {
             return false;
         }
 
-        $dependency = null;
+        $instance = null;
         if (is_string($typeName)) {
             try {
-                $dependency = $this->get($typeName);
+                $instance = $this->get($typeName);
             }
             catch (\Throwable $e) {
                 return false;
@@ -355,7 +345,7 @@ class ServiceContainer implements DiContainer // NOSONAR
         else {
             foreach ($typeName as $name) {
                 try {
-                    $dependency = $this->get($name);
+                    $instance = $this->get($name);
                     break;
                 }
                 catch (\Throwable $e) {
@@ -363,7 +353,7 @@ class ServiceContainer implements DiContainer // NOSONAR
                 }
             }
         }
-        return $dependency ?? false;
+        return $instance ?? false;
     }
 
     private function trySaveCacheByType(string|array|false $typeName, mixed $dependency) {
@@ -373,5 +363,43 @@ class ServiceContainer implements DiContainer // NOSONAR
         $typeNames = Arrays::asArray($typeName);
         $key = implode('|', $typeNames);
         $this->trySaveCache($key, $dependency);
+    }
+
+    private static function getErrorMessage(\ReflectionParameter $parameter) {
+        $paramName = $parameter->getName();
+        return "Unresolvable [$paramName] in class {$parameter->getDeclaringClass()->getName()}";
+    }
+}
+
+trait Bindable
+{
+    #[\Override]
+    public function isBound(string $id): bool {
+        return $this->isConstantBound($id) || $this->isFactoryBound($id) || $this->isClassBound($id);
+    }
+
+    #[\Override]
+    public function isConstantBound(string $id): bool {
+        return array_key_exists($id, $this->constantBindings);
+    }
+
+    #[\Override]
+    public function isFactoryBound(string $id): bool {
+        return isset($this->factoryBindings[$id]);
+    }
+
+    #[\Override]
+    public function isClassBound(string $id): bool {
+        return isset($this->classBindings[$id]);
+    }
+
+    #[\Override]
+    public function isSingletonScoped(string $id): bool {
+        return isset($this->scoped[$id]);
+    }
+
+    #[\Override]
+    public function isTransientScoped(string $id): bool {
+        return !$this->isSingletonScoped($id);
     }
 }
