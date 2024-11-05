@@ -33,6 +33,24 @@ class Reflections
         }
     }
 
+    /**
+     * @see {@link https://www.php.net/manual/en/reflectionparameter.isarray.php }
+     */
+    public static function isArray(\ReflectionParameter $reflectionParameter): bool
+    {
+        $reflectionType = $reflectionParameter->getType();
+    
+        if (!$reflectionType) {
+            return false;
+        }
+    
+        $types = $reflectionType instanceof \ReflectionUnionType
+            ? $reflectionType->getTypes()
+            : [$reflectionType];
+    
+       return in_array('array', array_map(fn(\ReflectionNamedType $t) => $t->getName(), $types));
+    }
+
     public static function instantiateClass(string $class, mixed ...$args): object|false {
         $reflector = new \ReflectionClass($class);
         if (!$reflector->isInstantiable()) {

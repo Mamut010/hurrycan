@@ -211,7 +211,7 @@ class ServiceContainer implements DiContainer // NOSONAR
                 $instance = $this->build($id);
             }
         }
-        catch (\Exception $e) {
+        catch (\Throwable $e) {
             throw new \UnexpectedValueException("Unable to build target id [$id].", 0, $e);
         }
 
@@ -269,7 +269,7 @@ class ServiceContainer implements DiContainer // NOSONAR
                     $dependencies[] = $this->resolveClassDependency($parameter);
                 }
             }
-            catch (\Exception $e) {
+            catch (\Throwable $e) {
                 $name = $parameter->getName();
                 if ($this->isBound($name)) {
                     $dependencies[] = $this->get($name);
@@ -291,7 +291,7 @@ class ServiceContainer implements DiContainer // NOSONAR
                 return $this->get($parameter->getName());
             }
         }
-        catch (\Exception $e) {
+        catch (\Throwable $e) {
             $msg = "Unresolvable dependency [$parameter] in class {$parameter->getDeclaringClass()->getName()}";
             throw new \UnexpectedValueException($msg, 0, $e);
         }
@@ -302,11 +302,13 @@ class ServiceContainer implements DiContainer // NOSONAR
         if ($parameter->isDefaultValueAvailable()) {
             $result = $parameter->getDefaultValue();
             $resolved = true;
-        } elseif ($parameter->isVariadic()) {
-            $result = [];
-            $resolved = true;
-        } elseif ($parameter->allowsNull()) {
+        }
+        elseif ($parameter->allowsNull()) {
             $result = null;
+            $resolved = true;
+        }
+        elseif (Reflections::isArray($parameter) || $parameter->isVariadic()) {
+            $result = [];
             $resolved = true;
         }
         return $resolved;
@@ -323,7 +325,7 @@ class ServiceContainer implements DiContainer // NOSONAR
                 throw new \UnexpectedValueException($msg);
             }
         }
-        catch (\Exception $e) {
+        catch (\Throwable $e) {
             if ($parameter->isOptional() || $parameter->allowsNull()) {
                 $dependency = $parameter->isOptional() ? $parameter->getDefaultValue() : null;
                 $this->trySaveCacheByType($typeName, $dependency);
@@ -346,7 +348,7 @@ class ServiceContainer implements DiContainer // NOSONAR
             try {
                 $dependency = $this->get($typeName);
             }
-            catch (\Exception $e) {
+            catch (\Throwable $e) {
                 return false;
             }
         }
@@ -356,7 +358,7 @@ class ServiceContainer implements DiContainer // NOSONAR
                     $dependency = $this->get($name);
                     break;
                 }
-                catch (\Exception $e) {
+                catch (\Throwable $e) {
                     // Skip this case
                 }
             }

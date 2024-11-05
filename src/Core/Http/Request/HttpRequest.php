@@ -19,19 +19,26 @@ class HttpRequest implements Request
     private RequestGlobalCollection $global;
     private SessionManager $sessionManager;
     private CookieReader $cookieReader;
-    private array $extraMethodFields;
+
+    /**
+     * @var ?string[]
+     */
+    private ?array $extraMethodFields;
     private array $routeParams = [];
     private array $extras = [];
     private ?array $inputsCache = null;
 
     /**
+     * @param RequestGlobalCollection $global
+     * @param SessionManager $sessionManager
+     * @param CookieReader $cookieReader
      * @param string[] $extraMethodFields
      */
     public function __construct(
         RequestGlobalCollection $global,
         SessionManager $sessionManager,
         CookieReader $cookieReader,
-        array $extraMethodFields = ['_method'],
+        ?array $extraMethodFields = ['_method'],
     ) {
         $this->global = $global;
         $this->sessionManager = $sessionManager;
@@ -54,7 +61,7 @@ class HttpRequest implements Request
     public function method(): string {
         $server = $this->global->server();
         $method = $server['REQUEST_METHOD'];
-        if ($method !== HttpMethod::POST) {
+        if (!$this->extraMethodFields || $method !== HttpMethod::POST) {
             return $method;
         }
 
