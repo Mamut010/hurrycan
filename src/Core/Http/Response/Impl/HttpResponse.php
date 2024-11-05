@@ -5,13 +5,12 @@ use App\Constants\Delimiter;
 use App\Constants\HttpCode;
 use App\Constants\HttpHeader;
 use App\Constants\MimeType;
+use App\Core\Exceptions\ResponseAlreadySentException;
 use App\Core\Http\Cookie\CookieOptions;
 use App\Core\Http\Cookie\CookieQueue;
-use App\Core\Http\Cookie\CookieWriter;
 use App\Core\Http\Response\Response;
 use App\Support\Collection\ArrayMultiMap;
 use App\Support\Collection\MultiMap;
-use App\Utils\Arrays;
 
 class HttpResponse implements Response
 {
@@ -109,13 +108,25 @@ class HttpResponse implements Response
     }
 
     #[\Override]
+    public function isSent(): bool {
+        return $this->sent;
+    }
+
+    #[\Override]
     public function send(): void {
-        if (!$this->sent) {
-            $this->sendCookie();
-            $this->sendHeaders();
-            $this->sendStatusCode();
-            $this->sent = $this->sendData();
+        if ($this->sent) {
+            throw new ResponseAlreadySentException('Attempt to send an already sent response');
         }
+
+        $this->doSending();
+        $this->sent = true;
+    }
+
+    protected function doSending(): void {
+        $this->sendCookie();
+        $this->sendHeaders();
+        $this->sendStatusCode();
+        $this->sendData();
     }
 
     protected function sendCookie(): void {
@@ -134,13 +145,9 @@ class HttpResponse implements Response
         http_response_code($this->statusCode);
     }
 
-    protected function sendData(): bool {
+    protected function sendData(): void {
         if ($this->data !== null) {
             echo $this->data;
-            return true;
-        }
-        else {
-            return false;
         }
     }
 }

@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Http\Response;
 
+use App\Core\Exceptions\ResponseAlreadySentException;
 use App\Core\Http\Cookie\CookieOptions;
 
 interface Response
@@ -50,5 +51,11 @@ interface Response
      * - samesite: SameSite (None|Lax|Strict)
      */
     function withoutCookie(string $name, ?CookieOptions $options = null): self;
+
+    function isSent(): bool;
+
+    /**
+     * @throws ResponseAlreadySentException
+     */
     function send(): void;
 }
