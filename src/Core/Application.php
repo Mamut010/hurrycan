@@ -32,7 +32,9 @@ class Application
     public function run(?callable $fallback = null) {
         $response = $this->dispatch();
         if ($response !== false) {
-            $response->send();
+            if (!$response->isSent()) {
+                $response->send();
+            }
         }
         elseif ($fallback) {
             call_user_func($fallback, $this->request);
