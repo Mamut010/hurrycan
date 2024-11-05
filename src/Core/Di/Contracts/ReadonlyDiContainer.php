@@ -4,6 +4,7 @@ namespace App\Core\Di\Contracts;
 interface ReadonlyDiContainer
 {
     function get(string $id): mixed;
+    function tryResolve(\ReflectionParameter $parameter, mixed &$result): bool;
     function isBound(string $id): bool;
     function isConstantBound(string $id): bool;
     function isFactoryBound(string $id): bool;

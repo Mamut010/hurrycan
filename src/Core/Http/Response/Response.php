@@ -55,7 +55,7 @@ interface Response
     function isSent(): bool;
 
     /**
-     * @throws ResponseAlreadySentException
+     * @throws ResponseAlreadySentException If the response has already been sent.
      */
     function send(): void;
 }
