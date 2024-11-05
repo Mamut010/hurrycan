@@ -76,10 +76,8 @@ class RouteConfig
 
         $route->prefix('test')->group([
             $route->view('/list', 'test.list', ['list' => [1, 2, 3, 4]]),
-            
-            $route->view('/switch', 'test.switch', ['value' => 2]),
 
-            $route->get('/switch/{param}', function(string $param) {
+            $route->get('/switch/{?param}', function(?string $param) {
                 return view('test.switch')->with('value', $param);
             }),
             
