@@ -33,10 +33,7 @@ class AuthUserMiddleware implements Middleware
             throw new UnauthorizedException('401 Unauthorized');
         }
 
-        $authUser = new AuthUserDto();
-        $authUser->id = $payload->id;
-        $authUser->name = $payload->name;
-        $authUser->role = $payload->role;
+        $authUser = Converters::instanceToObject($payload, AuthUserDto::class);
         $this->container->bind(AuthUserDto::class)->toConstant($authUser);
 
         return $next();

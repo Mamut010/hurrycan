@@ -11,19 +11,19 @@ class MessageController
     }
 
     public function index() {
-        $rows = $this->db->query("SELECT * FROM messages");
+        $rows = $this->db->query("SELECT * FROM message");
         return response()->json($rows);
     }
 
     public function store() {
-        $rows = $this->db->query("SELECT COUNT(*) as count FROM messages");
+        $rows = $this->db->query("SELECT COUNT(*) as count FROM message");
         $row = $rows[0];
         $count = $row['count'];
         $success = $this->db->execute("
-            INSERT INTO messages (message)
+            INSERT INTO message (message)
             SELECT CONCAT('message-', '$count')
             WHERE NOT EXISTS (
-            SELECT 1 FROM messages WHERE message = CONCAT('message-', '$count')
+            SELECT 1 FROM message WHERE message = CONCAT('message-', '$count')
             )
         ");
 

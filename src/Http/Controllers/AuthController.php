@@ -5,9 +5,8 @@ use App\Constants\HttpCode;
 use App\Constants\SameSite;
 use App\Core\Http\Cookie\CookieOptions;
 use App\Core\Http\Request\Request;
-use App\Core\Http\Session\SessionManager;
 use App\Dal\Contracts\UserRepo;
-use App\Dal\Models\UserModel;
+use App\Dal\Models\User;
 use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AccessTokenPayloadDto;
 use App\Http\Dtos\AuthUserDto;
@@ -69,16 +68,16 @@ class AuthController
                     ->withoutCookie(Auth::REFRESH_TOKEN_KEY, static::createRefreshCookieOptions());
     }
 
-    private static function createAccessPayloadFromUser(UserModel $user) {
+    private static function createAccessPayloadFromUser(User $user) {
         $payload = [
             'id' => $user->id,
             'name' => $user->name,
-            'role' => $user->role,
+            'role' => $user->role?->name,
         ];
         return Converters::arrayToObject($payload, AccessTokenPayloadDto::class);
     }
 
-    private static function createRefreshPayloadFromUser(UserModel $user) {
+    private static function createRefreshPayloadFromUser(User $user) {
         $payload = ['id' => $user->id];
         return Converters::arrayToObject($payload, RefreshTokenPayloadDto::class);
     }
