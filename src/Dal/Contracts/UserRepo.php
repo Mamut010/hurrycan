@@ -1,18 +1,18 @@
 <?php
 namespace App\Dal\Contracts;
 
-use App\Dal\Models\UserModel;
+use App\Dal\Models\User;
 
 interface UserRepo
 {
     /**
-     * @return UserModel[]
+     * @return User[]
      */
     function getAll(): array;
 
-    function findOneById(int $id): UserModel|false;
+    function findOneById(int $id): User|false;
 
-    function findOneByUsername(string $username): UserModel|false;
+    function findOneByUsername(string $username): User|false;
 
-    function findOrFail(int $id): UserModel;
+    function findOrFail(int $id): User;
 }

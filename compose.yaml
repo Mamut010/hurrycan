@@ -43,7 +43,7 @@ services:
     secrets:
       - db-password
     volumes:
-      - ./db:/docker-entrypoint-initdb.d  # Mount SQL files for initialization
+      #- ./db:/docker-entrypoint-initdb.d  # Mount SQL files for initialization
       - db-data:/var/lib/mysql
     environment:
       - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db-password

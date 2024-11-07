@@ -35,4 +35,18 @@ class Converters
         }
         return $obj;
     }
+
+    public static function instanceToObject(object $instance, string|object $objOrClass, mixed ...$ctorArgs): object|false {
+        $obj = is_string($objOrClass) ? Reflections::instantiateClass($objOrClass, ...$ctorArgs) : $objOrClass;
+        if (!$obj) {
+            return false;
+        }
+
+        foreach ($instance as $key => $value) {
+            if (property_exists($obj, $key)) {
+                $obj->{$key} = $value;
+            }
+        }
+        return $obj;
+    }
 }

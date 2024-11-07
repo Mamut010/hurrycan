@@ -2,16 +2,28 @@ SET GLOBAL max_allowed_packet = 128 * 1048576; -- 128MB
 
 USE mydb;
 
--- CreateTable
-CREATE TABLE IF NOT EXISTS messages (
+-- Drop all tables if exist
+DROP TABLE IF EXISTS message;
+DROP TABLE IF EXISTS role;
+DROP TABLE IF EXISTS user;
+
+-- Create all tables
+CREATE TABLE message (
     id INT AUTO_INCREMENT PRIMARY KEY,
     message VARCHAR(255) NOT NULL
 );
 
--- Seed
-INSERT INTO mydb.messages
-    (message)
-VALUES 
-    ('message-0'),
-    ('message-1'),
-    ('message-2');
+CREATE TABLE role (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE user (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name NVARCHAR(255) NOT NULL UNIQUE,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role_id INT,
+
+    FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE SET NULL ON UPDATE CASCADE
+);

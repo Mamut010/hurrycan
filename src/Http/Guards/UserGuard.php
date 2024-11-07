@@ -12,6 +12,6 @@ class UserGuard
     }
 
     public function canViewAll(AuthUserDto $authUser) {
-        return strcasecmp($authUser->role, 'admin') === 0;
+        return $authUser->role ? strcasecmp($authUser->role, 'admin') === 0 : false;
     }
 }
