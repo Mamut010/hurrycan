@@ -41,9 +41,9 @@ RUN chown www-data:www-data /var/www/html/public/assets \
 
 FROM base AS development
 COPY ./tests /var/www/html/tests
-RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
-    # && pecl install xdebug \
-    # && docker-php-ext-enable xdebug
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini" \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug
 COPY --from=dev-deps app/vendor/ /var/www/html/vendor
 CMD ["/var/www/docker/wait-for-it.sh", "db:3306", "--", "/var/www/docker/docker-entrypoint.sh"]
 
