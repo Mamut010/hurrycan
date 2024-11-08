@@ -49,13 +49,16 @@ class HurrycanTemplateEngine implements TemplateEngine
         $outputFilename = $this->getOutputFilename($viewFilename);
         $outputFile = $cachePath . DIRECTORY_SEPARATOR . $outputFilename;
 
-        if ($this->ignoreCache || !file_exists($outputFile)) {
-            $content = $this->parseView($actualViewName);
-            Files::saveFileContent($content, $cachePath, $outputFilename);
-        }
-
         $params = array_merge($context ?? [], $this->sharedData);
-        return new HurrycanView($viewName, $outputFile, $params);
+        $view = new HurrycanView($viewName, $outputFile, $params);
+        $view->setBeforeRenderHook(function() use ($outputFile, $actualViewName, $cachePath, $outputFilename) {
+            if ($this->ignoreCache || !file_exists($outputFile)) {
+                $content = $this->parseView($actualViewName);
+                Files::saveFileContent($content, $cachePath, $outputFilename);
+            }
+        });
+
+        return $view;
     }
 
     private function interpretViewName(string $viewName) {
