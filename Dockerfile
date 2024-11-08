@@ -16,18 +16,16 @@ RUN --mount=type=bind,source=composer.json,target=composer.json \
 
 FROM php:8.2-apache AS base
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
-    && mkdir /var/www/html/public /var/www/docker /var/www/db \
+    && mkdir /var/www/html/public /var/www/db \
     && mkdir /var/www/html/resources && chmod 777 /var/www/html/resources \
     && a2enmod rewrite \
     && docker-php-ext-install \
         mysqli \
     && docker-php-ext-enable mysqli
-COPY ./.docker/scripts /var/www/docker
-COPY ./db /var/www/db
+# Copy custom ini files into conf.d
+COPY ./.docker/php/*.ini /usr/local/etc/php/conf.d/
 # Copy source code
 COPY ./src /var/www/html
-# Copy .htaccess
-COPY ./.docker/apache/.htaccess /var/www/html
 # Copy public directory
 COPY ./public /var/www/html/public
 # Copy resources directory
@@ -45,7 +43,6 @@ RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini" \
     && pecl install xdebug \
     && docker-php-ext-enable xdebug
 COPY --from=dev-deps app/vendor/ /var/www/html/vendor
-CMD ["/var/www/docker/wait-for-it.sh", "db:3306", "--", "/var/www/docker/docker-entrypoint.sh"]
 
 FROM development AS test
 WORKDIR /var/www/html
@@ -54,5 +51,4 @@ RUN ./vendor/bin/phpunit tests/HelloWorldTest.php
 FROM base AS final
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY --from=prod-deps app/vendor/ /var/www/html/vendor
-CMD ["/var/www/docker/wait-for-it.sh", "db:3306", "--", "/var/www/docker/docker-entrypoint.sh"]
 USER www-data

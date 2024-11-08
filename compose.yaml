@@ -12,10 +12,9 @@ services:
     secrets:
       - db-password
     volumes:
-      - ./.docker/php/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
-      - ./.docker/php/memory.ini:/usr/local/etc/php/conf.d/memory.ini
-      - ./.docker/php/uploads.ini:/usr/local/etc/php/conf.d/upload.ini
-      - ./.docker/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+      - ./.docker/apache/.htaccess:/var/www/html/.htaccess
+      - ./.docker/scripts:/var/www/docker
+      - ./db:/var/www/db
     env_file: ".env"
     environment:
       - PASSWORD_FILE_PATH=/run/secrets/db-password
@@ -43,7 +42,7 @@ services:
     secrets:
       - db-password
     volumes:
-      #- ./db:/docker-entrypoint-initdb.d  # Mount SQL files for initialization
+      - ./.docker/db:/docker-entrypoint-initdb.d  # Mount SQL files for initialization
       - db-data:/var/lib/mysql
     environment:
       - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db-password
