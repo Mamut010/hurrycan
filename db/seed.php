@@ -27,13 +27,13 @@ for ($i = 1; $i <= 10; $i++) {
 }
 $insertUsersQuery .= implode(', ', $users);
 
+$db->begin_transaction();
 $queries = [$insertMessagesQuery, $insertRolesQuery, $insertUsersQuery];
 foreach ($queries as $query) {
-    if (!$db->execute_query($query)) {
+    if (!$db->query($query)) {
         echo "Unable to execute query: $query\n";
         echo "Error: " . $db->error;
-        break;
+        exit(1);
     }
 }
-
-$db->close();
+$db->commit();
