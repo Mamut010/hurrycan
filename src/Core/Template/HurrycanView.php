@@ -4,9 +4,12 @@ namespace App\Core\Template;
 use App\Core\Exceptions\ViewRenderException;
 use App\Core\Template\Contracts\RenderableView;
 use App\Utils\Arrays;
+use Closure;
 
 class HurrycanView implements RenderableView
 {
+    private ?\Closure $beforeRenderHook = null;
+
     public function __construct(
         private string $viewName,
         private string $file,
@@ -28,8 +31,16 @@ class HurrycanView implements RenderableView
 
     #[\Override]
     public function render(): string {
+        if ($this->beforeRenderHook) {
+            call_user_func($this->beforeRenderHook);
+        }
+        
         $context = $this->createViewContext();
         return $this->renderWithContext($context);
+    }
+
+    public function setBeforeRenderHook(callable $beforeRenderHook) {
+        $this->beforeRenderHook = Closure::fromCallable($beforeRenderHook);
     }
 
     private function createViewContext(): array {
@@ -55,7 +66,7 @@ class HurrycanView implements RenderableView
             include $this->file; //NOSONAR
             return ob_get_clean();
         }
-        catch (\Exception $e) {
+        catch (\Throwable $e) {
             throw new ViewRenderException("Unable to render view [$this->viewName]", 0, $e);
         }
     }
