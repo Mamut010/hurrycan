@@ -160,7 +160,7 @@ class ServiceContainer implements DiContainer
     }
 
     #[\Override]
-    public function tryResolve(\ReflectionParameter $parameter, mixed &$result): bool {
+    public function tryResolve(\ReflectionParameter $parameter, mixed &$result, \Throwable &$e = null): bool {
         try {
             $result = $this->resolveParameter($parameter);
             return true;
@@ -308,9 +308,9 @@ class ServiceContainer implements DiContainer
         $instance = null;
         $typeName = Reflections::getTypeName($parameter->getType());
         try {
-            $instance = $this->resolveClassByTypeImpl($typeName);
+            $instance = $this->resolveClassByTypeImpl($typeName, $e);
             if ($instance === false) {
-                throw new \UnexpectedValueException(static::getErrorMessage($parameter));
+                throw new \UnexpectedValueException(static::getErrorMessage($parameter), 0, $e);
             }
         }
         catch (\Throwable $e) {
@@ -328,7 +328,7 @@ class ServiceContainer implements DiContainer
         return $instance;
     }
 
-    private function resolveClassByTypeImpl(string|array|false $typeName) {
+    private function resolveClassByTypeImpl(string|array|false $typeName, \Throwable &$e = null) {
         if ($typeName === false) {
             return false;
         }

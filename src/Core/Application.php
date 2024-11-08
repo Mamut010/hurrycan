@@ -223,13 +223,13 @@ class Application
                     $value = static::handleUntypedOrRouteBoundParam($param, $routeParams);
                     $injected[$paramName] = $value;
                 }
-                elseif ($this->container->tryResolve($param, $result)) {
+                elseif ($this->container->tryResolve($param, $result, $e)) {
                     $injected[$paramName] = $result;
                 }
                 else {
                     $route = $this->getCurrentRoute();
                     $msg = "Unable to resolve parameter #$i [$paramName] for route action in $route";
-                    throw new \InvalidArgumentException($msg);
+                    throw new \InvalidArgumentException($msg, 0, $e);
                 }
             }
         }
