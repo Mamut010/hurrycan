@@ -12,10 +12,11 @@ $dbPassword = trim($dbPassword);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
+// Last-in First-out
 $allQuery = <<<QUERY
-DROP TABLE IF EXISTS message;
-DROP TABLE IF EXISTS role;
 DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS role;
+DROP TABLE IF EXISTS message;
 
 CREATE TABLE message (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,6 +48,5 @@ if ($db->multi_query($allQuery)) {
 }
 else {
     echo "Error: " . $db->error;
+    exit(1);
 }
-
-$db->close();

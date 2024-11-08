@@ -21,19 +21,27 @@ for ($i = 1; $i <= 10; $i++) {
     $name = $db->real_escape_string("user-$i");
     $username = $db->real_escape_string("username$i");
     $password = $db->real_escape_string(password_hash("password$i", PASSWORD_DEFAULT));
-    $roleId = $i <= 3 ? 1 : 2;
+    if ($i <= 3) {
+        $roleId = 1;
+    }
+    elseif ($i <= 6) {
+        $roleId = 2;
+    }
+    else {
+        $roleId = 'null';
+    }
     $value = "('$name', '$username', '$password', $roleId)";
     $users[] = $value;
 }
 $insertUsersQuery .= implode(', ', $users);
 
+$db->begin_transaction();
 $queries = [$insertMessagesQuery, $insertRolesQuery, $insertUsersQuery];
 foreach ($queries as $query) {
-    if (!$db->execute_query($query)) {
+    if (!$db->query($query)) {
         echo "Unable to execute query: $query\n";
         echo "Error: " . $db->error;
-        break;
+        exit(1);
     }
 }
-
-$db->close();
+$db->commit();

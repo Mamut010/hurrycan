@@ -110,6 +110,10 @@ trait MySqliQueryable
                 $boundParams[] = strval($param);
                 $types[] = static::PARAM_TYPE_STRING;
             }
+            elseif (is_null($param)) {
+                $boundParams[] = 'NULL';
+                $types[] = static::PARAM_TYPE_STRING;
+            }
             else {
                 throw new \InvalidArgumentException("Unexpected unbindable param #$i");
             }

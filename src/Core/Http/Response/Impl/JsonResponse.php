@@ -13,8 +13,8 @@ class JsonResponse extends HttpResponse
     }
 
     #[\Override]
-    public function send(): void {
+    protected function sendHeaders(): void {
         parent::header(HttpHeader::CONTENT_TYPE, MimeType::APPLICATION_JSON);
-        parent::send();
+        parent::sendHeaders();
     }
 }
