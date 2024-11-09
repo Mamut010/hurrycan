@@ -7,7 +7,5 @@ class User
     public string $name;
     public string $username;
     public string $password;
-    public ?int $roleId;
-    
-    public ?Role $role;
+    public string $role;
 }

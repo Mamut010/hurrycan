@@ -19,7 +19,7 @@ class UserController extends Controller
         $users = array_map(fn (User $user) => [
             'id' => $user->id,
             'name' => $user->name,
-            'role' => $user->role?->name
+            'role' => $user->role,
         ], $users);
         return response()->json($users);
     }
