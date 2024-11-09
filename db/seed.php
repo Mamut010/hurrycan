@@ -13,30 +13,21 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
 $insertMessagesQuery = "INSERT INTO message (message) VALUES ('message-0'), ('message-1'), ('message-2')";
-$insertRolesQuery = "INSERT INTO role (name) VALUES ('Admin'), ('User')";
-$insertUsersQuery = 'INSERT INTO user (name, username, password, role_id) VALUES ';
+$insertUsersQuery = 'INSERT INTO user (name, username, password, role) VALUES ';
 
 $users = [];
 for ($i = 1; $i <= 10; $i++) {
     $name = $db->real_escape_string("user-$i");
     $username = $db->real_escape_string("username$i");
     $password = $db->real_escape_string(password_hash("password$i", PASSWORD_DEFAULT));
-    if ($i <= 3) {
-        $roleId = 1;
-    }
-    elseif ($i <= 6) {
-        $roleId = 2;
-    }
-    else {
-        $roleId = 'null';
-    }
-    $value = "('$name', '$username', '$password', $roleId)";
+    $role = $i <= 3 ? 'Admin' : 'User';
+    $value = "('$name', '$username', '$password', '$role')";
     $users[] = $value;
 }
 $insertUsersQuery .= implode(', ', $users);
 
 $db->begin_transaction();
-$queries = [$insertMessagesQuery, $insertRolesQuery, $insertUsersQuery];
+$queries = [$insertMessagesQuery, $insertUsersQuery];
 foreach ($queries as $query) {
     if (!$db->query($query)) {
         echo "Unable to execute query: $query\n";

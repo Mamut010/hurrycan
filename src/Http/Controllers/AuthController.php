@@ -72,7 +72,7 @@ class AuthController
         $payload = [
             'id' => $user->id,
             'name' => $user->name,
-            'role' => $user->role?->name,
+            'role' => $user->role,
         ];
         return Converters::arrayToObject($payload, AccessTokenPayloadDto::class);
     }
