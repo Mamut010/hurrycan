@@ -212,57 +212,59 @@ class Application
         $params = $reflector->getParameters();
         $injected = [];
 
-        $i = -1;
+        $i = 0;
         try {
             foreach ($params as $param) {
-                $i++;
+                $success = false;
                 $paramName = $param->getName();
                 $paramType = $param->getType();
-    
+                // If no type hint or already provided by router
                 if (!$paramType || array_key_exists($paramName, $routeParams)) {
-                    $value = static::handleUntypedOrRouteBoundParam($param, $routeParams);
-                    $injected[$paramName] = $value;
+                    $success = static::handleUntypedOrRouteBoundParam($param, $routeParams, $result);
+                    if ($success) {
+                        $injected[$paramName] = $result;
+                    }
                 }
-                elseif ($this->container->tryResolve($param, $result, $e)) {
-                    $injected[$paramName] = $result;
+                // Resort to DI container to resolve the parameter
+                if (!$success) {
+                    $injected[$paramName] = $this->container->resolveParameter($param);
                 }
-                else {
-                    $route = $this->getCurrentRoute();
-                    $msg = "Unable to resolve parameter #$i [$paramName] for route action in $route";
-                    throw new \InvalidArgumentException($msg, 0, $e);
-                }
+                $i++;
             }
         }
         catch (\Throwable $e) {
-            if (!$e instanceof \InvalidArgumentException) {
-                $route = $this->getCurrentRoute();
-                $msg = "Unable to resolve parameter #$i [$paramName] for route action in $route";
-                throw new \InvalidArgumentException($msg, 0, $e);
-            }
-            else {
-                throw $e;
-            }
+            $route = $this->getCurrentRoute();
+            $msg = "Unable to resolve parameter #$i [$paramName] for route action in $route";
+            throw new \InvalidArgumentException($msg, 0, $e);
         }
 
         return $injected;
     }
 
-    private static function handleUntypedOrRouteBoundParam(\ReflectionParameter $param, array $routeParams) {
+    private static function handleUntypedOrRouteBoundParam(
+        \ReflectionParameter $param,
+        array $routeParams,
+        mixed &$result
+        ): bool {
+        $result = null;
+        $success = false;
         $paramName = $param->getName();
         if (array_key_exists($paramName, $routeParams)) {
             $routeParamValue = $routeParams[$paramName];
-            return $routeParamValue === null && $param->isDefaultValueAvailable()
+            $result = $routeParamValue === null && $param->isDefaultValueAvailable()
                 ? $param->getDefaultValue()
                 : $routeParams[$paramName];
+            $success = true;
         }
         elseif ($param->isDefaultValueAvailable()) {
-            return $param->getDefaultValue();
+            $result = $param->getDefaultValue();
+            $success = true;
         }
         elseif ($param->allowsNull()) {
-            return null;
+            $result = null;
+            $success = true;
         }
-
-        throw new \InvalidArgumentException();
+        return $success;
     }
 
     private function getCurrentRoute() {
