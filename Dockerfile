@@ -16,8 +16,7 @@ RUN --mount=type=bind,source=composer.json,target=composer.json \
 
 FROM php:8.2-apache AS base
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
-    && mkdir /var/www/html/public /var/www/db \
-    && mkdir /var/www/html/resources && chmod 777 /var/www/html/resources \
+    && mkdir /var/www/html/public /var/www/html/resources /var/www/db \
     && a2enmod rewrite \
     && docker-php-ext-install \
         mysqli \
@@ -30,9 +29,10 @@ COPY ./src /var/www/html
 COPY ./public /var/www/html/public
 # Copy resources directory
 COPY ./resources /var/www/html/resources
-# Give permission to write into assets directory
-RUN chown www-data:www-data /var/www/html/public/assets \
-    && chmod 775 /var/www/html/public/assets \
+    # Give permission to write into assets directory
+RUN chown www-data:www-data /var/www/html/public/assets && chmod 775 /var/www/html/public/assets \
+    # Give permission to write into resources directory
+    && chown www-data:www-data /var/www/html/resources && chmod 775 /var/www/html/resources \
     # Copy the favicon.ico
     && favicon=$(find ./public/ -maxdepth 1 -name 'favicon.ico' | head -n 1) && \
     if [ -n "$favicon" ]; then cp "$favicon" /var/www/html/; else echo "No favicon file found."; fi
