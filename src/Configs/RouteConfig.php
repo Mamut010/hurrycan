@@ -69,8 +69,8 @@ class RouteConfig
             }),
         ]);
 
-        $route->get('/example/hello/{?name}', function (?string $name = 'Unknown') {
-            return view('hello', ['name' => ucwords($name) . '!']);
+        $route->get('/example/hello/{?name}', function (?string $name) {
+            return view('hello', ['name' => $name ? ucwords($name) : null]);
         })->whereAlpha('name');
 
         $route->prefix('test')->group([

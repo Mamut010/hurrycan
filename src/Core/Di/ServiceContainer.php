@@ -159,17 +159,6 @@ class ServiceContainer implements DiContainer
         }
     }
 
-    #[\Override]
-    public function tryResolve(\ReflectionParameter $parameter, mixed &$result, \Throwable &$e = null): bool {
-        try {
-            $result = $this->resolveParameter($parameter);
-            return true;
-        }
-        catch (\Throwable $e) {
-            return false;
-        }
-    }
-
     private function getImpl(string $id): mixed
     {
         if ($this->isConstantBound($id)) {
@@ -250,7 +239,8 @@ class ServiceContainer implements DiContainer
         return $dependencies;
     }
 
-    private function resolveParameter(\ReflectionParameter $parameter) {
+    #[\Override]
+    public function resolveParameter(\ReflectionParameter $parameter): mixed {
         $type = $parameter->getType();
         try {
             if (Reflections::isPrimitiveType($type)) {
