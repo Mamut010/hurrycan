@@ -12,16 +12,36 @@ $dbPassword = trim($dbPassword);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
+function valueOrNull($value) {
+    global $db;
+
+    if (is_null($value)) {
+        return 'NULL';
+    }
+
+    if (is_bool($value)) {
+        $value = $value ? 1 : 0;
+    }
+    if (is_int($value) || is_float($value)) {
+        return $value;
+    }
+    else {
+        $safeValue = $db->real_escape_string(strval($value));
+        return "'$safeValue'";
+    }
+}
+
 $insertMessagesQuery = "INSERT INTO message (message) VALUES ('message-0'), ('message-1'), ('message-2')";
-$insertUsersQuery = 'INSERT INTO user (name, username, password, role) VALUES ';
+$insertUsersQuery = 'INSERT INTO user (name, email, username, password, role) VALUES ';
 
 $users = [];
 for ($i = 1; $i <= 10; $i++) {
-    $name = $db->real_escape_string("user-$i");
-    $username = $db->real_escape_string("username$i");
-    $password = $db->real_escape_string(password_hash("password$i", PASSWORD_DEFAULT));
-    $role = $i <= 3 ? 'Admin' : 'User';
-    $value = "('$name', '$username', '$password', '$role')";
+    $name = valueOrNull("user-$i");
+    $email = valueOrNull($i <= 7 ? "user$i@example.com" : null);
+    $username = valueOrNull("username$i");
+    $password = valueOrNull(password_hash("password$i", PASSWORD_DEFAULT));
+    $role = valueOrNull($i <= 3 ? 'Admin' : 'User');
+    $value = "($name, $email, $username, $password, $role)";
     $users[] = $value;
 }
 $insertUsersQuery .= implode(', ', $users);

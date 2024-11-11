@@ -3,5 +3,5 @@ namespace App\Http\Dtos;
 
 class RefreshTokenPayloadDto
 {
-    public int $id;
+    public int $seq;
 }

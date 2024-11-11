@@ -122,7 +122,7 @@ class RouteConfig
             ->prefix('/auth')
             ->group([
                 $route->post('/login', 'login'),
-                $route->post('/logout', 'logout'),
+                $route->post('/logout', 'logout')->middleware('auth'),
                 $route->post('/token', 'reissueTokens'),
             ]);
 

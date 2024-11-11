@@ -16,16 +16,15 @@ class PhpCookieQueue implements CookieQueue
     public function enqueueSend(
         string $name,
         string $value,
-        int $seconds,
+        int $expires,
         ?CookieOptions $options = null
     ): void {
-        if ($seconds < 0) {
+        if ($expires < 0) {
             $this->enqueueDestroy($name, $options);
             return;
         }
-        $timeCallback = fn() => $seconds !== 0 ? time() + $seconds : 0;
         $value = $this->cookieWriter->write(trim($value));
-        $command = fn() => setcookie($name, $value, static::makeOptions($timeCallback(), $options));
+        $command = fn() => setcookie($name, $value, static::makeOptions($expires, $options));
         $this->queue[] = $command;
     }
 

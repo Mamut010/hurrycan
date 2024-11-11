@@ -55,7 +55,7 @@ CREATE TABLE refresh_token (
     jti BINARY(16) PRIMARY KEY,   -- UUIDv4 binary form
     hash VARCHAR(255) NOT NULL,
     user_id INT NOT NULL,
-    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    issued_at TIMESTAMP,
     expires_at TIMESTAMP,
 
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -246,7 +246,7 @@ ON SCHEDULE EVERY 1 DAY
 DO
 BEGIN
     DELETE FROM refresh_token
-    WHERE expires_at <= NOW();
+    WHERE expires_at IS NOT NULL AND expires_at <= NOW();
 END;
 QUERY;
 

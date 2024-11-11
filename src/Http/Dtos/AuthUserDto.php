@@ -7,7 +7,9 @@ namespace App\Http\Dtos;
  * of this class available to the Controller/Middlewares later in the chain
  * through dependency injection.
  */
-class AuthUserDto extends AccessTokenPayloadDto
+class AuthUserDto
 {
-
+    public int $id;
+    public string $name;
+    public string $role;
 }

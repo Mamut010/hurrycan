@@ -5,20 +5,20 @@ use App\Support\OptionsBase;
 
 class JwtOptions extends OptionsBase
 {
-    public ?string $iss = null;
+    public ?string $iss;
 
-    public ?string $sub = null;
+    public ?string $sub;
     
     /**
      * @var string|string[]|null
      */
-    public string|array|null $aud = null;
+    public string|array|null $aud;
 
-    public ?int $exp = null;
+    public ?int $exp;
 
-    public ?int $nbf = null;
+    public ?int $nbf;
 
-    public ?int $iat = null;
+    public ?int $iat;
 
-    public ?string $jti = null;
+    public ?string $jti;
 }

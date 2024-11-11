@@ -1,35 +1,25 @@
 <?php
 namespace App\Http\Contracts;
 
-use App\Core\Http\Session\SessionManager;
+use App\Http\Dtos\AccessTokenDto;
+use App\Http\Dtos\AccessTokenIssueDto;
 use App\Http\Dtos\AccessTokenPayloadDto;
-use App\Http\Dtos\RefreshTokenPayloadDto;
+use App\Http\Dtos\RefreshTokenIssueDto;
+use App\Http\Dtos\RefreshTokenVerifyingDto;
 
 interface AuthService
 {
-    function issueAccessToken(AccessTokenPayloadDto $dto, string &$csrfToken = null): string;
+    function issueAccessToken(int $userId, AccessTokenPayloadDto $payload): AccessTokenIssueDto;
 
-    function issueRefreshToken(RefreshTokenPayloadDto $dto): string;
+    function issueRefreshToken(int $userId): RefreshTokenIssueDto;
     
-    /**
-     * @param string $token
-     * @param array<string,int|string|string[]> $claims
-     */
-    function verifyAccessToken(string $token, array &$claims = null): AccessTokenPayloadDto|false;
+    function verifyAccessToken(string $token): AccessTokenDto|false;
 
-    /**
-     * @param string $token
-     * @param array<string,int|string|string[]> $claims
-     */
-    function verifyRefreshToken(string $token, array &$claims = null): RefreshTokenPayloadDto|false;
+    function verifyRefreshToken(string $token): RefreshTokenVerifyingDto|false;
 
     function verifyCsrfToken(string $token, string $jti): bool;
 
-    function increaseRefreshSeq(string $token): string|false;
+    function deleteRefreshToken(string $token): void;
 
-    /**
-     * @param string $token
-     * @param array<string,int|string|string[]> $claims
-     */
-    function decodeToken(string $token, array &$claims = null): array|false;
+    function decodeAccessToken(string $token): AccessTokenDto|false;
 }

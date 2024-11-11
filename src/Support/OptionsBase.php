@@ -2,24 +2,24 @@
 namespace App\Support;
 
 use App\Utils\Arrays;
+use App\Utils\Converters;
 use ArrayAccess;
 
 class OptionsBase implements ArrayAccess
 {
     /**
-     * @param ?array<string,mixed> $args
+     * @param array<string,mixed>|object|null $args
      */
-    public function __construct(?array $args = null) {
+    public function __construct(array|object|null $args = null) {
         if ($args === null) {
             return;
         }
 
-        $props = $this->getCorrectSignatureProps();
-        foreach ($props as $prop) {
-            $propName = $prop->getName();
-            if (array_key_exists($propName, $args)) {
-                $prop->setValue($this, $args[$propName]);
-            }
+        if (is_array($args)) {
+            Converters::arrayToObject($args, $this);
+        }
+        else {
+            Converters::instanceToObject($args, $this);
         }
     }
 
@@ -28,15 +28,11 @@ class OptionsBase implements ArrayAccess
      */
     private static function getCorrectSignatureProps() {
         $reflector = new \ReflectionClass(static::class);
-        $props = $reflector->getProperties();
+        $props = $reflector->getProperties(\ReflectionProperty::IS_PUBLIC);
         return Arrays::filterReindex(
             $props,
-            fn (\ReflectionProperty $prop) => static::isCorrectSignatureProp($prop)
+            fn (\ReflectionProperty $prop) => !$prop->isStatic()
         );
-    }
-
-    private static function isCorrectSignatureProp(\ReflectionProperty $prop) {
-        return $prop->isPublic() && !$prop->isStatic();
     }
 
     /**

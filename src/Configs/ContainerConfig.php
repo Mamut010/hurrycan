@@ -6,7 +6,11 @@ use App\Core\Di\InjectionContext;
 use App\Dal\Contracts\UserRepo;
 use App\Core\Dal\DatabaseHandler;
 use App\Core\Dal\Impl\MysqlDatabaseHandler;
+use App\Dal\Contracts\RefreshTokenRepo;
+use App\Dal\Repos\RefreshTokenRepoImpl;
 use App\Dal\Repos\UserRepoImpl;
+use App\Dal\Transformer\DefaultPlainTransformer;
+use App\Dal\Transformer\PlainTransformer;
 use App\Http\Contracts\AuthService;
 use App\Http\Services\AuthServiceImpl;
 use App\Support\Csrf\CsrfHandler;
@@ -38,7 +42,9 @@ class ContainerConfig
         $container->bind(JwtHandler::class)->to(StandardJwtHandler::class);
         $container->bind(CsrfHandler::class)->to(HmacCsrfHandler::class);
 
+        $container->bind(PlainTransformer::class)->to(DefaultPlainTransformer::class);
         $container->bind(UserRepo::class)->to(UserRepoImpl::class);
+        $container->bind(RefreshTokenRepo::class)->to(RefreshTokenRepoImpl::class);
 
         $container->bind(AuthService::class)->to(AuthServiceImpl::class);
     }

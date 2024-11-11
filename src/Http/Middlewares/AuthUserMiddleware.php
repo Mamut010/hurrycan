@@ -25,15 +25,19 @@ class AuthUserMiddleware implements Middleware
     public function handle(Request $request, Closure $next): Response {
         $token = $request->cookie(Auth::ACCESS_TOKEN_KEY);
         if ($token === false) {
-            throw new UnauthorizedException('401 Unauthorized');
+            throw new UnauthorizedException();
         }
 
-        $payload = $this->authService->verifyAccessToken($token);
-        if ($payload === false) {
-            throw new UnauthorizedException('401 Unauthorized');
+        $tokenContent = $this->authService->verifyAccessToken($token);
+        if ($tokenContent === false) {
+            throw new UnauthorizedException();
         }
 
-        $authUser = Converters::instanceToObject($payload, AuthUserDto::class);
+        /**
+         * @var AuthUserDto
+         */
+        $authUser = Converters::instanceToObject($tokenContent->payload, AuthUserDto::class);
+        $authUser->id = intval($tokenContent->claims->sub);
         $this->container->bind(AuthUserDto::class)->toConstant($authUser);
 
         return $next();

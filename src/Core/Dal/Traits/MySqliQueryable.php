@@ -32,8 +32,8 @@ trait MySqliQueryable
                 throw new DatabaseException($errMsg);
             }
 
-            $types = $this->getTypesFromParams($params);
-            if (!$this->executeStatement($stmt, $types, $params)) {
+            $types = $this->getTypesFromParams($params, $boundParams);
+            if (!$this->executeStatement($stmt, $types, $boundParams)) {
                 throw new DatabaseException($errMsg);
             }
 
@@ -60,8 +60,8 @@ trait MySqliQueryable
 
             $result = [];
             for ($i = 0; $i < $times; $i++) {
-                $types = $this->getTypesFromParams($params[$i]);
-                if (!$this->executeStatement($stmt, $types, $params[$i])) {
+                $types = $this->getTypesFromParams($params[$i], $boundParams);
+                if (!$this->executeStatement($stmt, $types, $boundParams)) {
                     throw new DatabaseException($errMsg);
                 }
                 if ($handler) {
@@ -85,12 +85,14 @@ trait MySqliQueryable
     /**
      * Blobs are not sent yet at this stage
      */
-    private function getTypesFromParams(array $params) {
+    private function getTypesFromParams(array $params, array &$boundParams = null) { //NOSONAR
+        $boundParams = [];
         $types = [];
         $i = 0;
         foreach ($params as $param) {
             if (is_string($param)) {
                 if (strlen($param) <= $this->blobThreshold) {
+                    $boundParams[] = $param;
                     $types[] = static::PARAM_TYPE_STRING;
                 }
                 else {
@@ -106,12 +108,16 @@ trait MySqliQueryable
                 $boundParams[] = intval($param);
                 $types[] = static::PARAM_TYPE_INT;
             }
+            elseif ($param instanceof \DateTimeInterface) {
+                $boundParams[] = $param->format('Y-m-d H:i:s');
+                $types[] = static::PARAM_TYPE_STRING;
+            }
             elseif (isToStringable($param)) {
                 $boundParams[] = strval($param);
                 $types[] = static::PARAM_TYPE_STRING;
             }
             elseif (is_null($param)) {
-                $boundParams[] = 'NULL';
+                $boundParams[] = null;
                 $types[] = static::PARAM_TYPE_STRING;
             }
             else {
@@ -125,22 +131,21 @@ trait MySqliQueryable
     /**
      * @param \mysqli_stmt $stmt
      * @param ('s'|'i'|'d'|'b')[]|null $types
-     * @param array|null $params
+     * @param array|null $boundParams
      */
-    private function executeStatement(\mysqli_stmt $stmt, ?array $types = null, ?array $params = null)
+    private function executeStatement(\mysqli_stmt $stmt, ?array $types = null, ?array $boundParams = null)
     {
-        if (isNullOrEmpty($types) || isNullOrEmpty($params)) {
+        if (isNullOrEmpty($types) || isNullOrEmpty($boundParams)) {
             return $stmt->execute();
         }
 
-        $boundParams = static::getBoundParams($params, $types);
         $typesStr = implode('', $types);
         $stmt->bind_param($typesStr, ...$boundParams);
 
-        $paramCount = count($params);
+        $paramCount = count($boundParams);
         for ($i = 0; $i < $paramCount; $i++) {
             if ($types[$i] === static::PARAM_TYPE_BLOB) {
-                $blob = $params[$i];
+                $blob = $boundParams[$i];
                 if (!$this->sendBlob($stmt, $i, $blob)) {
                     throw new DatabaseException("Unable to send BLOB param #$i");
                 }
@@ -148,34 +153,6 @@ trait MySqliQueryable
         }
 
         return $stmt->execute();
-    }
-
-    /**
-     * @param ('s'|'i'|'d'|'b')[] $types
-     */
-    private static function getBoundParams(array $params, array $types) {
-        $boundParams = [];
-        for ($i = 0; $i < count($params); $i++) {
-            $param = $params[$i];
-            $type = $types[$i];
-            switch ($type) {
-                case static::PARAM_TYPE_STRING:
-                    $boundParams[] = strval($param);
-                    break;
-                case static::PARAM_TYPE_INT:
-                    $boundParams[] = intval($param);
-                    break;
-                case static::PARAM_TYPE_FLOAT:
-                    $boundParams[] = floatval($param);
-                    break;
-                case static::PARAM_TYPE_BLOB:
-                    $boundParams[] = null;
-                    break;
-                default:
-                    throw new \LogicException('Binding type must be among allowed type');
-            }
-        }
-        return $boundParams;
     }
 
     private function sendBlob(\mysqli_stmt $stmt, int $idx, string $blob) {

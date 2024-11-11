@@ -1,7 +1,7 @@
 <?php
-namespace App\Dal\Models;
+namespace App\Dal\Dtos;
 
-class User
+class UserDto
 {
     public int $id;
     public string $name;

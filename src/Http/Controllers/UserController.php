@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Core\Http\Controller\Controller;
 use App\Dal\Contracts\UserRepo;
-use App\Dal\Models\User;
+use App\Dal\Dtos\UserDto;
 use App\Http\Dtos\AuthUserDto;
 
 class UserController extends Controller
@@ -16,9 +16,10 @@ class UserController extends Controller
         $this->authorize('viewAll', $authUser);
 
         $users = $this->userRepo->getAll();
-        $users = array_map(fn (User $user) => [
+        $users = array_map(fn (UserDto $user) => [
             'id' => $user->id,
             'name' => $user->name,
+            'email' => $user->email,
             'role' => $user->role,
         ], $users);
         return response()->json($users);

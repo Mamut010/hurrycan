@@ -93,4 +93,21 @@ class Arrays
             return $callback($key, $array[$key]);
         }, array_keys($array));
     }
+
+    public static function convertKeys(array $array, callable $converter, int $depth = PHP_INT_MAX): array {
+        if ($depth < 0) {
+            return $array;
+        }
+
+        $result = [];
+        foreach ($array as $key => $value) {
+            $newKey = call_user_func($converter, $key, $value);
+            // If the value is an array, recursively apply the function
+            if (is_array($value)) {
+                $value = static::convertKeys($value, $converter, $depth - 1);
+            }
+            $result[$newKey] = $value;
+        }
+        return $result;
+    }
 }

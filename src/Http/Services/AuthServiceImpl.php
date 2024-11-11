@@ -1,57 +1,110 @@
 <?php
 namespace App\Http\Services;
 
-use App\Dal\Contracts\UserRepo;
+use App\Dal\Contracts\RefreshTokenRepo;
+use App\Dal\Requests\RefreshTokenCreateRequest;
+use App\Dal\Requests\RefreshTokenUpdateRequest;
 use App\Http\Contracts\AuthService;
+use App\Http\Dtos\AccessTokenClaims;
+use App\Http\Dtos\AccessTokenDto;
+use App\Http\Dtos\AccessTokenIssueDto;
 use App\Http\Dtos\AccessTokenPayloadDto;
+use App\Http\Dtos\RefreshTokenClaims;
+use App\Http\Dtos\RefreshTokenIssueDto;
 use App\Http\Dtos\RefreshTokenPayloadDto;
+use App\Http\Dtos\RefreshTokenVerifyingDto;
+use App\Http\Exceptions\ConflictException;
+use App\Http\Exceptions\ForbiddenException;
 use App\Settings\Auth;
 use App\Support\Csrf\CsrfHandler;
 use App\Support\Jwt\Exceptions\JwtException;
-use App\Support\Jwt\JwtClaim;
 use App\Support\Jwt\JwtHandler;
 use App\Support\Jwt\JwtOptions;
+use App\Support\Logger\Logger;
 use App\Utils\Converters;
+use App\Utils\Crypto;
 use App\Utils\Randoms;
 
 class AuthServiceImpl implements AuthService
 {
-    private const SEQ_KEY = 'seq';
+    private const SEQ_MIN = 0;
+    private const SEQ_MAX = 2147483647;
 
     public function __construct(
         private readonly string $accessTokenSecret,
         private readonly string $refreshTokenSecret,
         private readonly JwtHandler $jwt,
         private readonly CsrfHandler $csrf,
-        private readonly UserRepo $userRepo,
+        private readonly RefreshTokenRepo $refreshTokenRepo,
     ) {
         
     }
 
     #[\Override]
-    public function issueAccessToken(AccessTokenPayloadDto $dto, string &$csrfToken = null): string {
-        $payload = ['id' => $dto->id, 'name' => $dto->name, 'role' => $dto->role];
+    public function issueAccessToken(int $userId, AccessTokenPayloadDto $payload): AccessTokenIssueDto {
+        $payload = Converters::objectToArray($payload);
         $jti = Randoms::uuidv4();
-        $csrfToken = $this->csrf->generate($jti);
-        return $this->jwt->sign($payload, $this->accessTokenSecret, new JwtOptions([
-            JwtClaim::EXPIRATION_TIME => Auth::ACCESS_TOKEN_TTL + time(),
-            JwtClaim::JWT_ID => $jti
-        ]));
+        $now = time();
+        $exp = Auth::ACCESS_TOKEN_TTL + $now;
+
+        $claims = new AccessTokenClaims();
+        $claims->jti = $jti;
+        $claims->sub = $userId;
+        $claims->iat = $now;
+        $claims->exp = $exp;
+        $options = new JwtOptions($claims);
+        $token = $this->jwt->sign($payload, $this->accessTokenSecret, $options);
+
+        $dto = new AccessTokenIssueDto();
+        $dto->token = $token;
+        $dto->csrf = $this->csrf->generate($jti);
+        $dto->claims = $claims;
+        return $dto;
     }
 
     #[\Override]
-    public function issueRefreshToken(RefreshTokenPayloadDto $dto): string {
-        $payload = ['id' => $dto->id, static::SEQ_KEY => 1];
-        return $this->jwt->sign($payload, $this->refreshTokenSecret, new JwtOptions([
-            JwtClaim::EXPIRATION_TIME => Auth::REFRESH_TOKEN_TTL + time()
-        ]));
+    public function issueRefreshToken(int $userId): RefreshTokenIssueDto {
+        $jti = Randoms::uuidv4();
+        $seq = random_int(static::SEQ_MIN, static::SEQ_MAX);
+        $now = time();
+        $exp = Auth::REFRESH_TOKEN_TTL + $now;
+
+        $payload = new RefreshTokenPayloadDto();
+        $payload->seq = $seq;
+        $claims = new RefreshTokenClaims();
+        $claims->jti = $jti;
+        $claims->sub = $userId;
+        $claims->iat = $now;
+        $claims->exp = $exp;
+
+        $request = new RefreshTokenCreateRequest();
+        $request->jti = Converters::uuidToBinary($jti);
+        $request->hash = $this->createRefreshTokenHash($claims, $payload);
+        $request->userId = $userId;
+        $request->issuedAt = Converters::timestampToDate($now);
+        $request->expiresAt = Converters::timestampToDate($exp);
+        if (!$this->refreshTokenRepo->create($request)) {
+            throw new ConflictException('Unable to generate a valid credential');
+        }
+
+        $payload = Converters::objectToArray($payload);
+        $options = new JwtOptions($claims);
+        $token = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
+
+        $dto = new RefreshTokenIssueDto();
+        $dto->token = $token;
+        $dto->claims = $claims;
+        return $dto;
     }
 
     #[\Override]
-    public function verifyAccessToken(string $token, array &$claims = null): AccessTokenPayloadDto|false {
+    public function verifyAccessToken(string $token): AccessTokenDto|false {
         try {
-            $payload = $this->jwt->verify($token, $this->accessTokenSecret, $claims);
-            return Converters::arrayToObject($payload, AccessTokenPayloadDto::class);
+            $tokenContent = $this->jwt->verify($token, $this->accessTokenSecret);
+            $dto = new AccessTokenDto();
+            $dto->payload = Converters::arrayToObject($tokenContent->payload, AccessTokenPayloadDto::class);
+            $dto->claims = Converters::instanceToObject($tokenContent->claims, AccessTokenClaims::class);
+            return $dto;
         }
         catch (JwtException $e) {
             return false;
@@ -59,14 +112,51 @@ class AuthServiceImpl implements AuthService
     }
 
     #[\Override]
-    public function verifyRefreshToken(string $token, array &$claims = null): RefreshTokenPayloadDto|false {
+    public function verifyRefreshToken(string $token): RefreshTokenVerifyingDto|false {
         try {
-            $payload = $this->jwt->verify($token, $this->refreshTokenSecret, $claims);
-            return Converters::arrayToObject($payload, RefreshTokenPayloadDto::class);
+            $tokenContent = $this->jwt->verify($token, $this->refreshTokenSecret);
         }
         catch (JwtException $e) {
             return false;
         }
+
+        /**
+         * @var RefreshTokenPayloadDto
+         */
+        $payload = Converters::arrayToObject($tokenContent->payload, RefreshTokenPayloadDto::class);
+        /**
+         * @var RefreshTokenClaims
+         */
+        $claims = Converters::instanceToObject($tokenContent->claims, RefreshTokenClaims::class);
+        
+        $jti = Converters::uuidToBinary($claims->jti);
+        $token = $this->refreshTokenRepo->findOneById($jti);
+        if (!$token) {
+            $this->handleAbnormalActivity($claims);
+        }
+
+        $suppliedHash = $this->createRefreshTokenHash($claims, $payload);
+        if (!hash_equals($token->hash, $suppliedHash)) {
+            $this->refreshTokenRepo->delete($jti);
+            $this->handleAbnormalActivity($claims);
+        }
+
+        $payload->seq = static::getNextSeq($payload->seq);
+        $request = new RefreshTokenUpdateRequest();
+        $request->hash = $this->createRefreshTokenHash($claims, $payload);
+        if (!$this->refreshTokenRepo->update($jti, $request)) {
+            throw new ConflictException('Unable to generate a valid credential');
+        }
+
+        $payload = Converters::objectToArray($payload);
+        $options = new JwtOptions($claims);
+        $newToken = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
+
+        $dto = new RefreshTokenVerifyingDto();
+        $dto->newToken = $newToken;
+        $dto->claims = $claims;
+        $dto->user = $token->user;
+        return $dto;
     }
 
     #[\Override]
@@ -75,20 +165,38 @@ class AuthServiceImpl implements AuthService
     }
 
     #[\Override]
-    public function increaseRefreshSeq(string $token): string|false {
-        try {
-            $payload = $this->jwt->decode($token, $claims);
-            $currentSeq = $payload[static::SEQ_KEY];
-            $newPayload = [...$payload, static::SEQ_KEY => $currentSeq + 1];
-            return $this->jwt->sign($newPayload, $this->refreshTokenSecret, new JwtOptions($claims));
-        }
-        catch (JwtException $e) {
-            return false;
+    public function deleteRefreshToken(string $token): void {
+        $tokenContent = $this->jwt->decode($token);
+        $jti = $tokenContent->claims->jti;
+        if ($jti) {
+            $jti = Converters::uuidToBinary($jti);
+            $this->refreshTokenRepo->delete($jti);
         }
     }
 
     #[\Override]
-    public function decodeToken(string $token, array &$claims = null): array|false {
-        return $this->jwt->decode($token, $claims);
+    public function decodeAccessToken(string $token): AccessTokenDto|false {
+        $tokenContent = $this->jwt->decode($token);
+        if (!$tokenContent) {
+            return false;
+        }
+        $dto = new AccessTokenDto();
+        $dto->payload = Converters::arrayToObject($tokenContent->payload, AccessTokenPayloadDto::class);
+        $dto->claims = Converters::instanceToObject($tokenContent->claims, AccessTokenClaims::class);
+        return $dto;
+    }
+
+    private function createRefreshTokenHash(RefreshTokenClaims $claims, RefreshTokenPayloadDto $payload) {
+        $hashData = $claims->jti . $payload->seq;
+        return Crypto::hash($hashData, $this->refreshTokenSecret);
+    }
+
+    private function handleAbnormalActivity(RefreshTokenClaims $claims) {
+        Logger::securityWarning("Abnormal activity detected! Potential token misuse of user '$claims->sub'");
+        throw new ForbiddenException();
+    }
+
+    private static function getNextSeq(int $seq) {
+        return $seq === static::SEQ_MAX ? static::SEQ_MIN : $seq + 1;
     }
 }
