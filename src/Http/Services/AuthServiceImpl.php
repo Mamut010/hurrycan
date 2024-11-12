@@ -77,19 +77,19 @@ class AuthServiceImpl implements AuthService
         $claims->iat = $now;
         $claims->exp = $exp;
 
+        $payload = Converters::objectToArray($payload);
+        $options = new JwtOptions($claims);
+        $token = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
+
         $request = new RefreshTokenCreateRequest();
         $request->jti = Converters::uuidToBinary($jti);
-        $request->hash = $this->createRefreshTokenHash($claims, $payload);
+        $request->hash = Crypto::hash($token, $this->refreshTokenSecret);
         $request->userId = $userId;
         $request->issuedAt = Converters::timestampToDate($now);
         $request->expiresAt = Converters::timestampToDate($exp);
         if (!$this->refreshTokenRepo->create($request)) {
             throw new ConflictException('Unable to generate a valid credential');
         }
-
-        $payload = Converters::objectToArray($payload);
-        $options = new JwtOptions($claims);
-        $token = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
 
         $dto = new RefreshTokenIssueDto();
         $dto->token = $token;
@@ -130,32 +130,32 @@ class AuthServiceImpl implements AuthService
         $claims = Converters::instanceToObject($tokenContent->claims, RefreshTokenClaims::class);
         
         $jti = Converters::uuidToBinary($claims->jti);
-        $token = $this->refreshTokenRepo->findOneById($jti);
-        if (!$token) {
+        $refreshToken = $this->refreshTokenRepo->findOneById($jti);
+        if (!$refreshToken) {
             $this->handleAbnormalActivity($claims);
         }
 
-        $suppliedHash = $this->createRefreshTokenHash($claims, $payload);
-        if (!hash_equals($token->hash, $suppliedHash)) {
+        $suppliedHash = Crypto::hash($token, $this->refreshTokenSecret);
+        if (!hash_equals($refreshToken->hash, $suppliedHash)) {
             $this->refreshTokenRepo->delete($jti);
             $this->handleAbnormalActivity($claims);
         }
 
         $payload->seq = static::getNextSeq($payload->seq);
-        $request = new RefreshTokenUpdateRequest();
-        $request->hash = $this->createRefreshTokenHash($claims, $payload);
-        if (!$this->refreshTokenRepo->update($jti, $request)) {
-            throw new ConflictException('Unable to generate a valid credential');
-        }
-
         $payload = Converters::objectToArray($payload);
         $options = new JwtOptions($claims);
         $newToken = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
 
+        $request = new RefreshTokenUpdateRequest();
+        $request->hash = Crypto::hash($newToken, $this->refreshTokenSecret);
+        if (!$this->refreshTokenRepo->update($jti, $request)) {
+            throw new ConflictException('Unable to generate a valid credential');
+        }
+
         $dto = new RefreshTokenVerifyingDto();
         $dto->newToken = $newToken;
         $dto->claims = $claims;
-        $dto->user = $token->user;
+        $dto->user = $refreshToken->user;
         return $dto;
     }
 
@@ -184,11 +184,6 @@ class AuthServiceImpl implements AuthService
         $dto->payload = Converters::arrayToObject($tokenContent->payload, AccessTokenPayloadDto::class);
         $dto->claims = Converters::instanceToObject($tokenContent->claims, AccessTokenClaims::class);
         return $dto;
-    }
-
-    private function createRefreshTokenHash(RefreshTokenClaims $claims, RefreshTokenPayloadDto $payload) {
-        $hashData = $claims->jti . $payload->seq;
-        return Crypto::hash($hashData, $this->refreshTokenSecret);
     }
 
     private function handleAbnormalActivity(RefreshTokenClaims $claims) {
