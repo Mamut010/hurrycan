@@ -1,10 +1,10 @@
 <?php
 namespace App\Dal\Repos;
 
-use App\Core\Dal\DatabaseHandler;
+use App\Core\Dal\Contracts\DatabaseHandler;
 use App\Dal\Contracts\UserRepo;
 use App\Dal\Dtos\UserDto;
-use App\Dal\Transformer\PlainTransformer;
+use App\Core\Dal\Contracts\PlainTransformer;
 
 class UserRepoImpl implements UserRepo
 {
@@ -19,7 +19,7 @@ class UserRepoImpl implements UserRepo
     #[\Override]
     public function getAll(): array {
         $rows = $this->db->query(static::BASE_QUERY);
-        return array_map(fn (array $row) => $this->transformer->toUser($row), $rows);
+        return array_map(fn (array $row) => $this->transformer->transform($row, UserDto::class), $rows);
     }
 
     #[\Override]
@@ -46,6 +46,6 @@ class UserRepoImpl implements UserRepo
     }
 
     private function singleOrFalse(array $rows) {
-        return count($rows) === 1 ? $this->transformer->toUser($rows[0]) : false;
+        return count($rows) === 1 ? $this->transformer->transform($rows[0], UserDto::class) : false;
     }
 }

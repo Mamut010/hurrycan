@@ -1,18 +1,24 @@
 <?php
 namespace App\Dal\Repos;
 
-use App\Core\Dal\DatabaseHandler;
+use App\Core\Dal\Contracts\DatabaseHandler;
 use App\Dal\Contracts\RefreshTokenRepo;
 use App\Dal\Dtos\RefreshTokenDto;
+use App\Dal\Models\RefreshToken;
 use App\Dal\Requests\RefreshTokenCreateRequest;
 use App\Dal\Requests\RefreshTokenUpdateRequest;
-use App\Dal\Transformer\PlainTransformer;
+use App\Core\Dal\Contracts\PlainTransformer;
 use App\Utils\Converters;
 
 class RefreshTokenRepoImpl implements RefreshTokenRepo
 {
     private const BASE_QUERY = '
-        SELECT r.*, u.*
+        SELECT u.*,
+            r.`jti` AS r_jti,
+            r.`hash` AS r_hash,
+            r.`user_id` AS r_user_id,
+            r.`issued_at` AS r_issued_at,
+            r.`expires_at` AS r_expires_at
         FROM `refresh_token` AS r
             INNER JOIN `user` AS u ON r.`user_id` = u.`id`
     ';
@@ -34,7 +40,7 @@ class RefreshTokenRepoImpl implements RefreshTokenRepo
     public function findManyByUserId(int $userId): array {
         $query = static::BASE_QUERY . 'WHERE r.`user_id` = (?)';
         $rows = $this->db->query($query, $userId);
-        return array_map([$this, 'rowToDto'], $rows);
+        return $this->rowsToDtos($rows);
     }
 
     #[\Override]
@@ -87,8 +93,12 @@ class RefreshTokenRepoImpl implements RefreshTokenRepo
     }
 
     private function rowToDto(array $row) {
-        $refreshToken = $this->transformer->toRefreshToken($row);
-        $refreshToken->user = $this->transformer->toUser($row);
-        return $refreshToken;
+        return $this->transformer->transform($row, RefreshTokenDto::class, [
+            RefreshToken::class => fn(string $defaultKey) => 'r_' . $defaultKey,
+        ]);
+    }
+
+    private function rowsToDtos(array $rows) {
+        return array_map(fn (array $row) => $this->rowToDto($row), $rows);
     }
 }

@@ -155,7 +155,7 @@ class RouteConfig
     private static function registerTestingRoutes(RouteBuilder $route) { // NOSONAR
         $route->prefix('/testdb')->group([
             $route->prefix('/sp')->group([
-                $route->get('/in', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/in', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test"); // NOSONAR
                     $db->execute("CREATE TABLE test(id INT PRIMARY KEY)"); // NOSONAR
 
@@ -173,7 +173,7 @@ class RouteConfig
                     $result = $db->callProcedure('t', 10);
                     return response()->json($result);
                 }),
-                $route->get('/in-gen', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/in-gen', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test");
                     $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
 
@@ -199,7 +199,7 @@ class RouteConfig
                     }
                     return response()->json($result);
                 }),
-                $route->get('/out', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/out', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test");
                     $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
 
@@ -220,7 +220,7 @@ class RouteConfig
                 }),
             ]),
             $route->prefix('/transaction')->group([
-                $route->get('/insert', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/insert', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test_transaction");
                     $db->execute("CREATE TABLE test_transaction(id INT PRIMARY KEY)");
 
@@ -241,7 +241,7 @@ class RouteConfig
                 }),
             ]),
             $route->prefix('/file')->group([
-                $route->get('/init', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/init', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test_file");
                     $db->execute(
                         "CREATE TABLE test_file(
@@ -252,7 +252,7 @@ class RouteConfig
                     );
                     return response()->make('Success');
                 }),
-                $route->post('/upload', function (Request $request, \App\Core\Dal\DatabaseHandler $db) {
+                $route->post('/upload', function (Request $request, \App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $file = $request->file('my-file');
                     if (!$file) {
                         return response()->make('Missing "my-file" file')->statusCode(HttpCode::BAD_REQUEST);
@@ -267,7 +267,7 @@ class RouteConfig
 
                     return $success ? response()->make('Success') : response()->err(HttpCode::CONFLICT, 'Failed');
                 }),
-                $route->get('/download/{id}', function (\App\Core\Dal\DatabaseHandler $db, int $id) {
+                $route->get('/download/{id}', function (\App\Core\Dal\Contracts\DatabaseHandler $db, int $id) {
                     $rows = $db->query('SELECT filename, data FROM test_file WHERE id = (?)', $id);
                     if (empty($rows)) {
                         return response()->err(HttpCode::NOT_FOUND, 'File Not Found');
@@ -277,7 +277,7 @@ class RouteConfig
 
                     return response()->downloadContent($data, $filename);
                 })->whereNumber('id'),
-                $route->get('/display/{id}', function (\App\Core\Dal\DatabaseHandler $db, int $id) {
+                $route->get('/display/{id}', function (\App\Core\Dal\Contracts\DatabaseHandler $db, int $id) {
                     $rows = $db->query('SELECT data FROM test_file WHERE id = (?)', $id);
                     if (empty($rows)) {
                         return response()->err(HttpCode::NOT_FOUND, 'File Not Found');

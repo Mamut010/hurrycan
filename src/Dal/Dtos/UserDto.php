@@ -1,6 +1,10 @@
 <?php
 namespace App\Dal\Dtos;
 
+use App\Core\Dal\Attributes\RefBase;
+use App\Dal\Models\User;
+
+#[RefBase(User::class)]
 class UserDto
 {
     public int $id;

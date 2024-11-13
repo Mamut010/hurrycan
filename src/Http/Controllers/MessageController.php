@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\HttpCode;
-use App\Core\Dal\DatabaseHandler;
+use App\Core\Dal\Contracts\DatabaseHandler;
 
 class MessageController
 {

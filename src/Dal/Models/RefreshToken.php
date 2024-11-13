@@ -8,6 +8,4 @@ class RefreshToken
     public int $userId;
     public ?\DateTimeImmutable $issuedAt;
     public ?\DateTimeImmutable $expiresAt;
-
-    public ?User $user;
 }

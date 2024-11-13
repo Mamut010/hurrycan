@@ -1,6 +1,9 @@
 <?php
 namespace App\Utils;
 
+use App\Constants\Format;
+use App\Support\DateTime\JsonSerializableDateTimeImmutable;
+
 class Converters
 {
     private function __construct() {
@@ -36,7 +39,8 @@ class Converters
     }
 
     public static function timestampToDate(int $timestamp, \DateTimeZone $timezone = null): \DateTimeImmutable {
-        return \DateTimeImmutable::createFromFormat('U', $timestamp, $timezone);
+        $formattedDate = date(Format::ISO_8601_DATE, $timestamp);
+        return new JsonSerializableDateTimeImmutable($formattedDate, $timezone);
     }
 
     /**
@@ -58,15 +62,55 @@ class Converters
         return $result;
     }
 
-    public static function arrayToObject(array $array, string|object $objOrClass, array $ctorArgs = null): object|false {
+    /**
+     * @template T of object
+     * @param array<string,mixed> $array
+     * @param class-string<T>|T $objOrClass
+     * @return T
+     */
+    public static function arrayToObject(
+        array $array,
+        string|object $objOrClass,
+        array $propSetters = null,
+        array $ctorArgs = null): object|false {
+        $propSetters ??= [];
         $valueChecker = fn(string $propName) => array_key_exists($propName, $array);
-        $valueGetter = fn(string $propName) => $array[$propName];
+        $valueGetter = function (string $propName) use ($array, $propSetters) {
+            $value = Arrays::getOrDefaultExists($array, $propName);
+            $setter = Arrays::getOrDefault($propSetters, $propName);
+            if ($setter) {
+                return call_user_func($setter, $value, $propName);
+            }
+            else {
+                return $value;
+            }
+        };
         return static::createAndInitObjectValues($valueChecker, $valueGetter, $objOrClass, $ctorArgs);
     }
 
-    public static function instanceToObject(object $instance, string|object $objOrClass, array $ctorArgs = null): object|false {
+    /**
+     * @template T of object
+     * @param object $instance
+     * @param class-string<T>|T $objOrClass
+     * @return T
+     */
+    public static function instanceToObject(
+        object $instance,
+        string|object $objOrClass,
+        array $propSetters = null,
+        array $ctorArgs = null): object|false {
+        $propSetters ??= [];
         $valueChecker = fn(string $propName) => property_exists($instance, $propName);
-        $valueGetter = fn(string $propName) => $instance->{$propName};
+        $valueGetter = function (string $propName) use ($instance, $propSetters) {
+            $value = property_exists($instance, $propName) ? $instance->{$propName} : null;
+            $setter = Arrays::getOrDefault($propSetters, $propName);
+            if ($setter) {
+                return call_user_func($setter, $value, $propName);
+            }
+            else {
+                return $value;
+            }
+        };
         return static::createAndInitObjectValues($valueChecker, $valueGetter, $objOrClass, $ctorArgs);
     }
 
@@ -93,59 +137,5 @@ class Converters
             }
         }
         return $obj;
-    }
-
-    /**
-     * @param array<string,mixed> $arr
-     * @param string $modelClass
-     * @param ?array<string,\Closure(mixed $value, string $propName, string $key):string> $valueSetters
-     * @param ?array<string,\Closure(string $propName, string $orgKey):string> $keyMappers
-     */
-    public static function sqlAssocArrayToModel(
-        array $arr,
-        string $modelClass,
-        array $valueGetters = null,
-        array $keyMappers = null): object|false {
-        $instance = Reflections::instantiateClass($modelClass);
-        if (!$instance) {
-            return false;
-        }
-
-        $valueGetters ??= [];
-        $keyMappers ??= [];
-
-        $reflector = new \ReflectionObject($instance);
-        $props = $reflector->getProperties(\ReflectionProperty::IS_PUBLIC);
-        foreach ($props as $prop) {
-            $propName = $prop->getName();
-            $key = static::camelToSnake($propName);
-            if (isset($keyMappers[$propName])) {
-                $keyMapper = $keyMappers[$propName];
-                $key = call_user_func($keyMapper, $propName, $key);
-            }
-
-            if (!array_key_exists($key, $arr)) {
-                if (!$prop->isInitialized($instance) && !$prop->getType()?->allowsNull()) {
-                    throw new \UnexpectedValueException(
-                        "Unable to assign value for property [$prop] in model [$modelClass]"
-                    );
-                }
-                elseif ($prop->getType()?->allowsNull()) {
-                    $instance->{$propName} = null;
-                }
-                continue;
-            }
-
-            $value = $arr[$key];
-            $getter = Arrays::getOrDefaultExists($valueGetters, $propName);
-            if (!$getter) {
-                $instance->{$propName} = $value;
-            }
-            else {
-                $newValue = call_user_func($getter, $value, $propName, $key);
-                $instance->{$propName} = $newValue;
-            }
-        }
-        return $instance;
     }
 }

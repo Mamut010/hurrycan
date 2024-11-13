@@ -8,6 +8,11 @@ class Arrays
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
 
+    /**
+     * @template T
+     * @param T $value
+     * @return T|T[]
+     */
     public static function asArray(mixed $value) {
         if (!is_array($value)) {
             $value = [$value];
@@ -27,37 +32,73 @@ class Arrays
         return !empty(array_intersect($array, ...$arrays));
     }
 
+    /**
+     * @template T
+     * @template U
+     * @param array<int|string,T> $array
+     * @param int|string $key
+     * @param U $default
+     * @return T|U
+     */
     public static function getOrDefault(array $array, int|string $key, mixed $default = null) {
         return isset($array[$key]) ? $array[$key] : $default;
     }
 
+    /**
+     * @template T
+     * @template U
+     * @param array<int|string,T> $array
+     * @param int|string $key
+     * @param U $default
+     * @return T|U
+     */
     public static function getOrDefaultExists(array $array, int|string $key, mixed $default = null) {
         return array_key_exists($key, $array) ? $array[$key] : $default;
     }
 
+    /**
+     * @template T
+     * @template U
+     * @param array<int|string,T> $array
+     * @param U[] ...$arrays
+     * @return T[]
+     */
     public static function diffReindex(array $array, array ...$arrays) {
         return array_values(array_diff($array, ...$arrays));
     }
 
+    /**
+     * @template T
+     * @template U
+     * @param array<int|string,T> $array
+     * @param callable(TValue): bool|callable(TValue, TKey): bool|null $callback [optional]
+     * @param int $mode [optional]
+     * @return T[]
+     */
     public static function filterReindex(array $array, ?callable $callback, int $mode = 0) {
         return array_values(array_filter($array, $callback, $mode));
     }
 
+    /**
+     * @template TKey
+     * @template TValue
+     * @param array<TKey,TValue> $array
+     * @param mixed[] $keys
+     * @return array<TKey,TValue>
+     */
     public static function filterKeys(array $array, array $keys) {
         return array_diff_key($array, array_flip($keys));
     }
 
+    /**
+     * @template TKey
+     * @template TValue
+     * @param array<TKey,TValue> $array
+     * @param mixed[] $keys
+     * @return array<TKey,TValue>
+     */
     public static function retainKeys(array $array, array $keys) {
         return array_intersect_key($array, array_flip($keys));
-    }
-
-    public static function find(array $array, callable $predicate) {
-        foreach ($array as $key => $value) {
-            if (call_user_func($predicate, $value) === true) {
-                return $key;
-            }
-        }
-        return false;
     }
 
     /**
@@ -94,6 +135,15 @@ class Arrays
         }, array_keys($array));
     }
 
+    /**
+     * @template TKey
+     * @template TValue
+     * @template TKeyConverted of int|string
+     * @param array<TKey,TValue> $array
+     * @param callable(TKey,TValue):TKeyConverted $converter
+     * @param int $depth [optional]
+     * @return array<TKeyConverted,TValue>
+     */
     public static function convertKeys(array $array, callable $converter, int $depth = PHP_INT_MAX): array {
         if ($depth < 0) {
             return $array;

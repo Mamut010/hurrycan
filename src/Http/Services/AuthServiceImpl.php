@@ -120,13 +120,7 @@ class AuthServiceImpl implements AuthService
             return false;
         }
 
-        /**
-         * @var RefreshTokenPayloadDto
-         */
         $payload = Converters::arrayToObject($tokenContent->payload, RefreshTokenPayloadDto::class);
-        /**
-         * @var RefreshTokenClaims
-         */
         $claims = Converters::instanceToObject($tokenContent->claims, RefreshTokenClaims::class);
         
         $jti = Converters::uuidToBinary($claims->jti);

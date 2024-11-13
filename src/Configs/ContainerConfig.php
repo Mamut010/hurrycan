@@ -4,13 +4,15 @@ namespace App\Configs;
 use App\Core\Di\Contracts\DiContainer;
 use App\Core\Di\InjectionContext;
 use App\Dal\Contracts\UserRepo;
-use App\Core\Dal\DatabaseHandler;
-use App\Core\Dal\Impl\MysqlDatabaseHandler;
+use App\Core\Dal\Contracts\DatabaseHandler;
+use App\Core\Dal\Contracts\PlainModelMapper;
+use App\Core\Dal\DatabaseHandlers\MysqlDatabaseHandler;
+use App\Core\Dal\Contracts\PlainTransformer;
+use App\Core\Dal\PlainModelMappers\KeyConvertedPlainModelMapper;
+use App\Core\Dal\PlainTransformers\AttributeBasedPlainTransformer;
 use App\Dal\Contracts\RefreshTokenRepo;
 use App\Dal\Repos\RefreshTokenRepoImpl;
 use App\Dal\Repos\UserRepoImpl;
-use App\Dal\Transformer\DefaultPlainTransformer;
-use App\Dal\Transformer\PlainTransformer;
 use App\Http\Contracts\AuthService;
 use App\Http\Services\AuthServiceImpl;
 use App\Support\Csrf\CsrfHandler;
@@ -39,10 +41,12 @@ class ContainerConfig
             })
             ->inSingletonScope();
 
+        $container->bind(PlainModelMapper::class)->to(KeyConvertedPlainModelMapper::class);
+        $container ->bind(PlainTransformer::class) ->to(AttributeBasedPlainTransformer::class);
+
         $container->bind(JwtHandler::class)->to(StandardJwtHandler::class);
         $container->bind(CsrfHandler::class)->to(HmacCsrfHandler::class);
 
-        $container->bind(PlainTransformer::class)->to(DefaultPlainTransformer::class);
         $container->bind(UserRepo::class)->to(UserRepoImpl::class);
         $container->bind(RefreshTokenRepo::class)->to(RefreshTokenRepoImpl::class);
 

@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Dal\Traits;
 
+use App\Constants\Format;
 use App\Core\Exceptions\DatabaseException;
 
 trait MySqliQueryable
@@ -109,7 +110,8 @@ trait MySqliQueryable
                 $types[] = static::PARAM_TYPE_INT;
             }
             elseif ($param instanceof \DateTimeInterface) {
-                $boundParams[] = $param->format('Y-m-d H:i:s');
+                $mysqlDateFormat = Format::MYSQL_DATE_TIME;
+                $boundParams[] = $param->format($mysqlDateFormat);
                 $types[] = static::PARAM_TYPE_STRING;
             }
             elseif (isToStringable($param)) {

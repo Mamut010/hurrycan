@@ -1,6 +1,11 @@
 <?php
 namespace App\Dal\Dtos;
 
+use App\Core\Dal\Attributes\RefBase;
+use App\Core\Dal\Attributes\RefType;
+use App\Dal\Models\RefreshToken;
+
+#[RefBase(RefreshToken::class)]
 class RefreshTokenDto
 {
     public string $jti;
@@ -9,5 +14,6 @@ class RefreshTokenDto
     public ?\DateTimeImmutable $issuedAt;
     public ?\DateTimeImmutable $expiresAt;
 
-    public ?UserDto $user;
+    #[RefType(UserDto::class)]
+    public UserDto $user;
 }

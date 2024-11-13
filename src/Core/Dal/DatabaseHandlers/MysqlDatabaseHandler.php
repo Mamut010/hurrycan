@@ -1,7 +1,7 @@
 <?php
-namespace App\Core\Dal\Impl;
+namespace App\Core\Dal\DatabaseHandlers;
 
-use App\Core\Dal\DatabaseHandler;
+use App\Core\Dal\Contracts\DatabaseHandler;
 use App\Core\Dal\Traits\MySqliQueryable;
 use App\Core\Exceptions\DatabaseException;
 
