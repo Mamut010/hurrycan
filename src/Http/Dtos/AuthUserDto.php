@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Dtos;
 
+use App\Constants\Role;
+
 /**
  * Represents the current authorized user processed by AuthUserMiddleware.\
  * Adding the AuthUserMiddleware to the route chain will make an instance
@@ -11,5 +13,5 @@ class AuthUserDto
 {
     public int $id;
     public string $name;
-    public string $role;
+    public Role $role;
 }

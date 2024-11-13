@@ -10,7 +10,12 @@ class Dates
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
 
-    public static function isDateTime(\ReflectionType $type): bool {
+    public static function isDateTime(\ReflectionProperty|\ReflectionType $propOrType): bool {
+        $type = $propOrType instanceof \ReflectionProperty ? $propOrType->getType() : $propOrType;
+        if (!$type) {
+            return false;
+        }
+
         $typeName = Reflections::getTypeName($type);
         if ($typeName === false) {
             return false;

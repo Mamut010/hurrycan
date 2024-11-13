@@ -68,6 +68,23 @@ class Reflections
         return in_array($arrayType, array_map(fn(\ReflectionNamedType $t) => $t->getName(), $types));
     }
 
+    public static function isBackedEnum(\ReflectionType $type): string|false
+    {
+        $typeNames = static::getTypeName($type);
+        if ($typeNames === false) {
+            return false;
+        }
+
+        $typeNames = Arrays::asArray($typeNames);
+        foreach ($typeNames as $typeName) {
+            if (is_subclass_of($typeName, \BackedEnum::class)) {
+                return $typeName;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @template T of object
      * @param class-string<T> $class

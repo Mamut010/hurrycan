@@ -86,48 +86,71 @@ trait MySqliQueryable
     /**
      * Blobs are not sent yet at this stage
      */
-    private function getTypesFromParams(array $params, array &$boundParams = null) { //NOSONAR
+    private function getTypesFromParams(array $params, array &$boundParams = null) {
         $boundParams = [];
         $types = [];
         $i = 0;
         foreach ($params as $param) {
-            if (is_string($param)) {
-                if (strlen($param) <= $this->blobThreshold) {
-                    $boundParams[] = $param;
-                    $types[] = static::PARAM_TYPE_STRING;
-                }
-                else {
-                    $boundParams[] = null;
-                    $types[] = static::PARAM_TYPE_BLOB;
-                }
-            }
-            elseif (is_numeric($param)) {
-                $boundParams[] = $param;
-                $types[] = is_int($param) ? static::PARAM_TYPE_INT : static::PARAM_TYPE_FLOAT;
-            }
-            elseif (is_bool($param)) {
-                $boundParams[] = intval($param);
-                $types[] = static::PARAM_TYPE_INT;
-            }
-            elseif ($param instanceof \DateTimeInterface) {
-                $mysqlDateFormat = Format::MYSQL_DATE_TIME;
-                $boundParams[] = $param->format($mysqlDateFormat);
-                $types[] = static::PARAM_TYPE_STRING;
-            }
-            elseif (isToStringable($param)) {
-                $boundParams[] = strval($param);
-                $types[] = static::PARAM_TYPE_STRING;
-            }
-            elseif (is_null($param)) {
-                $boundParams[] = null;
-                $types[] = static::PARAM_TYPE_STRING;
-            }
-            else {
+            if (!$this->getTypesPrimitiveCases($param, $boundParams, $types)
+                && !$this->getTypesSpecialCases($param, $boundParams, $types)) {
                 throw new \InvalidArgumentException("Unexpected unbindable param #$i");
             }
             $i++;
         }
         return $types;
+    }
+
+    private function getTypesPrimitiveCases(mixed $param, array &$boundParams, array &$types): bool {
+        $handled = false;
+        if (is_string($param)) {
+            if (strlen($param) <= $this->blobThreshold) {
+                $boundParams[] = $param;
+                $types[] = static::PARAM_TYPE_STRING;
+            }
+            else {
+                $boundParams[] = null;
+                $types[] = static::PARAM_TYPE_BLOB;
+            }
+            $handled = true;
+        }
+        elseif (is_numeric($param)) {
+            $boundParams[] = $param;
+            $types[] = is_int($param) ? static::PARAM_TYPE_INT : static::PARAM_TYPE_FLOAT;
+            $handled = true;
+        }
+        elseif (is_bool($param)) {
+            $boundParams[] = intval($param);
+            $types[] = static::PARAM_TYPE_INT;
+            $handled = true;
+        }
+        return $handled;
+    }
+
+    private function getTypesSpecialCases(mixed $param, array &$boundParams, array &$types): bool {
+        $handled = false;
+        if ($param instanceof \DateTimeInterface) {
+            $mysqlDateFormat = Format::MYSQL_DATE_TIME;
+            $boundParams[] = $param->format($mysqlDateFormat);
+            $types[] = static::PARAM_TYPE_STRING;
+            $handled = true;
+        }
+        elseif ($param instanceof \BackedEnum) {
+            $value = $param->value;
+            $boundParams[] = $value;
+            $types[] = is_string($value) ? static::PARAM_TYPE_STRING : static::PARAM_TYPE_INT;
+            $handled = true;
+        }
+        elseif (isToStringable($param)) {
+            $boundParams[] = strval($param);
+            $types[] = static::PARAM_TYPE_STRING;
+            $handled = true;
+        }
+        elseif (is_null($param)) {
+            $boundParams[] = null;
+            $types[] = static::PARAM_TYPE_STRING;
+            $handled = true;
+        }
+        return $handled;
     }
 
     /**

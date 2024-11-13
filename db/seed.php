@@ -31,6 +31,18 @@ function valueOrNull($value) {
     }
 }
 
+function getRole(int $i) {
+    if ($i <= 2) {
+        return 'Admin';
+    }
+    elseif ($i <= 5) {
+        return 'Shop';
+    }
+    else {
+        return 'Customer';
+    }
+}
+
 $insertMessagesQuery = "INSERT INTO message (message) VALUES ('message-0'), ('message-1'), ('message-2')";
 $insertUsersQuery = 'INSERT INTO user (name, email, username, password, role) VALUES ';
 
@@ -40,7 +52,7 @@ for ($i = 1; $i <= 10; $i++) {
     $email = valueOrNull($i <= 7 ? "user$i@example.com" : null);
     $username = valueOrNull("username$i");
     $password = valueOrNull(password_hash("password$i", PASSWORD_DEFAULT));
-    $role = valueOrNull($i <= 3 ? 'Admin' : 'User');
+    $role = valueOrNull(getRole($i));
     $value = "($name, $email, $username, $password, $role)";
     $users[] = $value;
 }

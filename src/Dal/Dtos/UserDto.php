@@ -1,6 +1,7 @@
 <?php
 namespace App\Dal\Dtos;
 
+use App\Constants\Role;
 use App\Core\Dal\Attributes\RefBase;
 use App\Dal\Models\User;
 
@@ -12,7 +13,7 @@ class UserDto
     public ?string $email;
     public string $username;
     public string $password;
-    public string $role;
+    public Role $role;
     public ?\DateTimeImmutable $createdAt;
     public ?\DateTimeImmutable $updatedAt;
 }

@@ -10,8 +10,9 @@ class Arrays
 
     /**
      * @template T
-     * @param T $value
-     * @return T|T[]
+     * @template TArray of array
+     * @param TArray|T $value
+     * @return TArray|T[]
      */
     public static function asArray(mixed $value) {
         if (!is_array($value)) {

@@ -4,10 +4,12 @@ namespace App\Configs;
 use App\Constants\HttpCode;
 use App\Core\Http\Request\Request;
 use App\Core\Routing\Contracts\RouteBuilder;
+use App\Dal\Contracts\RefreshTokenRepo;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MemeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UserController;
+use App\Utils\Converters;
 
 class RouteConfig
 {
@@ -324,6 +326,15 @@ class RouteConfig
             $route->get('download', fn() => response()->download(static::$imageName)),
             $route->get('display', fn() => response()->file(static::$imageName)),
         ]);
+
+        
+        $route->get('/users/{userId}/tokens', function (int $userId, RefreshTokenRepo $refreshTokenRepo) {
+            $tokens = $refreshTokenRepo->findManyByUserId($userId);
+            foreach ($tokens as $token) {
+                $token->jti = Converters::binaryToUuid($token->jti);
+            }
+            return response()->json($tokens);
+        })->whereNumber('userId');
     }
 
     private static string $filename = "resources/files/sample.pdf";

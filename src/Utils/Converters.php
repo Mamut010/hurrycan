@@ -2,6 +2,7 @@
 namespace App\Utils;
 
 use App\Constants\Format;
+use App\Support\DateTime\JsonSerializableDateTime;
 use App\Support\DateTime\JsonSerializableDateTimeImmutable;
 
 class Converters
@@ -43,6 +44,11 @@ class Converters
         return new JsonSerializableDateTimeImmutable($formattedDate, $timezone);
     }
 
+    public static function timestampToMutableDate(int $timestamp, \DateTimeZone $timezone = null): \DateTime {
+        $formattedDate = date(Format::ISO_8601_DATE, $timestamp);
+        return new JsonSerializableDateTime($formattedDate, $timezone);
+    }
+
     /**
      * Convert a given object or array into an array.
      * @param array|object $data The converted object or array
@@ -66,7 +72,7 @@ class Converters
      * @template T of object
      * @param array<string,mixed> $array
      * @param class-string<T>|T $objOrClass
-     * @return T
+     * @return T|false
      */
     public static function arrayToObject(
         array $array,
@@ -75,14 +81,15 @@ class Converters
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
         $valueChecker = fn(string $propName) => array_key_exists($propName, $array);
-        $valueGetter = function (string $propName) use ($array, $propSetters) {
+        $valueGetter = function (\ReflectionProperty $prop) use ($array, $propSetters) {
+            $propName = $prop->getName();
             $value = Arrays::getOrDefaultExists($array, $propName);
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
                 return call_user_func($setter, $value, $propName);
             }
             else {
-                return $value;
+                return static::defaultPropSetter($value, $prop);
             }
         };
         return static::createAndInitObjectValues($valueChecker, $valueGetter, $objOrClass, $ctorArgs);
@@ -92,7 +99,7 @@ class Converters
      * @template T of object
      * @param object $instance
      * @param class-string<T>|T $objOrClass
-     * @return T
+     * @return T|false
      */
     public static function instanceToObject(
         object $instance,
@@ -101,14 +108,15 @@ class Converters
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
         $valueChecker = fn(string $propName) => property_exists($instance, $propName);
-        $valueGetter = function (string $propName) use ($instance, $propSetters) {
+        $valueGetter = function (\ReflectionProperty $prop) use ($instance, $propSetters) {
+            $propName = $prop->getName();
             $value = property_exists($instance, $propName) ? $instance->{$propName} : null;
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
-                return call_user_func($setter, $value, $propName);
+                return call_user_func($setter, $value, $prop);
             }
             else {
-                return $value;
+                return static::defaultPropSetter($value, $prop);
             }
         };
         return static::createAndInitObjectValues($valueChecker, $valueGetter, $objOrClass, $ctorArgs);
@@ -130,12 +138,45 @@ class Converters
         foreach ($props as $prop) {
             $propName = $prop->getName();
             if (call_user_func($valueChecker, $propName)) {
-                $obj->{$propName} = call_user_func($valueGetter, $propName);
+                $obj->{$propName} = call_user_func($valueGetter, $prop);
             }
             elseif (!$prop->isInitialized($obj) && $prop->getType()?->allowsNull()) {
                 $obj->{$propName} = null;
             }
         }
         return $obj;
+    }
+
+    private static function defaultPropSetter(mixed $value, \ReflectionProperty $prop) { // NOSONAR
+        $propType = $prop->getType();
+        if (!$propType) {
+            return $value;
+        }
+
+        $result = null;
+        if (Dates::isDateTime($propType) && (is_string($value) || is_int($value))) {
+            $isImmutable = Dates::isImmutableDateAssignable($propType);
+            if ($isImmutable) {
+                $result = is_int($value)
+                    ? static::timestampToDate($value)
+                    : new JsonSerializableDateTimeImmutable($value);
+            }
+            else {
+                $result = is_int($value)
+                    ? static::timestampToMutableDate($value)
+                    : new JsonSerializableDateTime($value);
+            }
+        }
+
+        if (($enumClass = Reflections::isBackedEnum($propType)) && (is_string($value) || is_int($value))) {
+            try {
+                $result = $enumClass::from($value);
+            }
+            catch (\ValueError $e) {
+                // Ignore this case
+            }
+        }
+
+        return $result ?? $value;
     }
 }

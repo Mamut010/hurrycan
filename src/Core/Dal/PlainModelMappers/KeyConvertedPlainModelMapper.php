@@ -71,15 +71,30 @@ class KeyConvertedPlainModelMapper implements PlainModelMapper
     }
 
     private function assignValueToProp(object $instance, \ReflectionProperty $prop, mixed $value) {
-        $propName = $prop->getName();
+        if ($value === null || !$this->assignValueToPropSpecialCases($instance, $prop, $value)) {
+            $propName = $prop->getName();
+            $instance->{$propName} = $value;
+        }
+    }
+
+    private function assignValueToPropSpecialCases(object $instance, \ReflectionProperty $prop, mixed $value) {
         $propType = $prop->getType();
-        if ($value !== null && $propType && Dates::isDateTime($propType)) {
+        if (!$propType) {
+            return false;
+        }
+
+        $propName = $prop->getName();
+        $handled = false;
+        if (Dates::isDateTime($propType)) {
             $instance->{$propName} = Dates::isImmutableDateAssignable($propType)
                 ? new JsonSerializableDateTimeImmutable($value)
                 : new JsonSerializableDateTime($value);
+            $handled = true;
         }
-        else {
-            $instance->{$propName} = $value;
+        elseif ($enumClass = Reflections::isBackedEnum($propType)) {
+            $instance->{$propName} = $enumClass::from($value);
+            $handled = true;
         }
+        return $handled;
     }
 }
