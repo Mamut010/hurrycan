@@ -4,27 +4,34 @@ namespace App\Core\Http\Middleware\Impl;
 use App\Core\Di\Exceptions\CycleDetectedException;
 use App\Core\Http\Middleware\ErrorMiddleware;
 use App\Core\Http\Middleware\Middleware;
-use App\Core\Http\Middleware\MiddlewareStack;
+use App\Core\Http\Middleware\MiddlewareChain;
 use App\Support\Collection\ArrayMultiMap;
 use App\Support\Collection\MultiMap;
 use App\Utils\Arrays;
 use App\Utils\Reflections;
 
-class MiddlewareArrayStack implements MiddlewareStack
+class MiddlewareArrayChain implements MiddlewareChain
 {
     /**
-     * @var string[]
+     * @var class-string<Middleware>[]
      */
     private array $middlewares;
 
     private MultiMap $namedMiddlewares;
 
+    /**
+     * @var class-string<ErrorMiddleware>
+     */
     private string $errorMiddleware;
 
+    /**
+     * @template T of ErrorMiddleware
+     * @param class-string<T> $errorMiddleware
+     */
     public function __construct(string $errorMiddleware) {
         $this->middlewares = [];
         $this->namedMiddlewares = new ArrayMultiMap();
-        $this->errorMiddleware = Reflections::ensureValidImplementation($errorMiddleware, ErrorMiddleware::class);
+        $this->errorMiddleware = Reflections::assertValidImplementation($errorMiddleware, ErrorMiddleware::class);
     }
 
     #[\Override]
@@ -72,7 +79,7 @@ class MiddlewareArrayStack implements MiddlewareStack
             $middlewares = $this->getMiddlewaresByName($middleware);
             if ($middlewares === false) {
                 $middlewares = Arrays::asArray($middleware);
-                $middlewares = Reflections::ensureValidImplementations($middlewares, Middleware::class);
+                $middlewares = Reflections::assertValidImplementations($middlewares, Middleware::class);
             }
             array_push($values, ...$middlewares);
         }
@@ -86,7 +93,7 @@ class MiddlewareArrayStack implements MiddlewareStack
             $values = $this->getMiddlewaresByName($value);
             if ($values === false) {
                 $values = Arrays::asArray($value);
-                $values = Reflections::ensureValidImplementations($values, Middleware::class);
+                $values = Reflections::assertValidImplementations($values, Middleware::class);
                 if (is_string($key)) {
                     $this->namedMiddlewares->set($key, $values);
                 }
@@ -98,13 +105,13 @@ class MiddlewareArrayStack implements MiddlewareStack
 
     #[\Override]
     public function useError(string $errorMiddleware): static {
-        $this->errorMiddleware = Reflections::ensureValidImplementation($errorMiddleware, ErrorMiddleware::class);
+        $this->errorMiddleware = Reflections::assertValidImplementation($errorMiddleware, ErrorMiddleware::class);
         return $this;
     }
 
     #[\Override]
     public function append(string $middleware, ?string $name = null): static {
-        $this->middlewares[] = Reflections::ensureValidImplementation($middleware, Middleware::class);
+        $this->middlewares[] = Reflections::assertValidImplementation($middleware, Middleware::class);
         if ($name !== null) {
             $this->namedMiddlewares->putIfAbsent($name, $middleware);
         }
@@ -113,7 +120,7 @@ class MiddlewareArrayStack implements MiddlewareStack
     
     #[\Override]
     public function prepend(string $middleware, ?string $name = null): static {
-        array_unshift($this->middlewares, Reflections::ensureValidImplementation($middleware, Middleware::class));
+        array_unshift($this->middlewares, Reflections::assertValidImplementation($middleware, Middleware::class));
         if ($name !== null) {
             $this->namedMiddlewares->putIfAbsent($name, $middleware);
         }

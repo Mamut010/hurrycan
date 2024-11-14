@@ -48,14 +48,20 @@ class KeyConvertedPlainModelMapper implements PlainModelMapper
                 $key = call_user_func($keyMapper, $key, $propName);
             }
 
-            if (!array_key_exists($key, $plain)) {
+            $getter = Arrays::getOrDefaultExists($valueGetters, $propName);
+            $plainHasKey = array_key_exists($key, $plain);
+            if (!$plainHasKey && !$getter) {
+                continue;
+            }
+            elseif (!$plainHasKey) {
+                $value = call_user_func($getter, null, $propName, $key);
+                $instance->{$propName} = $value;
                 continue;
             }
 
             $value = $plain[$key];
-            $getter = Arrays::getOrDefaultExists($valueGetters, $propName);
             if ($getter) {
-                $newValue = call_user_func($getter, $value, $key, $propName);
+                $newValue = call_user_func($getter, $value, $propName, $key);
                 $instance->{$propName} = $newValue;
                 continue;
             }

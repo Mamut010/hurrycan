@@ -17,10 +17,10 @@ use App\Core\Http\Cookie\CookieSigner;
 use App\Core\Http\Cookie\CookieWriter;
 use App\Core\Http\Cookie\PhpCookieQueue;
 use App\Core\Http\Middleware\Impl\DefaultErrorMiddleware;
-use App\Core\Http\Middleware\Impl\MiddlewareArrayStack;
+use App\Core\Http\Middleware\Impl\MiddlewareArrayChain;
 use App\Core\Http\Middleware\MiddlewareNamedCollection;
 use App\Core\Http\Middleware\ReadonlyMiddlewareNamedCollection;
-use App\Core\Http\Middleware\MiddlewareStack;
+use App\Core\Http\Middleware\MiddlewareChain;
 use App\Core\Http\Request\HttpRequest;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Request\RequestGlobalCollection;
@@ -84,15 +84,15 @@ class AppProvider
             ->to(Router::class);
 
         $container
-            ->bind(MiddlewareStack::class)
-            ->toFactory(fn () => new MiddlewareArrayStack(DefaultErrorMiddleware::class))
+            ->bind(MiddlewareChain::class)
+            ->toFactory(fn () => new MiddlewareArrayChain(DefaultErrorMiddleware::class))
             ->inSingletonScope();
         $container
             ->bind(MiddlewareNamedCollection::class)
-            ->to(MiddlewareStack::class);
+            ->to(MiddlewareChain::class);
         $container
             ->bind(ReadonlyMiddlewareNamedCollection::class)
-            ->to(MiddlewareStack::class);
+            ->to(MiddlewareChain::class);
         
         $container
             ->bind(GlobalCollection::class)
@@ -160,9 +160,9 @@ class AppProvider
 
     private static function configApplication(DiContainer $container) {
         /**
-         * @var MiddlewareStack
+         * @var MiddlewareChain
          */
-        $middlewares = $container->get(MiddlewareStack::class);
+        $middlewares = $container->get(MiddlewareChain::class);
         /**
          * @var RouteBuilder
          */

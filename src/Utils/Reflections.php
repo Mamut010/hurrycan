@@ -108,19 +108,21 @@ class Reflections
      * @template TInteface of object
      * @param class-string<TClass> $class
      * @param class-string<TInterface> $interface
-     * @return bool
+     * @return class-string<TClass>
      */
-    public static function ensureValidImplementation(string $class, string $interface) {
+    public static function assertValidImplementation(string $class, string $interface) {
+        $errorMsg = "Given [$class] does not implement interface [$interface]";
         try {
             $reflector = new \ReflectionClass($class);
-            if (!$reflector->implementsInterface($interface)) {
-                throw new \InvalidArgumentException();
-            }
-            return $class;
         }
-        catch (\Exception $e) {
-            throw new \InvalidArgumentException("Given [$class] does not implement interface [$interface]");
+        catch (\ReflectionException $e) {
+            throw new \InvalidArgumentException($errorMsg, 0, $e);
         }
+
+        if (!$reflector->implementsInterface($interface)) {
+            throw new \InvalidArgumentException($errorMsg);
+        }
+        return $class;
     }
 
     /**
@@ -128,11 +130,11 @@ class Reflections
      * @template TInteface of object
      * @param class-string<TClass>[] $classes
      * @param class-string<TInterface> $interface
-     * @return bool
+     * @return class-string<TClass>[]
      */
-    public static function ensureValidImplementations(array $classes, string $interface) {
+    public static function assertValidImplementations(array $classes, string $interface) {
         foreach ($classes as $class) {
-            static::ensureValidImplementation($class, $interface);
+            static::assertValidImplementation($class, $interface);
         }
         return $classes;
     }
