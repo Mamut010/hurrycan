@@ -12,6 +12,7 @@ $dbPassword = trim($dbPassword);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
+// HELPERS
 $numbers = '0123456789';
 
 function valueOrNull($value) {
@@ -86,12 +87,12 @@ function getRole(int $i) {
     }
 }
 
-$insertMessagesQuery = "INSERT INTO message (message) VALUES ('message-1'), ('message-2'), ('message-3')";
-$insertUsersQuery = 'INSERT INTO user (name, email, username, password, role) VALUES ';
-$insertCustomersQuery = 'INSERT INTO customer (user_id, phone_number) VALUES ';
-$insertShopsQuery = 'INSERT INTO shop (user_id, location, phone_number) VALUES ';
+// INSERTS
+$insertUsersQuery = 'INSERT INTO `user` (name, email, username, password, role) VALUES ';
+$insertCustomersQuery = 'INSERT INTO `customer` (user_id, phone_number) VALUES ';
+$insertShopsQuery = 'INSERT INTO `shop` (user_id, location, phone_number) VALUES ';
 $insertProductsQuery = '
-    INSERT INTO product (name, original_price, price, brief_description, detail_description, shop_id)
+    INSERT INTO `product` (name, original_price, price, brief_description, detail_description, shop_id)
     VALUES
 ';
 
@@ -130,6 +131,7 @@ foreach ($shopIds as $id) {
 $insertShopsQuery .= implode(', ', $shops);
 
 $products = [];
+$productIds = [];
 for ($i = 1; $i <= 10; $i++) {
     $name = valueOrNull("product-$i");
     $originalPrice = valueOrNull(randomOriginalPrice());
@@ -138,18 +140,31 @@ for ($i = 1; $i <= 10; $i++) {
     $detailDescription = valueOrNull(randomString(100));
     $shopId = valueOrNull(randomItem($shopActualIds));
     $value = "($name, $originalPrice, $price, $briefDescription, $detailDescription, $shopId)";
+    $productIds[] = $i;
     $products[] = $value;
 }
 $insertProductsQuery .= implode(', ', $products);
 
-$db->begin_transaction();
-$queries = [
-    $insertMessagesQuery,
+// UPDATES
+$updateProductPriceQueryFormat = 'UPDATE `product` SET `price` = %s WHERE `id` = %d';
+$updateProductPriceQueries = [];
+foreach ($productIds as $productId) {
+    $updateProductPriceQueries[] = sprintf($updateProductPriceQueryFormat, randomPrice(), $productId);
+}
+
+// COMBINING QUERIES
+$insertQueries = [
     $insertUsersQuery,
     $insertCustomersQuery,
     $insertShopsQuery,
     $insertProductsQuery
 ];
+$updateQueries = [...$updateProductPriceQueries];
+
+$queries = array_merge($insertQueries, $updateQueries);
+
+// TRANSACTION
+$db->begin_transaction();
 foreach ($queries as $query) {
     if (!$db->query($query)) {
         echo "Unable to execute query: $query\n";

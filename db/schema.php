@@ -32,14 +32,8 @@ DROP TABLE IF EXISTS shop;
 DROP TABLE IF EXISTS customer;
 DROP TABLE IF EXISTS refresh_token;
 DROP TABLE IF EXISTS user;
-DROP TABLE IF EXISTS message;
 
 -- Create all tables
-CREATE TABLE message (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    message VARCHAR(255) NOT NULL
-);
-
 CREATE TABLE user (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name NVARCHAR(255) NOT NULL UNIQUE,
@@ -81,14 +75,14 @@ CREATE TABLE shop (
 CREATE TABLE product (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name NVARCHAR(255) NOT NULL UNIQUE,
-    original_price DECIMAL(10, 2) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
+    original_price DECIMAL(10, 3) NOT NULL,
+    price DECIMAL(10, 3) NOT NULL,
     brief_description NVARCHAR(500),
     detail_description TEXT,
     shop_id INT NOT NULL,
     -- Redundant fields to improve search speed
-    average_rating DECIMAL(5, 2),
-    discount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    average_rating DECIMAL(3, 2),
+    discount DECIMAL(10, 3) NOT NULL DEFAULT 0,
     --
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -121,7 +115,7 @@ CREATE TABLE purchase_history (
     customer_id INT,
     product_id INT NOT NULL,
     quantity INT NOT NULL,
-    total_price DECIMAL(10, 2) NOT NULL,
+    total_price DECIMAL(10, 3) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (customer_id) REFERENCES customer(id) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -181,7 +175,7 @@ BEGIN
     -- Recalculate the average rating for the product
     UPDATE product
     SET average_rating = (
-        SELECT AVG(rating)
+        SELECT ROUND(AVG(rating), 2)
         FROM feedback
         WHERE product_id = NEW.product_id
     )
@@ -195,7 +189,7 @@ BEGIN
     -- Recalculate the average rating for the product
     UPDATE product
     SET average_rating = (
-        SELECT AVG(rating)
+        SELECT ROUND(AVG(rating), 2)
         FROM feedback
         WHERE product_id = NEW.product_id
     )
@@ -206,10 +200,10 @@ CREATE TRIGGER update_average_rating_after_delete
 AFTER DELETE ON feedback
 FOR EACH ROW
 BEGIN
-    DECLARE new_avg DECIMAL(5, 2);
+    DECLARE new_avg DECIMAL(3, 2);
 
     -- Calculate the new average rating for the product
-    SELECT AVG(rating)
+    SELECT ROUND(AVG(rating), 2)
     INTO new_avg
     FROM feedback
     WHERE product_id = OLD.product_id;
