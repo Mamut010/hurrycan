@@ -43,9 +43,8 @@ class StandardJwtHandler implements JwtHandler
     }
 
     #[\Override]
-    public function verify(string $token, string $key, array &$claims = null): array
+    public function verify(string $token, string $key): JwtContent
     {
-        $claims = [];
         $parts = static::extractTokenParts($token);
         if (!$parts) {
             throw new InvalidTokenException($token, "Given [$token] is not a valid JWT token");
@@ -65,13 +64,12 @@ class StandardJwtHandler implements JwtHandler
         }
 
         static::ensureClaimsCompliance($token, $payload);
-        return $this->recoverPayload($payload, $claims);
+        return $this->getTokenContent($payload);
     }
 
     #[\Override]
-    public function decode(string $token, array &$claims = null): array|false
+    public function decode(string $token): JwtContent|false
     {
-        $claims = [];
         $parts = static::extractTokenParts($token);
         if (!$parts) {
             return false;
@@ -84,7 +82,7 @@ class StandardJwtHandler implements JwtHandler
             return false;
         }
 
-        return $this->recoverPayload($payload, $claims);
+        return $this->getTokenContent($payload);
     }
 
     protected function transformListToAssoc(array $list): array {
@@ -95,39 +93,28 @@ class StandardJwtHandler implements JwtHandler
         return array_merge($payload, $options->toArray());
     }
 
-    protected function recoverPayload(array $payload, array &$claims): array {
+    protected function getTokenContent(array $payload): JwtContent {
         if (array_key_exists(static::LIST_KEY, $payload) && Arrays::isList($payload[static::LIST_KEY])) {
-            return $this->retrieveListPayload($payload, $claims);
+            return $this->getListPayloadTokenContent($payload);
         }
         else {
-            return $this->stripOptionsFromPayload($payload, $claims);
+            return $this->getAssocListPayloadTokenContent($payload);
         }
     }
 
-    protected function retrieveListPayload(array $payload, array &$claims) {
-        $originalPayload = $payload[static::LIST_KEY];
+    protected function getListPayloadTokenContent(array $payload): JwtContent {
+        $tokenContent = new JwtContent();
+        $tokenContent->payload = $payload[static::LIST_KEY];
+        $tokenContent->claims = new JwtOptions($payload);
+        return $tokenContent;
+    }
+
+    protected function getAssocListPayloadTokenContent(array $payload): JwtContent {
         $options = JwtOptions::getOptions();
-        $claims = static::getClaimsInPayload($payload, $options);
-        return $originalPayload;
-    }
-
-    protected function stripOptionsFromPayload(array $payload, array &$claims) {
-        $options = JwtOptions::getOptions();
-        $originalPayload = Arrays::filterKeys($payload, $options);
-        if ($originalPayload !== null) {
-            $claims = static::getClaimsInPayload($payload, $options);
-        }
-        return $originalPayload;
-    }
-
-    private function getClaimsInPayload(array $payload, array $options) {
-        $claims = [];
-        foreach ($options as $option) {
-            if (isset($payload[$option])) {
-                $claims[$option] = $payload[$option];
-            }
-        }
-        return $claims;
+        $tokenContent = new JwtContent();
+        $tokenContent->payload = Arrays::filterKeys($payload, $options);
+        $tokenContent->claims = new JwtOptions($payload);
+        return $tokenContent;
     }
 
     private static function extractTokenParts(string $token) {

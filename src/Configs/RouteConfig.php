@@ -4,10 +4,13 @@ namespace App\Configs;
 use App\Constants\HttpCode;
 use App\Core\Http\Request\Request;
 use App\Core\Routing\Contracts\RouteBuilder;
+use App\Dal\Contracts\RefreshTokenRepo;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MemeController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
+use App\Utils\Converters;
 
 class RouteConfig
 {
@@ -122,7 +125,7 @@ class RouteConfig
             ->prefix('/auth')
             ->group([
                 $route->post('/login', 'login'),
-                $route->post('/logout', 'logout'),
+                $route->post('/logout', 'logout')->middleware('auth'),
                 $route->post('/token', 'reissueTokens'),
             ]);
 
@@ -149,13 +152,23 @@ class RouteConfig
                     $route->get('', 'index'),
                     $route->post('', 'store'),
                 ]),
+
+            $route
+                ->controller(ProductController::class)
+                ->prefix('/products')
+                ->withoutMiddleware('auth') // Testing
+                ->group([
+                    $route->get('', 'index'),
+                    $route->get('/{id}', 'getById')->whereNumber('id'),
+                    $route->get('/shops/{shopId}', 'getByShopId')->whereNumber('shopId'),
+                ]),
         ];
     }
 
     private static function registerTestingRoutes(RouteBuilder $route) { // NOSONAR
         $route->prefix('/testdb')->group([
             $route->prefix('/sp')->group([
-                $route->get('/in', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/in', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test"); // NOSONAR
                     $db->execute("CREATE TABLE test(id INT PRIMARY KEY)"); // NOSONAR
 
@@ -173,7 +186,7 @@ class RouteConfig
                     $result = $db->callProcedure('t', 10);
                     return response()->json($result);
                 }),
-                $route->get('/in-gen', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/in-gen', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test");
                     $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
 
@@ -199,7 +212,7 @@ class RouteConfig
                     }
                     return response()->json($result);
                 }),
-                $route->get('/out', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/out', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test");
                     $db->execute("CREATE TABLE test(id INT PRIMARY KEY)");
 
@@ -220,7 +233,7 @@ class RouteConfig
                 }),
             ]),
             $route->prefix('/transaction')->group([
-                $route->get('/insert', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/insert', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test_transaction");
                     $db->execute("CREATE TABLE test_transaction(id INT PRIMARY KEY)");
 
@@ -241,7 +254,7 @@ class RouteConfig
                 }),
             ]),
             $route->prefix('/file')->group([
-                $route->get('/init', function (\App\Core\Dal\DatabaseHandler $db) {
+                $route->get('/init', function (\App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $db->execute("DROP TABLE IF EXISTS test_file");
                     $db->execute(
                         "CREATE TABLE test_file(
@@ -252,7 +265,7 @@ class RouteConfig
                     );
                     return response()->make('Success');
                 }),
-                $route->post('/upload', function (Request $request, \App\Core\Dal\DatabaseHandler $db) {
+                $route->post('/upload', function (Request $request, \App\Core\Dal\Contracts\DatabaseHandler $db) {
                     $file = $request->file('my-file');
                     if (!$file) {
                         return response()->make('Missing "my-file" file')->statusCode(HttpCode::BAD_REQUEST);
@@ -267,7 +280,7 @@ class RouteConfig
 
                     return $success ? response()->make('Success') : response()->err(HttpCode::CONFLICT, 'Failed');
                 }),
-                $route->get('/download/{id}', function (\App\Core\Dal\DatabaseHandler $db, int $id) {
+                $route->get('/download/{id}', function (\App\Core\Dal\Contracts\DatabaseHandler $db, int $id) {
                     $rows = $db->query('SELECT filename, data FROM test_file WHERE id = (?)', $id);
                     if (empty($rows)) {
                         return response()->err(HttpCode::NOT_FOUND, 'File Not Found');
@@ -277,7 +290,7 @@ class RouteConfig
 
                     return response()->downloadContent($data, $filename);
                 })->whereNumber('id'),
-                $route->get('/display/{id}', function (\App\Core\Dal\DatabaseHandler $db, int $id) {
+                $route->get('/display/{id}', function (\App\Core\Dal\Contracts\DatabaseHandler $db, int $id) {
                     $rows = $db->query('SELECT data FROM test_file WHERE id = (?)', $id);
                     if (empty($rows)) {
                         return response()->err(HttpCode::NOT_FOUND, 'File Not Found');
@@ -324,6 +337,15 @@ class RouteConfig
             $route->get('download', fn() => response()->download(static::$imageName)),
             $route->get('display', fn() => response()->file(static::$imageName)),
         ]);
+
+        
+        $route->get('/users/{userId}/tokens', function (int $userId, RefreshTokenRepo $refreshTokenRepo) {
+            $tokens = $refreshTokenRepo->findManyByUserId($userId);
+            foreach ($tokens as $token) {
+                $token->jti = Converters::binaryToUuid($token->jti);
+            }
+            return response()->json($tokens);
+        })->whereNumber('userId');
     }
 
     private static string $filename = "resources/files/sample.pdf";

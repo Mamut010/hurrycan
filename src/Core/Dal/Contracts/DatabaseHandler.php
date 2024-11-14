@@ -1,5 +1,5 @@
 <?php
-namespace App\Core\Dal;
+namespace App\Core\Dal\Contracts;
 
 interface DatabaseHandler
 {

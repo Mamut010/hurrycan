@@ -1,9 +1,10 @@
 <?php
 namespace App\Http\Dtos;
 
+use App\Constants\Role;
+
 class AccessTokenPayloadDto
 {
-    public int $id;
     public string $name;
-    public string $role;
+    public Role $role;
 }

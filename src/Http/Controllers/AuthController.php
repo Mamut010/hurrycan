@@ -6,13 +6,9 @@ use App\Constants\SameSite;
 use App\Core\Http\Cookie\CookieOptions;
 use App\Core\Http\Request\Request;
 use App\Dal\Contracts\UserRepo;
-use App\Dal\Models\User;
 use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AccessTokenPayloadDto;
-use App\Http\Dtos\AuthUserDto;
-use App\Http\Dtos\RefreshTokenPayloadDto;
 use App\Http\Exceptions\BadRequestException;
-use App\Http\Exceptions\InternalServerErrorException;
 use App\Http\Exceptions\UnauthorizedException;
 use App\Settings\Auth;
 use App\Utils\Converters;
@@ -38,48 +34,44 @@ class AuthController
             throw new UnauthorizedException("Wrong username or password");
         }
         
-        $accessPayload = static::createAccessPayloadFromUser($user);
-        $refreshPayload = static::createRefreshPayloadFromUser($user);
+        $accessPayload = Converters::instanceToObject($user, AccessTokenPayloadDto::class);
 
-        $accessToken = $this->authService->issueAccessToken($accessPayload, $csrfToken);
-        $refreshToken = $this->authService->issueRefreshToken($refreshPayload);
+        $accessTokenIssue = $this->authService->issueAccessToken($user->id, $accessPayload);
+        $refreshTokenIssue = $this->authService->issueRefreshToken($user->id);
+
+        $accessToken = $accessTokenIssue->token;
+        $csrfToken = $accessTokenIssue->csrf;
+        $refreshToken = $refreshTokenIssue->token;
+        $accessTokenExp = $accessTokenIssue->claims->exp;
+        $refreshTokenExp = $refreshTokenIssue->claims->exp;
 
         return response()
                     ->json(['csrf' => $csrfToken])
                     ->cookie(
                         Auth::ACCESS_TOKEN_KEY,
                         $accessToken,
-                        Auth::ACCESS_TOKEN_TTL,
+                        $accessTokenExp,
                         static::createAccessCookieOptions()
                     )
                     ->cookie(
                         Auth::REFRESH_TOKEN_KEY,
                         $refreshToken,
-                        Auth::REFRESH_TOKEN_TTL,
+                        $refreshTokenExp,
                         static::createRefreshCookieOptions()
                     );
     }
 
-    public function logout() {
+    public function logout(Request $request) {
+        $refreshToken = $request->cookie(Auth::REFRESH_TOKEN_KEY);
+        if ($refreshToken === false) {
+            throw new UnauthorizedException("Embedded credential not found");
+        }
+        $this->authService->deleteRefreshToken($refreshToken);
         return response()
                     ->make()
                     ->statusCode(HttpCode::NO_CONTENT)
                     ->withoutCookie(Auth::ACCESS_TOKEN_KEY, static::createAccessCookieOptions())
                     ->withoutCookie(Auth::REFRESH_TOKEN_KEY, static::createRefreshCookieOptions());
-    }
-
-    private static function createAccessPayloadFromUser(User $user) {
-        $payload = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'role' => $user->role,
-        ];
-        return Converters::arrayToObject($payload, AccessTokenPayloadDto::class);
-    }
-
-    private static function createRefreshPayloadFromUser(User $user) {
-        $payload = ['id' => $user->id];
-        return Converters::arrayToObject($payload, RefreshTokenPayloadDto::class);
     }
 
     private static function createAccessCookieOptions() {
@@ -102,38 +94,36 @@ class AuthController
     public function reissueTokens(Request $request) {
         $refreshToken = $request->cookie(Auth::REFRESH_TOKEN_KEY);
         if ($refreshToken === false) {
-            throw new UnauthorizedException("Refresh token not found");
+            throw new UnauthorizedException("Embedded credential not found");
         }
 
-        $payload = $this->authService->verifyRefreshToken($refreshToken);
-        if (!$payload) {
-            throw new UnauthorizedException("Invalid refresh token");
+        $refreshTokenVerifying = $this->authService->verifyRefreshToken($refreshToken);
+        if (!$refreshTokenVerifying) {
+            throw new UnauthorizedException("Invalid embedded credential");
         }
 
-        $user = $this->userRepo->findOneById($payload->id);
-        if (!$user) {
-            return response()->err(HttpCode::NOT_FOUND, "User information not found");
-        }
+        $user = $refreshTokenVerifying->user;
+        $payload = Converters::instanceToObject($user, AccessTokenPayloadDto::class);
+        $accessTokenIssue = $this->authService->issueAccessToken($user->id, $payload);
 
-        $payload = static::createAccessPayloadFromUser($user);
-        $accessToken = $this->authService->issueAccessToken($payload, $csrfToken);
-        $newRefreshToken = $this->authService->increaseRefreshSeq($refreshToken);
-        if (!$newRefreshToken) {
-            throw new InternalServerErrorException('Unable to increase sequence number of refresh token');
-        }
+        $accessToken = $accessTokenIssue->token;
+        $csrfToken = $accessTokenIssue->csrf;
+        $refreshToken = $refreshTokenVerifying->newToken;
+        $accessTokenExp = $accessTokenIssue->claims->exp;
+        $refreshTokenExp = $refreshTokenVerifying->claims->exp;
 
         return response()
                     ->json(['csrf' => $csrfToken])
                     ->cookie(
                         Auth::ACCESS_TOKEN_KEY,
                         $accessToken,
-                        Auth::ACCESS_TOKEN_TTL,
+                        $accessTokenExp,
                         static::createAccessCookieOptions()
                     )
                     ->cookie(
                         Auth::REFRESH_TOKEN_KEY,
-                        $newRefreshToken,
-                        Auth::REFRESH_TOKEN_TTL,
+                        $refreshToken,
+                        $refreshTokenExp,
                         static::createRefreshCookieOptions()
                     );
     }

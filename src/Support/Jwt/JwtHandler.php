@@ -18,16 +18,15 @@ interface JwtHandler
      * Verify a JWT token and get the payload.
      * @param string $token The token to verify
      * @param string $key The key to be used for decoding
-     * @param array<string,int|string|string[]> $claims (Optional) The claims in the token
-     * @param array The payload
+     * @return JwtContent The token content
      * @throws JwtException When the decoding or authorization failed
      */
-    function verify(string $token, string $key, array &$claims = null): array;
+    function verify(string $token, string $key): JwtContent;
 
     /**
      * Decode a JWT token payload without verifying the signature and claims.
      * @param string $token The token to decode
-     * @return array|false The payload on success. If the token is malformed, false is returned.
+     * @return JwtContent|false The token content on success. If the token is malformed, false is returned.
      */
-    function decode(string $token, array &$claims = null): array|false;
+    function decode(string $token): JwtContent|false;
 }

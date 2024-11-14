@@ -8,10 +8,11 @@ use App\Core\Http\Request\Request;
 use Closure;
 use App\Core\Http\Response\Response;
 use App\Http\Contracts\AuthService;
+use App\Http\Dtos\AccessTokenClaims;
 use App\Http\Exceptions\ForbiddenException;
 use App\Http\Exceptions\UnauthorizedException;
 use App\Settings\Auth;
-use App\Support\Jwt\JwtClaim;
+use App\Support\Logger\Logger;
 
 class CsrfMiddleware implements Middleware
 {
@@ -24,10 +25,11 @@ class CsrfMiddleware implements Middleware
             return $next();
         }
 
+        $claims = $this->getClaimsFromRequest($request);
         $token = static::getCsrfTokenFromRequest($request);
-        $jti = $this->getJtiFromRequest($request);
-        if (!$this->authService->verifyCsrfToken($token, $jti)) {
-            throw new ForbiddenException('403 Forbidden');
+        if (!$token || !$this->authService->verifyCsrfToken($token, $claims->jti)) {
+            Logger::securityWarning("Potential CSRF attack triggered by user '$claims->sub'");
+            throw new ForbiddenException();
         }
         
         return $next();
@@ -38,23 +40,16 @@ class CsrfMiddleware implements Middleware
     }
 
     private static function getCsrfTokenFromRequest(Request $request) {
-        $token = $request->header(HttpHeader::X_CSRF_TOKEN);
-        if ($token === null) {
-            $token = $request->header(HttpHeader::X_XSRF_TOKEN);
-        }
-        if ($token === null) {
-            throw new ForbiddenException('403 Forbidden');
-        }
-        return $token;
+        return $request->header(HttpHeader::X_CSRF_TOKEN) ?? $request->header(HttpHeader::X_XSRF_TOKEN);
     }
 
-    private function getJtiFromRequest(Request $request): string {
+    private function getClaimsFromRequest(Request $request): AccessTokenClaims {
         $accessToken = $request->cookie(Auth::ACCESS_TOKEN_KEY);
         if ($accessToken === false) {
-            throw new UnauthorizedException('401 Unauthorized');
+            throw new UnauthorizedException();
         }
 
-        $this->authService->decodeToken($accessToken, $claims);
-        return $claims[JwtClaim::JWT_ID];
+        $accessTokenContent = $this->authService->decodeAccessToken($accessToken);
+        return $accessTokenContent->claims;
     }
 }

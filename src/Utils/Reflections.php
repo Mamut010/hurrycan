@@ -7,7 +7,7 @@ class Reflections
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
 
-    public static function isPrimitiveType(mixed $type) {
+    public static function isPrimitiveType(\ReflectionType $type) {
         return $type instanceof \ReflectionNamedType && $type->isBuiltin();
     }
 
@@ -34,11 +34,27 @@ class Reflections
     }
 
     /**
+     * @template T of object
+     * @param class-string<T> $targetAttribute
+     * @return T|false
+     */
+    public static function getAttribute(
+        \ReflectionProperty|\ReflectionClass|\ReflectionParameter|\ReflectionFunctionAbstract|\ReflectionClassConstant $reflector,
+        string $targetAttribute) {
+        
+        $attributes = $reflector->getAttributes($targetAttribute);
+        if (empty($attributes)) {
+            return false;
+        }
+        return $attributes[0]->newInstance();
+    }
+
+    /**
      * @see {@link https://www.php.net/manual/en/reflectionparameter.isarray.php }
      */
-    public static function isArray(\ReflectionParameter $reflectionParameter): bool
+    public static function isArray(\ReflectionParameter|\ReflectionProperty|\ReflectionClassConstant $reflector): bool
     {
-        $reflectionType = $reflectionParameter->getType();
+        $reflectionType = $reflector->getType();
     
         if (!$reflectionType) {
             return false;
@@ -47,10 +63,33 @@ class Reflections
         $types = $reflectionType instanceof \ReflectionUnionType
             ? $reflectionType->getTypes()
             : [$reflectionType];
-    
-       return in_array('array', array_map(fn(\ReflectionNamedType $t) => $t->getName(), $types));
+            
+        $arrayType = 'array';
+        return in_array($arrayType, array_map(fn(\ReflectionNamedType $t) => $t->getName(), $types));
     }
 
+    public static function isBackedEnum(\ReflectionType $type): string|false
+    {
+        $typeNames = static::getTypeName($type);
+        if ($typeNames === false) {
+            return false;
+        }
+
+        $typeNames = Arrays::asArray($typeNames);
+        foreach ($typeNames as $typeName) {
+            if (is_subclass_of($typeName, \BackedEnum::class)) {
+                return $typeName;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @template T of object
+     * @param class-string<T> $class
+     * @return T|false
+     */
     public static function instantiateClass(string $class, mixed ...$args): object|false {
         $reflector = new \ReflectionClass($class);
         if (!$reflector->isInstantiable()) {
@@ -64,6 +103,13 @@ class Reflections
         }
     }
 
+    /**
+     * @template TClass of object
+     * @template TInteface of object
+     * @param class-string<TClass> $class
+     * @param class-string<TInterface> $interface
+     * @return bool
+     */
     public static function ensureValidImplementation(string $class, string $interface) {
         try {
             $reflector = new \ReflectionClass($class);
@@ -78,12 +124,21 @@ class Reflections
     }
 
     /**
-     * @param string[] $classes
+     * @template TClass of object
+     * @template TInteface of object
+     * @param class-string<TClass>[] $classes
+     * @param class-string<TInterface> $interface
+     * @return bool
      */
     public static function ensureValidImplementations(array $classes, string $interface) {
         foreach ($classes as $class) {
             static::ensureValidImplementation($class, $interface);
         }
         return $classes;
+    }
+
+    public static function invokeMethod(object $obj, string $method, mixed ...$args): mixed {
+        $reflectionMethod = new \ReflectionMethod($obj, $method);
+        return $reflectionMethod->invoke($obj, ...$args);
     }
 }

@@ -12,6 +12,7 @@ class GlobalMiddlewareConfig
         $middlewares->use([
             'cors' => \App\Http\Middlewares\CorsMiddleware::class,
             'session' => \App\Http\Middlewares\SessionStartMiddleware::class,
+            'bc' => \App\Http\Middlewares\BcSetupMiddleware::class,
         ]);
 
         $middlewares

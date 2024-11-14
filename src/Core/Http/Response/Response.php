@@ -22,11 +22,11 @@ interface Response
     /**
      * @param string $name
      * @param string $value
-     * @param int $seconds
-     * - Passing a negative seconds will have the same effect as calling withoutCookie()
+     * @param int $expires
+     * - Passing a negative expires will have the same effect as calling withoutCookie()
      *   with the given name and options.
-     * - Passing 0 as seconds will create a session cookie.
-     * - Passing a positive seconds will create a cookie that would expire after the given number of seconds.
+     * - Passing 0 as expires will create a session cookie.
+     * - Passing a positive expires will create a cookie that would expire at the given time (in UNIX timestamp).
      * @param ?CookieOptions $options
      * - path: string
      * - domain: string
@@ -37,7 +37,7 @@ interface Response
     function cookie(
         string $name,
         string $value,
-        int $seconds,
+        int $expires,
         ?CookieOptions $options = null
     ): self;
 
