@@ -81,14 +81,14 @@ CREATE TABLE shop (
 CREATE TABLE product (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name NVARCHAR(255) NOT NULL UNIQUE,
-    original_price DECIMAL NOT NULL,
-    price DECIMAL NOT NULL,
+    original_price DECIMAL(10, 2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
     brief_description NVARCHAR(500),
     detail_description TEXT,
     shop_id INT NOT NULL,
     -- Redundant fields to improve search speed
     average_rating DECIMAL(5, 2),
-    discount DECIMAL NOT NULL DEFAULT 0,
+    discount DECIMAL(10, 2) NOT NULL DEFAULT 0,
     --
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -121,7 +121,7 @@ CREATE TABLE purchase_history (
     customer_id INT,
     product_id INT NOT NULL,
     quantity INT NOT NULL,
-    total_price DECIMAL NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (customer_id) REFERENCES customer(id) ON DELETE SET NULL ON UPDATE CASCADE,

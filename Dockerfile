@@ -20,6 +20,7 @@ RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
     && a2enmod rewrite \
     && docker-php-ext-install \
         mysqli \
+        bcmath \
     && docker-php-ext-enable mysqli
 # Copy custom ini files into conf.d
 COPY ./.docker/php/*.ini /usr/local/etc/php/conf.d/

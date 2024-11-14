@@ -104,7 +104,7 @@ class AttributeBasedPlainTransformingExecution
         if (!$instance) {
             throw new InternalServerErrorException();
         }
-        $built[$class] = $instance;
+        $this->built[$class] = $instance;
 
         foreach ($refTypeCallbacks as $propName => $callback) {
             $instance->{$propName} = call_user_func($callback);

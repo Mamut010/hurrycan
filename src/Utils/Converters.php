@@ -80,7 +80,7 @@ class Converters
         array $propSetters = null,
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
-        $valueChecker = fn(string $propName) => array_key_exists($propName, $array);
+        $valueChecker = fn(\ReflectionProperty $prop) => array_key_exists($prop->getName(), $array);
         $valueGetter = function (\ReflectionProperty $prop) use ($array, $propSetters) {
             $propName = $prop->getName();
             $value = Arrays::getOrDefaultExists($array, $propName);
@@ -107,10 +107,10 @@ class Converters
         array $propSetters = null,
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
-        $valueChecker = fn(string $propName) => property_exists($instance, $propName);
+        $valueChecker = fn(\ReflectionProperty $prop) => isset($instance->{$prop->getName()});
         $valueGetter = function (\ReflectionProperty $prop) use ($instance, $propSetters) {
             $propName = $prop->getName();
-            $value = property_exists($instance, $propName) ? $instance->{$propName} : null;
+            $value = $instance->{$propName};
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
                 return call_user_func($setter, $value, $prop);
@@ -137,7 +137,7 @@ class Converters
         $props = $reflector->getProperties(\ReflectionProperty::IS_PUBLIC);
         foreach ($props as $prop) {
             $propName = $prop->getName();
-            if (call_user_func($valueChecker, $propName)) {
+            if (call_user_func($valueChecker, $prop)) {
                 $obj->{$propName} = call_user_func($valueGetter, $prop);
             }
             elseif (!$prop->isInitialized($obj) && $prop->getType()?->allowsNull()) {

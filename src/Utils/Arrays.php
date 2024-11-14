@@ -33,6 +33,10 @@ class Arrays
         return !empty(array_intersect($array, ...$arrays));
     }
 
+    public static function arrayMergeDistinct(array $array, array ...$arrays) {
+        return array_unique(array_merge($array, ...$arrays));
+    }
+
     /**
      * @template T
      * @template U

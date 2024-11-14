@@ -10,7 +10,9 @@ use App\Core\Dal\DatabaseHandlers\MysqlDatabaseHandler;
 use App\Core\Dal\Contracts\PlainTransformer;
 use App\Core\Dal\PlainModelMappers\KeyConvertedPlainModelMapper;
 use App\Core\Dal\PlainTransformers\AttributeBasedPlainTransformer;
+use App\Dal\Contracts\ProductRepo;
 use App\Dal\Contracts\RefreshTokenRepo;
+use App\Dal\Repos\ProductRepoImpl;
 use App\Dal\Repos\RefreshTokenRepoImpl;
 use App\Dal\Repos\UserRepoImpl;
 use App\Http\Contracts\AuthService;
@@ -49,6 +51,7 @@ class ContainerConfig
 
         $container->bind(UserRepo::class)->to(UserRepoImpl::class);
         $container->bind(RefreshTokenRepo::class)->to(RefreshTokenRepoImpl::class);
+        $container->bind(ProductRepo::class)->to(ProductRepoImpl::class);
 
         $container->bind(AuthService::class)->to(AuthServiceImpl::class);
     }

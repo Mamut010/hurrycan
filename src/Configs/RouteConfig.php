@@ -8,6 +8,7 @@ use App\Dal\Contracts\RefreshTokenRepo;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MemeController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Utils\Converters;
 
@@ -150,6 +151,16 @@ class RouteConfig
                 ->group([
                     $route->get('', 'index'),
                     $route->post('', 'store'),
+                ]),
+
+            $route
+                ->controller(ProductController::class)
+                ->prefix('/products')
+                ->withoutMiddleware('auth') // Testing
+                ->group([
+                    $route->get('', 'index'),
+                    $route->get('/{id}', 'getById')->whereNumber('id'),
+                    $route->get('/shops/{shopId}', 'getByShopId')->whereNumber('shopId'),
                 ]),
         ];
     }

@@ -9,6 +9,7 @@ use App\Core\Http\Request\Request;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
+use App\Utils\Arrays;
 use App\Utils\MimeTypes;
 use App\Utils\Strings;
 
@@ -145,5 +146,81 @@ if (!function_exists('view')) {
 if (!function_exists('response')) {
     function response(): ResponseFactory {
         return AppProvider::get()->container()->get(ResponseFactory::class);
+    }
+}
+
+if (!function_exists('bcfact')) {
+    /**
+     * Calculates a factorial of given number.
+     * @param string|int $num
+     * @throws InvalidArgumentException
+     * @return string
+     */
+    function bcfact(string|int $num)
+    {
+        if (!filter_var($num, FILTER_VALIDATE_INT) || $num <= 0) {
+            throw new InvalidArgumentException(
+                sprintf('Argument must be natural number, "%s" given.', $num)
+            );
+        }
+
+        $result = '1';
+        for (; $num > 0; $num--) {
+            $result = bcmul($result, $num);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('bc')) {
+    /**
+     * Evaluate a bc expression containing mathematical operations and sqrt/fact functions.
+     * @param string $expression The bc expression, may contain placeholder like $1 or $2 (starting from 1)
+     * @param string[] $values [optional] The values to substitute into placeholders in the expression
+     * @return string The evaluated result of the expression
+     */
+    function bc(string $expression, string ...$values): string {
+        $functions = 'sqrt|fact';
+
+        $expression = str_replace(' ', '', '('.$expression.')');
+        $expression = preg_replace_callback('/\$(\d+)/', function (array $matches) use ($values) {
+            $position = $matches[1];
+            if ($position <= 0) {
+                throw new \InvalidArgumentException(
+                    "Unexpected placeholder $$position - Placeholder must start from 1"
+                );
+            }
+            if ($position > count($values)) {
+                throw new \InvalidArgumentException("No supplied value for placeholder $$position");
+            }
+            return $values[$position - 1];
+        }, $expression);
+        while (preg_match('/(('.$functions.')?)\(([^\)\(]*)\)/', $expression, $match)) {
+                while (
+                        preg_match('/([0-9\.]+)(\^)([0-9\.]+)/', $match[3], $m) ||
+                        preg_match('/([0-9\.]+)([\*\/\%])([0-9\.]+)/', $match[3], $m) ||
+                        preg_match('/([0-9\.]+)([\+\-])([0-9\.]+)/', $match[3], $m)
+                ) {
+                        switch($m[2]) {
+                                case '+': $result = bcadd($m[1], $m[3]); break;
+                                case '-': $result = bcsub($m[1], $m[3]); break;
+                                case '*': $result = bcmul($m[1], $m[3]); break;
+                                case '/': $result = bcdiv($m[1], $m[3]); break;
+                                case '%': $result = bcmod($m[1], $m[3]); break;
+                                case '^': $result = bcpow($m[1], $m[3]); break;
+                                default: break;
+                        }
+                        $match[3] = str_replace($m[0], $result, $match[3]);
+                }
+                if (!empty($match[1]) && function_exists($func = 'bc'.$match[1]))  {
+                        $match[3] = $func($match[3]);
+                }
+                $expression = str_replace($match[0], $match[3], $expression);
+        }
+        if (!is_numeric($expression)) {
+            throw new \InvalidArgumentException('Given arguments are not valid bc expression');
+        }
+        return $expression;
     }
 }
