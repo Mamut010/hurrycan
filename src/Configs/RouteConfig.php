@@ -9,7 +9,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MemeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
-use App\Utils\Converters;
+use App\Utils\Uuids;
 
 class RouteConfig
 {
@@ -303,7 +303,7 @@ class RouteConfig
         $route->get('/users/{userId}/tokens', function (int $userId, RefreshTokenRepo $refreshTokenRepo) {
             $tokens = $refreshTokenRepo->findManyByUserId($userId);
             foreach ($tokens as $token) {
-                $token->jti = Converters::binaryToUuid($token->jti);
+                $token->jti = Uuids::binaryToUuid($token->jti);
             }
             return response()->json($tokens);
         })->whereNumber('userId');

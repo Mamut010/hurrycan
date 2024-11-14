@@ -11,26 +11,6 @@ class Converters
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
 
-    public static function uuidToBinary(string $uuid): string {
-        $hex = str_replace('-', '', $uuid);
-        return hex2bin($hex);
-    }
-
-    public static function binaryToUuid(string $binaryUuid, int $version = 4): string {
-        $supportedVersions = [1, 4];
-        if (!in_array($version, $supportedVersions)) {
-            throw new \UnexpectedValueException("Unsupported UUID version: $version");
-        }
-
-        $segments = str_split(bin2hex($binaryUuid), 4);
-        if ($version === 4) {
-            return vsprintf('%s%s-%s-%s-%s-%s%s%s', $segments);
-        }
-        else {
-            return vsprintf('%08s-%04s-%04s-%02s%02s-%012s', $segments);
-        }
-    }
-
     public static function snakeToCamel(string $str): string {
         return lcfirst(str_replace('_', '', ucwords($str, '_')));
     }
