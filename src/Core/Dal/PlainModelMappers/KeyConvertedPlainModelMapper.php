@@ -54,14 +54,14 @@ class KeyConvertedPlainModelMapper implements PlainModelMapper
                 continue;
             }
             elseif (!$plainHasKey) {
-                $value = call_user_func($getter, null, $propName, $key);
+                $value = call_user_func($getter, $instance, null, $prop);
                 $instance->{$propName} = $value;
                 continue;
             }
 
             $value = $plain[$key];
             if ($getter) {
-                $newValue = call_user_func($getter, $value, $propName, $key);
+                $newValue = call_user_func($getter, $instance, $value, $prop);
                 $instance->{$propName} = $newValue;
                 continue;
             }

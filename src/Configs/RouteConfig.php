@@ -302,9 +302,6 @@ class RouteConfig
         
         $route->get('/users/{userId}/tokens', function (int $userId, RefreshTokenRepo $refreshTokenRepo) {
             $tokens = $refreshTokenRepo->findManyByUserId($userId);
-            foreach ($tokens as $token) {
-                $token->jti = Uuids::binaryToUuid($token->jti);
-            }
             return response()->json($tokens);
         })->whereNumber('userId');
     }

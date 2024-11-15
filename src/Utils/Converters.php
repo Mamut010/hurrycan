@@ -88,12 +88,12 @@ class Converters
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
         $valueChecker = fn(\ReflectionProperty $prop) => isset($instance->{$prop->getName()});
-        $valueGetter = function (\ReflectionProperty $prop) use ($instance, $propSetters) {
+        $valueGetter = function (object $obj, \ReflectionProperty $prop) use ($instance, $propSetters) {
             $propName = $prop->getName();
             $value = $instance->{$propName};
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
-                return call_user_func($setter, $value, $prop);
+                return call_user_func($setter, $obj, $value, $prop);
             }
             else {
                 return static::defaultPropSetter($value, $prop);
@@ -118,7 +118,7 @@ class Converters
         foreach ($props as $prop) {
             $propName = $prop->getName();
             if (call_user_func($valueChecker, $prop)) {
-                $obj->{$propName} = call_user_func($valueGetter, $prop);
+                $obj->{$propName} = call_user_func($valueGetter, $obj, $prop);
             }
             elseif (!$prop->isInitialized($obj) && $prop->getType()?->allowsNull()) {
                 $obj->{$propName} = null;

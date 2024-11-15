@@ -1,34 +1,21 @@
 <?php
 namespace App\Core\Dal\Attributes;
 
-use App\Utils\Reflections;
 use Attribute;
 
 #[\Attribute(Attribute::TARGET_PROPERTY)]
-class Computed
+class Computed extends ComputedBase
 {
     /**
-     * @param string $callback A callable string
-     */
-    public function __construct(private readonly string $callback) {
-        
-    }
-
-    /**
-     * Invoke the callback with the provided instance.
+     * Eager computation of a property by invoke the callback with the provided instance,
+     * a supplied value and property.
      *
-     * @param object $instance The instance on which to execute the callback.
+     * @param object $instance The instance on which to execute the callback
+     * @param mixed $value The supplied value
+     * @param \ReflectionProperty $prop The computed property
      * @return mixed The result of the callback.
      */
-    public function compute(object $instance): mixed {
-        if (is_string($this->callback) && method_exists($instance, $this->callback)) {
-            return Reflections::invokeMethod($instance, $this->callback);
-        }
-
-        if (is_callable($this->callback)) {
-            return call_user_func($this->callback, $instance);
-        }
-
-        throw new \InvalidArgumentException("Invalid callback provided.");
+    public function compute(object $instance, mixed $value, \ReflectionProperty $prop): mixed {
+        return $this->invokeCallback($instance, $value, $prop);
     }
 }
