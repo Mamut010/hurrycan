@@ -1,5 +1,5 @@
 <?php
-namespace App\Core\Dal\Attributes;
+namespace App\Core\Dal\Bases;
 
 use App\Utils\Reflections;
 
