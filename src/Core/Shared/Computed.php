@@ -1,7 +1,6 @@
 <?php
-namespace App\Core\Dal\Attributes;
+namespace App\Core\Shared;
 
-use App\Core\Dal\Bases\ComputedBase;
 use Attribute;
 
 #[\Attribute(Attribute::TARGET_PROPERTY)]

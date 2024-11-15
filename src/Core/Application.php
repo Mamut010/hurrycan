@@ -1,7 +1,9 @@
 <?php
 namespace App\Core;
 
+use App\Constants\HttpCode;
 use App\Core\Di\Contracts\ReadonlyDiContainer;
+use App\Core\Exceptions\HttpException;
 use App\Core\Exceptions\UnexpectedActionArgumentException;
 use App\Core\Http\Guard\HasGuard;
 use App\Core\Http\Middleware\ErrorMiddleware;
@@ -11,16 +13,21 @@ use App\Core\Http\Request\Request;
 use App\Core\Http\Response\Response;
 use App\Core\Routing\Contracts\RouteResolver;
 use App\Core\Routing\RouteResolvedResult;
+use App\Core\Validation\Bases\RequestValidation;
+use App\Core\Validation\Contracts\Validator;
+use App\Core\Validation\ValidationErrorBag;
+use App\Support\Optional\Optional;
 use App\Utils\Arrays;
 use App\Utils\Functions;
+use App\Utils\Reflections;
 
 class Application
 {
     public function __construct(
-        private ReadonlyDiContainer $container,
-        private RouteResolver $routeResolver,
-        private ReadonlyMiddlewareNamedCollection $middlewares,
-        private Request $request,
+        private readonly ReadonlyDiContainer $container,
+        private readonly RouteResolver $routeResolver,
+        private readonly ReadonlyMiddlewareNamedCollection $middlewares,
+        private readonly Request $request,
     ) {
 
     }
@@ -212,27 +219,42 @@ class Application
         $params = $reflector->getParameters();
         $injected = [];
 
-        $i = 0;
+        $i = -1;
         try {
             foreach ($params as $param) {
-                $success = false;
+                $i++;
                 $paramName = $param->getName();
+
+                // Try getting result from resolving param attributes
+                $result = $this->resolveParamAttribute($param);
+                // If there is such a result, use it directly
+                if ($result->isPresent()) {
+                    $value = $result->get();
+                    $injected[$paramName] = $value;
+                    continue;
+                }
+
+                $success = false;
                 $paramType = $param->getType();
                 // If no type hint or already provided by router
                 if (!$paramType || array_key_exists($paramName, $routeParams)) {
-                    $success = static::handleUntypedOrRouteBoundParam($param, $routeParams, $result);
-                    if ($success) {
-                        $injected[$paramName] = $result;
-                    }
+                    $result = static::handleUntypedOrRouteBoundParam($param, $routeParams);
+                    $result->ifPresent(function ($value) use (&$success, &$injected, $paramName) {
+                        $success = true;
+                        $injected[$paramName] = $value;
+                    });
                 }
                 // Resort to DI container to resolve the parameter
                 if (!$success) {
                     $injected[$paramName] = $this->container->resolveParameter($param);
                 }
-                $i++;
             }
         }
         catch (\Throwable $e) {
+            if ($e instanceof HttpException) {
+                throw $e;
+            }
+
             $route = $this->getCurrentRoute();
             $msg = "Unable to resolve parameter #$i [$paramName] for route action in $route";
             throw new \InvalidArgumentException($msg, 0, $e);
@@ -241,11 +263,43 @@ class Application
         return $injected;
     }
 
-    private static function handleUntypedOrRouteBoundParam(
-        \ReflectionParameter $param,
-        array $routeParams,
-        mixed &$result
-        ): bool {
+    private function resolveParamAttribute(\ReflectionParameter $param): Optional {
+        $requestValidation = Reflections::getAttribute(
+            $param,
+            RequestValidation::class,
+            \ReflectionAttribute::IS_INSTANCEOF
+        );
+        if (!$requestValidation) {
+            return Optional::empty();
+        }
+
+        /**
+         * @var Validator
+         */
+        $validator = $this->container->get(Validator::class);
+
+        $type = $param->getType();
+        if ($type instanceof \ReflectionIntersectionType || $type instanceof \ReflectionUnionType) {
+            $paramName = $param->getName();
+            $typeMsg = $type instanceof \ReflectionIntersectionType ? 'intersection' : 'union';
+            throw new \InvalidArgumentException(
+                "Unsupported validation of $typeMsg type of parameter [$paramName]"
+            );
+        }
+
+        $validationModel = $type?->getName();
+        $validationResult = $requestValidation->invoke($validator, $this->request, $validationModel);
+        if ($validationResult instanceof ValidationErrorBag) {
+            $errorMsg = $requestValidation->errorMessage ?? $validationResult;
+            $errorMsg = strval(json_encode($errorMsg));
+            throw new HttpException(HttpCode::BAD_REQUEST, $errorMsg);
+        }
+        else {
+            return Optional::of($validationResult);
+        }
+    }
+
+    private static function handleUntypedOrRouteBoundParam(\ReflectionParameter $param, array $routeParams): Optional {
         $result = null;
         $success = false;
         $paramName = $param->getName();
@@ -264,7 +318,7 @@ class Application
             $result = null;
             $success = true;
         }
-        return $success;
+        return $success ? Optional::of($result) : Optional::empty();
     }
 
     private function getCurrentRoute() {

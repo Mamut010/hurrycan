@@ -40,9 +40,10 @@ class Reflections
      */
     public static function getAttribute(
         \ReflectionProperty|\ReflectionClass|\ReflectionParameter|\ReflectionFunctionAbstract|\ReflectionClassConstant $reflector,
-        string $targetAttribute) {
+        string $targetAttribute,
+        int $flags = 0) {
         
-        $attributes = $reflector->getAttributes($targetAttribute);
+        $attributes = $reflector->getAttributes($targetAttribute, $flags);
         if (empty($attributes)) {
             return false;
         }
@@ -140,7 +141,29 @@ class Reflections
     }
 
     public static function invokeMethod(object $obj, string $method, mixed ...$args): mixed {
-        $reflectionMethod = new \ReflectionMethod($obj, $method);
-        return $reflectionMethod->invoke($obj, ...$args);
+        $reflector = new \ReflectionMethod($obj, $method);
+        return $reflector->invoke($obj, ...$args);
+    }
+
+    public static function getPropValue(object $obj, string $propName, ?int $filter = null): mixed {
+        $reflector = new \ReflectionObject($obj);
+        $prop = $reflector->getProperty($propName);
+        if (!$filter) {
+            return $prop->getValue($obj); // NOSONAR
+        }
+
+        $definedFilters = [
+            \ReflectionProperty::IS_PUBLIC => fn(\ReflectionProperty $prop) => $prop->isPublic(),
+            \ReflectionProperty::IS_PROTECTED => fn(\ReflectionProperty $prop) => $prop->isProtected(),
+            \ReflectionProperty::IS_PRIVATE => fn(\ReflectionProperty $prop) => $prop->isPrivate(),
+            \ReflectionProperty::IS_READONLY => fn(\ReflectionProperty $prop) => $prop->isReadOnly(),
+            \ReflectionProperty::IS_STATIC => fn(\ReflectionProperty $prop) => $prop->isStatic(),
+        ];
+        foreach ($definedFilters as $definedFilter => $pred) {
+            if (($definedFilter & $filter) && !call_user_func($pred, $prop)) {
+                throw new \ReflectionException("property [$prop] does not satisfy the given filter");
+            }
+        }
+        return $prop->getValue($obj); // NOSONAR
     }
 }

@@ -2,15 +2,14 @@
 namespace App\Core\Dal\PlainTransformers;
 
 use App\Core\Dal\Attributes\Column;
-use App\Core\Dal\Attributes\Computed;
-use App\Core\Dal\Attributes\LateComputed;
 use App\Core\Dal\Attributes\RefBase;
 use App\Core\Dal\Attributes\RefType;
 use App\Core\Dal\Contracts\PlainModelMapper;
 use App\Core\Dal\Contracts\PlainTransformer;
 use App\Core\Di\Exceptions\CycleDetectedException;
 use App\Core\Di\Exceptions\DepthLimitReachException;
-use App\Http\Exceptions\InternalServerErrorException;
+use App\Core\Shared\Computed;
+use App\Core\Shared\LateComputed;
 use App\Utils\Arrays;
 use App\Utils\Converters;
 use App\Utils\Reflections;
@@ -106,7 +105,7 @@ class AttributeBasedPlainTransformingExecution
         }
         
         if (!$instance) {
-            throw new InternalServerErrorException();
+            throw new \InvalidArgumentException("Unexpected non-instantiable class [$class] given");
         }
         $this->built[$class] = $instance;
 

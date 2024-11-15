@@ -30,15 +30,15 @@ class Converters
     }
 
     /**
-     * Convert a given object or array into an array.
-     * @param array|object $data The converted object or array
-     * @param bool $recursive Whether to recursively convert array or object property to array
+     * Convert a given object into an array.
+     * @param object $object The converted object
+     * @param bool $recursive Whether to recursively convert object property to array
      * @return array The result array
      */
-    public static function objectToArray(array|object $data, bool $recursive = false): array {
+    public static function objectToArray(object $object, bool $recursive = false): array {
         $result = [];
-        foreach ($data as $key => $value) {
-            if ($recursive && (is_array($value) || is_object($value))) {
+        foreach ($object as $key => $value) {
+            if ($recursive && is_object($value)) {
                 $result[$key] = static::objectToArray($value, $recursive);
             }
             else {
@@ -61,12 +61,12 @@ class Converters
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
         $valueChecker = fn(\ReflectionProperty $prop) => array_key_exists($prop->getName(), $array);
-        $valueGetter = function (\ReflectionProperty $prop) use ($array, $propSetters) {
+        $valueGetter = function (object $obj, \ReflectionProperty $prop) use ($array, $propSetters) {
             $propName = $prop->getName();
             $value = Arrays::getOrDefaultExists($array, $propName);
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
-                return call_user_func($setter, $value, $propName);
+                return call_user_func($setter, $obj, $value, $propName);
             }
             else {
                 return static::defaultPropSetter($value, $prop);

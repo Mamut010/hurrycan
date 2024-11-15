@@ -5,6 +5,10 @@ use App\Configs\ContainerConfig;
 use App\Configs\GlobalMiddlewareConfig;
 use App\Configs\RouteConfig;
 use App\Core\Application;
+use App\Core\Dal\Contracts\PlainModelMapper;
+use App\Core\Dal\Contracts\PlainTransformer;
+use App\Core\Dal\PlainModelMappers\KeyConvertedPlainModelMapper;
+use App\Core\Dal\PlainTransformers\AttributeBasedPlainTransformer;
 use App\Core\Di\Contracts\DiContainer;
 use App\Core\Di\Contracts\ReadonlyDiContainer;
 use App\Core\Di\InjectionContext;
@@ -36,6 +40,8 @@ use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\TemplateParser;
 use App\Core\Template\HurrycanTemplateEngine;
 use App\Core\Template\HurrycanTemplateParser;
+use App\Core\Validation\Contracts\Validator;
+use App\Core\Validation\Validators\AttributeBasedValidator;
 
 class AppProvider
 {
@@ -155,6 +161,22 @@ class AppProvider
         $container
             ->bind(ResponseFactory::class)
             ->to(DefaultResponseFactory::class)
+            ->inSingletonScope();
+    
+
+        $container
+            ->bind(PlainModelMapper::class)
+            ->to(KeyConvertedPlainModelMapper::class)
+            ->inSingletonScope();
+
+        $container
+            ->bind(PlainTransformer::class)
+            ->to(AttributeBasedPlainTransformer::class)
+            ->inSingletonScope();
+
+        $container
+            ->bind(Validator::class)
+            ->to(AttributeBasedValidator::class)
             ->inSingletonScope();
     }
 
