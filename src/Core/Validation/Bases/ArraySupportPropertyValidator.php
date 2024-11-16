@@ -22,7 +22,8 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
      * the value is the element of the array in the subject. In other cases, the value is taken
      * directly from the corresponding property in subject.
      *
-     * @param ValidationContext $ctx The validation context
+     * @template T of object
+     * @param ValidationContext<T> $ctx The validation context
      * @param string $propName Name of the property associated with the value
      * @param mixed $value The value to validate, either an element in an array property or the value of a property.
      * @return null|string|object|ValidationErrorBag|ValidationResult The result of the validation operation.
@@ -39,19 +40,20 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
     abstract protected function getConstraint(): string;
 
     #[\Override]
-    public function validate(ValidationContext $ctx): ValidationResult {
+    public function validate(ValidationContext $ctx, string $propName): ValidationResult {
         if (!$this->each) {
-            $result = $this->execute($ctx, $ctx->propertyName(), $ctx->subjectPropertyValue());
+            $subject = $ctx->subject();
+            $result = $this->execute($ctx, $propName, $subject[$propName]);
             return $this->convertExecutionResultToValidationResult($result);
         }
         else {
-            return $this->validateArray($ctx);
+            return $this->validateArray($ctx, $propName);
         }
     }
 
-    private function validateArray(ValidationContext $ctx): ValidationResult {
-        $propName = $ctx->propertyName();
-        $values = $ctx->subjectPropertyValue();
+    private function validateArray(ValidationContext $ctx, string $propName): ValidationResult {
+        $subject = $ctx->subject();
+        $values = $subject[$propName];
         if (!is_array($values)) {
             return ValidationResult::failure("'$propName' is not an array");
         }

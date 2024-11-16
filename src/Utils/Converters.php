@@ -66,7 +66,7 @@ class Converters
             $value = Arrays::getOrDefaultExists($array, $propName);
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
-                return call_user_func($setter, $obj, $value, $propName);
+                return call_user_func($setter, $obj, $value, $prop);
             }
             else {
                 return static::defaultPropSetter($value, $prop);

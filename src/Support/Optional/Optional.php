@@ -36,7 +36,7 @@ class Optional
 
     /**
      * Create an Optional without any value
-     * 
+     *
      * @template T
      * @return Optional<T> An Optional without any value
      */

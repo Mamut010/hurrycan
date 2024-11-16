@@ -12,13 +12,15 @@ class ValidationContext
      * @param Validator $validator The validator used in the current validation context
      * @param T $modelInstance An instance of validation model
      * @param array<string,mixed> $subject The subject to validate
-     * @param string $propName The name of the property to validate in the validation model
+     * @param string[] $passedProps The name of the properties that passed the validation
+     * @param string[] $errorProps The name of the properties that failed the validation
      */
     public function __construct(
         private readonly Validator $validator,
         private readonly object $modelInstance,
         private readonly array $subject,
-        private readonly string $propName,
+        private array &$passedProps,
+        private array &$errorProps,
     ) {
         
     }
@@ -45,13 +47,16 @@ class ValidationContext
     }
 
     /**
-     * @return string The name of the property to validate in the validation model
+     * @return string[] an array containing names of the properties that passed the validation
      */
-    public function propertyName(): string {
-        return $this->propName;
+    public function passedProperties(): array {
+        return $this->passedProps;
     }
 
-    public function subjectPropertyValue(): mixed {
-        return $this->subject[$this->propName];
+    /**
+     * @return string[] an array containing names of the properties that failed the validation
+     */
+    public function errorProperties(): array {
+        return $this->errorProps;
     }
 }
