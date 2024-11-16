@@ -6,12 +6,12 @@ use App\Core\Validation\Contracts\Validator;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
-class IsBool extends ArraySupportPropertyValidator
+class IsFloat extends ArraySupportPropertyValidator
 {
     #[\Override]
     protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
-        if (!filter_var($value, FILTER_VALIDATE_BOOL)) {
-            return "'$propName' is not a boolean";
+        if (!filter_var($value, FILTER_VALIDATE_FLOAT)) {
+            return "'$propName' is not a floating-point number";
         }
         else {
             return null;
@@ -20,6 +20,6 @@ class IsBool extends ArraySupportPropertyValidator
 
     #[\Override]
     protected function getConstraint(): string {
-        return 'is boolean';
+        return 'is floating-point number';
     }
 }
