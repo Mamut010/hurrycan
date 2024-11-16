@@ -1,22 +1,25 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
-use App\Core\Validation\Contracts\PropertyValidator;
+use App\Core\Validation\Bases\ArraySupportPropertyValidator;
+use App\Core\Validation\Contracts\Validator;
 use Attribute;
-use ReflectionProperty;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
-class IsBool implements PropertyValidator
+class IsBool extends ArraySupportPropertyValidator
 {
     #[\Override]
-    public function validate(ReflectionProperty $prop, array $subject, mixed $value): ?string {
-        $msg = null;
-
+    protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
         if (!is_bool($value)) {
-            $propName = $prop->getName();
-            $msg = "'$propName' is not a boolean";
+            return "'$propName' is not a boolean";
         }
+        else {
+            return null;
+        }
+    }
 
-        return $msg;
+    #[\Override]
+    protected function getConstraint(): string {
+        return 'is boolean';
     }
 }

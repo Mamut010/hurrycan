@@ -1,8 +1,8 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
+use App\Core\Validation\Contracts\Validator;
 use Attribute;
-use ReflectionProperty;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class Between extends IsNumeric
@@ -23,16 +23,20 @@ class Between extends IsNumeric
     }
 
     #[\Override]
-    public function validate(ReflectionProperty $prop, array $subject, mixed $value): ?string {
-        $msg = parent::validate($prop, $subject, $value);
+    protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
+        $msg = parent::execute($validator, $subject, $propName, $value);
         if ($msg !== null) {
             return $msg;
         }
 
         if ($value < $this->minValue || $value > $this->maxValue) {
-            $propName = $prop->getName();
             $msg = "'$propName' is not between $this->minValue and $this->maxValue";
         }
         return $msg;
+    }
+
+    #[\Override]
+    protected function getConstraint(): string {
+        return "value between $this->minValue and $this->maxValue";
     }
 }

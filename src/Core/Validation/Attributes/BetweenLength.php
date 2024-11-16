@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
+use App\Core\Validation\Contracts\Validator;
 use Attribute;
 use ReflectionProperty;
 
@@ -10,7 +11,9 @@ class BetweenLength extends IsString
     private readonly int $minLength;
     private readonly int $maxLength;
 
-    public function __construct(private int $length1, private int $length2) {
+    public function __construct(private int $length1, private int $length2, ?bool $each = null) {
+        parent::__construct($each);
+
         $this->minLength = min($length1, $length2);
         $this->maxLength = max($length1, $length2);
 
@@ -19,17 +22,21 @@ class BetweenLength extends IsString
     }
 
     #[\Override]
-    public function validate(ReflectionProperty $prop, array $subject, mixed $value): ?string {
-        $msg = parent::validate($prop, $subject, $value);
+    protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
+        $msg = parent::execute($validator, $subject, $propName, $value);
         if ($msg !== null) {
             return $msg;
         }
 
         $valueLength = strlen($value);
         if ($valueLength < $this->minLength || $valueLength > $this->maxLength) {
-            $propName = $prop->getName();
             $msg = "'$propName' is not between $this->minLength and $this->maxLength in length";
         }
         return $msg;
+    }
+
+    #[\Override]
+    protected function getConstraint(): string {
+        return "length between $this->minLength and $this->maxLength";
     }
 }

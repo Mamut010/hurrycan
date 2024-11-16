@@ -22,7 +22,7 @@ class Optional
 
     /**
      * Create an Optional containing a given value
-     * 
+     *
      * @template T
      * @param T $value The value of the Optional
      * @return Optional<T> An Optional containing a given value

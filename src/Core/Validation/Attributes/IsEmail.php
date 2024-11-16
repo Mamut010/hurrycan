@@ -1,20 +1,25 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
-use App\Core\Validation\Contracts\PropertyValidator;
+use App\Core\Validation\Bases\ArraySupportPropertyValidator;
+use App\Core\Validation\Contracts\Validator;
 use Attribute;
-use ReflectionProperty;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
-class IsEmail implements PropertyValidator
+class IsEmail extends ArraySupportPropertyValidator
 {
     #[\Override]
-    public function validate(ReflectionProperty $prop, array $subject, mixed $value): ?string {
+    protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
         if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            $propName = $prop->getName();
             return "'$propName' is not a valid email";
         }
+        else {
+            return null;
+        }
+    }
 
-        return null;
+    #[\Override]
+    protected function getConstraint(): string {
+        return 'is email';
     }
 }

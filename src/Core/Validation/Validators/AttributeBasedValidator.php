@@ -34,6 +34,7 @@ class AttributeBasedValidator implements Validator
 class AttributeBasedValidatingExecution
 {
     private bool $failFastModel = false;
+    private ?IsOptionalBase $optionalModel = null;
 
     /**
      * @param Validator $validator
@@ -103,6 +104,11 @@ class AttributeBasedValidatingExecution
 
     private function checkClassAttributes(\ReflectionClass $class) {
         $this->failFastModel = Reflections::getAttribute($class, FailFast::class) !== false;
+        $this->optionalModel = Reflections::getAttribute(
+            $class,
+            IsOptionalBase::class,
+            \ReflectionAttribute::IS_INSTANCEOF
+        ) ?: null;
     }
 
     private function handleLateComputedAttribute(\ReflectionProperty $prop, array &$lateComputeds) {
@@ -120,7 +126,11 @@ class AttributeBasedValidatingExecution
         array &$passedProps,
     ) {
         $propName = $prop->getName();
-        $isOptional = Reflections::getAttribute($prop, IsOptionalBase::class, \ReflectionAttribute::IS_INSTANCEOF);
+        $isOptional = $this->optionalModel;
+        if (!$isOptional) {
+            $isOptional = Reflections::getAttribute($prop, IsOptionalBase::class, \ReflectionAttribute::IS_INSTANCEOF);
+        }
+
         if (!$isOptional) {
             $requiredMessageAttribute = static::getRequiredMessageAttribute($class, $prop);
             $requiredErrorMessage = $requiredMessageAttribute->getMessage($propName);
@@ -151,70 +161,28 @@ class AttributeBasedValidatingExecution
     }
 
     private function validateProp(\ReflectionProperty $prop, mixed &$outputValue) {
-        $validateNested = Reflections::getAttribute($prop, ValidateNested::class);
-        $result = null;
-        if ($validateNested) {
-            $result = $this->handleValidateNested($prop, $outputValue);
-        }
-        
-        // If not handled
-        if ($result === null) {
-            return $this->invokePropertyValidators($prop, $outputValue);
-        }
-        // If handled and there are errors
-        elseif ($result instanceof ValidationErrorBag) {
-            return $result;
-        }
-        // Handled and no error
-        else {
-            return null;
-        }
-    }
-
-    private function handleValidateNested(\ReflectionProperty $prop, mixed &$outputValue) {
-        $propName = $prop->getName();
-        $type = $prop->getType();
-
-        // Skip untyped property
-        if (!$type) {
-            return null;
-        }
-
-        if (!$type instanceof \ReflectionNamedType) {
-            $typeMsg = $type instanceof \ReflectionIntersectionType ? 'intersection type' : 'union type';
-            throw new \ReflectionException("Unsupported validate nested $typeMsg [$type] of property [$propName]");
-        }
-
-        // Skip built-in type
-        if ($type->isBuiltin()) {
-            return null;
-        }
-        
-        $typeName = $type->getName();
-        $class = new \ReflectionClass($typeName);
-        if (!$class->isInstantiable()) {
-            throw new \ReflectionException("Type [$typeName] is non-instantiable");
-        }
-
-        $nestedValidationResult = $this->validator->validate($this->subject[$propName], $typeName);
-        // If no error
-        if (!$nestedValidationResult instanceof ValidationErrorBag) {
-            $outputValue = $nestedValidationResult;
-        }
-        return $nestedValidationResult instanceof ValidationErrorBag ? $nestedValidationResult : true;
+        return $this->invokePropertyValidators($prop, $outputValue);
     }
 
     private function invokePropertyValidators(\ReflectionProperty $prop, mixed &$outputValue) {
         $validatorAttributes = $prop->getAttributes(PropertyValidator::class, \ReflectionAttribute::IS_INSTANCEOF);
         $propName = $prop->getName();
+        $isOutputSet = false;
         foreach ($validatorAttributes as $validatorAttribute) {
             $validator = $validatorAttribute->newInstance();
-            $errorMessage = $validator->validate($prop, $this->subject, $this->subject[$propName]);
-            if ($errorMessage !== null) {
-                return $errorMessage;
+            $validationResult = $validator->validate($this->validator, $this->subject, $propName);
+            if ($validationResult->isFailure()) {
+                return $validationResult->getError();
+            }
+            elseif ($validationResult->containsSuccessfulValue()) {
+                $outputValue = $validationResult->getResult();
+                $isOutputSet = true;
             }
         }
-        $outputValue = $this->subject[$propName];
+        
+        if (!$isOutputSet) {
+            $outputValue = $this->subject[$propName];
+        }
         return null;
     }
 }

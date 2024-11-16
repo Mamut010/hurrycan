@@ -1,27 +1,31 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
+use App\Core\Validation\Contracts\Validator;
 use Attribute;
-use ReflectionProperty;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class MinLength extends IsString
 {
-    public function __construct(private readonly int $minLength) {
-        
+    public function __construct(private readonly int $minLength, ?bool $each = null) {
+        parent::__construct($each);
     }
 
     #[\Override]
-    public function validate(ReflectionProperty $prop, array $subject, mixed $value): ?string {
-        $msg = parent::validate($prop, $subject, $value);
+    protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
+        $msg = parent::execute($validator, $subject, $propName, $value);
         if ($msg !== null) {
             return $msg;
         }
 
         if (strlen($value) < $this->minLength) {
-            $propName = $prop->getName();
             $msg = "'$propName' must be at least $this->minLength in length";
         }
         return $msg;
+    }
+
+    #[\Override]
+    protected function getConstraint(): string {
+        return 'min length ' . $this->minLength;
     }
 }

@@ -1,12 +1,17 @@
 <?php
 namespace App\Core\Validation;
 
-class ValidationErrorBag implements \IteratorAggregate, \JsonSerializable
+class ValidationErrorBag implements \IteratorAggregate, \JsonSerializable, \Stringable
 {
     /**
      * @var array<string,ValidationErrorbag|string>
      */
     private array $errors = [];
+
+    #[\Override]
+    public function __toString(): string {
+        return json_encode($this->errors);
+    }
 
     public function isEmpty(): bool {
         return empty($this->errors);
