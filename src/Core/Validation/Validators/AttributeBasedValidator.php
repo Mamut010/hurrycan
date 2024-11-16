@@ -4,11 +4,13 @@ namespace App\Core\Validation\Validators;
 use App\Core\Shared\Computed;
 use App\Core\Shared\LateComputed;
 use App\Core\Validation\Attributes\FailFast;
+use App\Core\Validation\Attributes\IsRequired;
 use App\Core\Validation\Attributes\RequiredMessage;
 use App\Core\Validation\Attributes\ValidateNested;
 use App\Core\Validation\Bases\IsOptionalBase;
 use App\Core\Validation\Contracts\PropertyValidator;
 use App\Core\Validation\Contracts\Validator;
+use App\Core\Validation\ValidationContext;
 use App\Core\Validation\ValidationErrorBag;
 use App\Utils\Converters;
 use App\Utils\Reflections;
@@ -17,12 +19,18 @@ class AttributeBasedValidator implements Validator
 {
     #[\Override]
     public function validate(array|object $subject, string $validationModel): object {
+        $modelInstance = Reflections::instantiateClass($validationModel);
+        if (!$modelInstance) {
+            $reason = "validation model must be a class having a no-argument constructor";
+            throw new \InvalidArgumentException("Invalid validation model [$validationModel]: $reason");
+        }
+
         try {
             if (!is_array($subject)) {
                 $subject = Converters::objectToArray($subject);
             }
 
-            $execution = new AttributeBasedValidatingExecution($this, $subject);
+            $execution = new AttributeBasedValidatingExecution($this, $subject, $modelInstance);
             return $execution->validate($validationModel);
         }
         catch (\ReflectionException $e) {
@@ -31,6 +39,9 @@ class AttributeBasedValidator implements Validator
     }
 }
 
+/**
+ * @template T of object
+ */
 class AttributeBasedValidatingExecution
 {
     private bool $failFastModel = false;
@@ -39,10 +50,12 @@ class AttributeBasedValidatingExecution
     /**
      * @param Validator $validator
      * @param array<string,mixed> $subject
+     * @param T $modelInstance
      */
     public function __construct(
         private readonly Validator $validator,
-        private readonly array $subject) {
+        private readonly array $subject,
+        private readonly object $modelInstance) {
         
     }
 
@@ -131,7 +144,9 @@ class AttributeBasedValidatingExecution
             $isOptional = Reflections::getAttribute($prop, IsOptionalBase::class, \ReflectionAttribute::IS_INSTANCEOF);
         }
 
-        if (!$isOptional) {
+        $isRequiredProp = Reflections::getAttribute($prop, IsRequired::class) !== false;
+
+        if ($isRequiredProp || !$isOptional) {
             $requiredMessageAttribute = static::getRequiredMessageAttribute($class, $prop);
             $requiredErrorMessage = $requiredMessageAttribute->getMessage($propName);
             $errorBag->add($propName, $requiredErrorMessage);
@@ -167,10 +182,11 @@ class AttributeBasedValidatingExecution
     private function invokePropertyValidators(\ReflectionProperty $prop, mixed &$outputValue) {
         $validatorAttributes = $prop->getAttributes(PropertyValidator::class, \ReflectionAttribute::IS_INSTANCEOF);
         $propName = $prop->getName();
+        $context = new ValidationContext($this->validator, $this->modelInstance, $this->subject, $propName);
         $isOutputSet = false;
         foreach ($validatorAttributes as $validatorAttribute) {
             $validator = $validatorAttribute->newInstance();
-            $validationResult = $validator->validate($this->validator, $this->subject, $propName);
+            $validationResult = $validator->validate($context);
             if ($validationResult->isFailure()) {
                 return $validationResult->getError();
             }

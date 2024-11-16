@@ -1,31 +1,28 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
-use App\Constants\Delimiter;
-use App\Core\Validation\Contracts\Validator;
+use App\Core\Validation\ValidationContext;
+use App\Utils\Regexes;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class IsPattern extends IsString
 {
-    public function __construct(private readonly string $pattern, ?bool $each = null) {
-        parent::__construct($each);
+    public function __construct(private readonly string $pattern, ?bool $each = null, ?string $msg = null) {
+        if (!Regexes::isValidRegex($pattern)) {
+            throw new \InvalidArgumentException("Invalid regex pattern: $pattern");
+        }
+
+        parent::__construct($each, $msg);
     }
 
     #[\Override]
-    protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
-        $msg = parent::execute($validator, $subject, $propName, $value);
+    protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
+        $msg = parent::execute($ctx, $propName, $value);
         if ($msg !== null) {
             return $msg;
         }
-        
-         // Escape special regex characters in the pattern
-        $escapedPattern = preg_quote($this->pattern, Delimiter::REGEX);
-
-        // Create a valid regex by enclosing in delimiters
-        $regex = Delimiter::REGEX. $escapedPattern . Delimiter::REGEX;
-
-        if (!preg_match($regex, $value)) {
+        if (!preg_match($this->pattern, $value)) {
             $msg = "'$propName' does not satisfy the pattern '$this->pattern'";
         }
         return $msg;
