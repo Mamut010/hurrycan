@@ -12,6 +12,10 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
     protected readonly bool $each;
     protected readonly ?string $msg;
 
+    /**
+     * @param ?bool $each [optional] Specify whether the validation will be applied to each elements in an array property
+     * @param ?string $msg [optional] The custom error message
+     */
     public function __construct(?bool $each = null, ?string $msg = null) {
         $this->each = $each === true;
         $this->msg = $msg;

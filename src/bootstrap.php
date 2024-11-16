@@ -9,6 +9,7 @@ use App\Core\Dal\Contracts\PlainModelMapper;
 use App\Core\Dal\Contracts\PlainTransformer;
 use App\Core\Dal\PlainModelMappers\KeyConvertedPlainModelMapper;
 use App\Core\Dal\PlainTransformers\AttributeBasedPlainTransformer;
+use App\Core\DefaultApplication;
 use App\Core\Di\Contracts\DiContainer;
 use App\Core\Di\Contracts\ReadonlyDiContainer;
 use App\Core\Di\InjectionContext;
@@ -45,17 +46,16 @@ use App\Core\Validation\Validators\AttributeBasedValidator;
 
 class AppProvider
 {
-    private static ?Application $app = null;
+    private static ?ReadonlyDiContainer $container = null;
 
     public static function get(): Application {
-        if (!static::$app) {
-            $container = new ServiceContainer();
-            static::populateEnv($container);
-            static::configCore($container);
-            static::configApplication($container);
-            static::$app = $container->get(Application::class);
+        if (!static::$container) {
+            static::$container = new ServiceContainer();
+            static::populateEnv(static::$container);
+            static::configCore(static::$container);
+            static::configApplication(static::$container);
         }
-        return static::$app;
+        return static::$container->get(Application::class);
     }
 
     private static function populateEnv(DiContainer $container) {
@@ -77,6 +77,11 @@ class AppProvider
         $container
             ->bind(ReadonlyDiContainer::class)
             ->to(DiContainer::class);
+
+        $container
+            ->bind(Application::class)
+            ->to(DefaultApplication::class)
+            ->inSingletonScope();
 
         $container
             ->bind(Router::class)
@@ -116,11 +121,6 @@ class AppProvider
         $container
             ->bind(Request::class)
             ->to(HttpRequest::class)
-            ->inSingletonScope();
-
-        $container
-            ->bind(Application::class)
-            ->toSelf()
             ->inSingletonScope();
 
         $container

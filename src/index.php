@@ -6,7 +6,8 @@ namespace App;
 require_once __DIR__ . '/vendor/autoload.php';
 
 try {
-    AppProvider::get()->run(fn() => abort('404 Not Found'));
+    $app = AppProvider::get();
+    $app->run(fn() => abort('404 Not Found'));
 }
 catch (\Throwable $e) {
     if (isProduction()) {

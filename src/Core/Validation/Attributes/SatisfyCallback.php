@@ -10,7 +10,11 @@ use Attribute;
 class SatisfyCallback extends ArraySupportPropertyValidator
 {
     /**
-     * @param string $callback A callable string that accepts the value to validate as the single argument
+     * @param string $callback A callable string that accepts the value to validate as the first argument,
+     * the second argument is the passed properties so far, the third argument
+     * is the names of properties that failed the validation so far.
+     * @param ?bool $each [optional] Specify whether the validation will be applied to each elements in an array property
+     * @param ?string $msg [optional] The custom error message
      */
     public function __construct(private readonly string $callback, ?bool $each = null, ?string $msg = null) {
         parent::__construct($each, $msg);
@@ -19,12 +23,14 @@ class SatisfyCallback extends ArraySupportPropertyValidator
     #[\Override]
     protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
         $modelInstance = $ctx->modelInstance();
+        $passProps = $ctx->passedProperties();
+        $errorProps = $ctx->errorProperties();
 
         if (is_string($this->callback) && method_exists($modelInstance, $this->callback)) {
-            $result = Reflections::invokeMethod($modelInstance, $this->callback, $value);
+            $result = Reflections::invokeMethod($modelInstance, $this->callback, $value, $passProps, $errorProps);
         }
         elseif (is_callable($this->callback)) {
-            $result = call_user_func($this->callback, $value);
+            $result = call_user_func($this->callback, $value, $passProps, $errorProps);
         }
         else {
             throw new \InvalidArgumentException("Invalid callback [$this->callback] provided");
