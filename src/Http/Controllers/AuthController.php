@@ -5,11 +5,12 @@ use App\Constants\HttpCode;
 use App\Constants\SameSite;
 use App\Core\Http\Cookie\CookieOptions;
 use App\Core\Http\Request\Request;
+use App\Core\Validation\Attributes\ReqBody;
 use App\Dal\Contracts\UserRepo;
 use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AccessTokenPayloadDto;
-use App\Http\Exceptions\BadRequestException;
 use App\Http\Exceptions\UnauthorizedException;
+use App\Http\Requests\LoginRequest;
 use App\Settings\Auth;
 use App\Utils\Converters;
 
@@ -22,15 +23,9 @@ class AuthController
         
     }
 
-    public function login(Request $request) {
-        if (!$request->has(['username', 'password'])) {
-            throw new BadRequestException('Username or password not given');
-        }
-
-        $username = $request->string('username');
-        $password = $request->string('password');
-        $user = $this->userRepo->findOneByUsername($username);
-        if (!$user || !password_verify($password, $user->password)) {
+    public function login(#[ReqBody] LoginRequest $loginRequest) {
+        $user = $this->userRepo->findOneByUsername($loginRequest->username);
+        if (!$user || !password_verify($loginRequest->password, $user->password)) {
             throw new UnauthorizedException("Wrong username or password");
         }
         

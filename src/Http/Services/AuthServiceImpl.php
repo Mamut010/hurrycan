@@ -23,7 +23,7 @@ use App\Support\Jwt\JwtOptions;
 use App\Support\Logger\Logger;
 use App\Utils\Converters;
 use App\Utils\Crypto;
-use App\Utils\Randoms;
+use App\Utils\Uuids;
 
 class AuthServiceImpl implements AuthService
 {
@@ -43,7 +43,7 @@ class AuthServiceImpl implements AuthService
     #[\Override]
     public function issueAccessToken(int $userId, AccessTokenPayloadDto $payload): AccessTokenIssueDto {
         $payload = Converters::objectToArray($payload);
-        $jti = Randoms::uuidv4();
+        $jti = Uuids::uuidv4();
         $now = time();
         $exp = Auth::ACCESS_TOKEN_TTL + $now;
 
@@ -64,7 +64,7 @@ class AuthServiceImpl implements AuthService
 
     #[\Override]
     public function issueRefreshToken(int $userId): RefreshTokenIssueDto {
-        $jti = Randoms::uuidv4();
+        $jti = Uuids::uuidv4();
         $seq = random_int(static::SEQ_MIN, static::SEQ_MAX);
         $now = time();
         $exp = Auth::REFRESH_TOKEN_TTL + $now;
@@ -82,7 +82,7 @@ class AuthServiceImpl implements AuthService
         $token = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
 
         $request = new RefreshTokenCreateRequest();
-        $request->jti = Converters::uuidToBinary($jti);
+        $request->jti = Uuids::uuidToBinary($jti);
         $request->hash = Crypto::hash($token, $this->refreshTokenSecret);
         $request->userId = $userId;
         $request->issuedAt = Converters::timestampToDate($now);
@@ -123,7 +123,7 @@ class AuthServiceImpl implements AuthService
         $payload = Converters::arrayToObject($tokenContent->payload, RefreshTokenPayloadDto::class);
         $claims = Converters::instanceToObject($tokenContent->claims, RefreshTokenClaims::class);
         
-        $jti = Converters::uuidToBinary($claims->jti);
+        $jti = Uuids::uuidToBinary($claims->jti);
         $refreshToken = $this->refreshTokenRepo->findOneById($jti);
         if (!$refreshToken) {
             $this->handleAbnormalActivity($claims);
@@ -163,7 +163,7 @@ class AuthServiceImpl implements AuthService
         $tokenContent = $this->jwt->decode($token);
         $jti = $tokenContent->claims->jti;
         if ($jti) {
-            $jti = Converters::uuidToBinary($jti);
+            $jti = Uuids::uuidToBinary($jti);
             $this->refreshTokenRepo->delete($jti);
         }
     }

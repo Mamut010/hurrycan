@@ -11,26 +11,6 @@ class Converters
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
 
-    public static function uuidToBinary(string $uuid): string {
-        $hex = str_replace('-', '', $uuid);
-        return hex2bin($hex);
-    }
-
-    public static function binaryToUuid(string $binaryUuid, int $version = 4): string {
-        $supportedVersions = [1, 4];
-        if (!in_array($version, $supportedVersions)) {
-            throw new \UnexpectedValueException("Unsupported UUID version: $version");
-        }
-
-        $segments = str_split(bin2hex($binaryUuid), 4);
-        if ($version === 4) {
-            return vsprintf('%s%s-%s-%s-%s-%s%s%s', $segments);
-        }
-        else {
-            return vsprintf('%08s-%04s-%04s-%02s%02s-%012s', $segments);
-        }
-    }
-
     public static function snakeToCamel(string $str): string {
         return lcfirst(str_replace('_', '', ucwords($str, '_')));
     }
@@ -50,15 +30,15 @@ class Converters
     }
 
     /**
-     * Convert a given object or array into an array.
-     * @param array|object $data The converted object or array
-     * @param bool $recursive Whether to recursively convert array or object property to array
+     * Convert a given object into an array.
+     * @param object $object The converted object
+     * @param bool $recursive Whether to recursively convert object property to array
      * @return array The result array
      */
-    public static function objectToArray(array|object $data, bool $recursive = false): array {
+    public static function objectToArray(object $object, bool $recursive = false): array {
         $result = [];
-        foreach ($data as $key => $value) {
-            if ($recursive && (is_array($value) || is_object($value))) {
+        foreach ($object as $key => $value) {
+            if ($recursive && is_object($value)) {
                 $result[$key] = static::objectToArray($value, $recursive);
             }
             else {
@@ -81,12 +61,12 @@ class Converters
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
         $valueChecker = fn(\ReflectionProperty $prop) => array_key_exists($prop->getName(), $array);
-        $valueGetter = function (\ReflectionProperty $prop) use ($array, $propSetters) {
+        $valueGetter = function (object $obj, \ReflectionProperty $prop) use ($array, $propSetters) {
             $propName = $prop->getName();
             $value = Arrays::getOrDefaultExists($array, $propName);
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
-                return call_user_func($setter, $value, $propName);
+                return call_user_func($setter, $obj, $value, $propName);
             }
             else {
                 return static::defaultPropSetter($value, $prop);
@@ -108,12 +88,12 @@ class Converters
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
         $valueChecker = fn(\ReflectionProperty $prop) => isset($instance->{$prop->getName()});
-        $valueGetter = function (\ReflectionProperty $prop) use ($instance, $propSetters) {
+        $valueGetter = function (object $obj, \ReflectionProperty $prop) use ($instance, $propSetters) {
             $propName = $prop->getName();
             $value = $instance->{$propName};
             $setter = Arrays::getOrDefault($propSetters, $propName);
             if ($setter) {
-                return call_user_func($setter, $value, $prop);
+                return call_user_func($setter, $obj, $value, $prop);
             }
             else {
                 return static::defaultPropSetter($value, $prop);
@@ -138,7 +118,7 @@ class Converters
         foreach ($props as $prop) {
             $propName = $prop->getName();
             if (call_user_func($valueChecker, $prop)) {
-                $obj->{$propName} = call_user_func($valueGetter, $prop);
+                $obj->{$propName} = call_user_func($valueGetter, $obj, $prop);
             }
             elseif (!$prop->isInitialized($obj) && $prop->getType()?->allowsNull()) {
                 $obj->{$propName} = null;

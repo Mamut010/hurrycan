@@ -4,13 +4,18 @@ namespace App\Core\Http\Middleware;
 interface ReadonlyMiddlewareNamedCollection
 {
     /**
-     * @return string[]
+     * @return class-string<Middleware>[]
      */
     function getMiddlewares(): array;
 
     /**
-     * @return string[]|false
+     * @param string $name
+     * @return class-string<Middleware>[]|false
      */
     function getMiddlewaresByName(string $name): array|false;
+
+    /**
+     * @return class-string<ErrorMiddleware>
+     */
     function getErrorMiddleware(): string;
 }

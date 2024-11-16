@@ -5,6 +5,10 @@ use App\Configs\ContainerConfig;
 use App\Configs\GlobalMiddlewareConfig;
 use App\Configs\RouteConfig;
 use App\Core\Application;
+use App\Core\Dal\Contracts\PlainModelMapper;
+use App\Core\Dal\Contracts\PlainTransformer;
+use App\Core\Dal\PlainModelMappers\KeyConvertedPlainModelMapper;
+use App\Core\Dal\PlainTransformers\AttributeBasedPlainTransformer;
 use App\Core\Di\Contracts\DiContainer;
 use App\Core\Di\Contracts\ReadonlyDiContainer;
 use App\Core\Di\InjectionContext;
@@ -17,10 +21,10 @@ use App\Core\Http\Cookie\CookieSigner;
 use App\Core\Http\Cookie\CookieWriter;
 use App\Core\Http\Cookie\PhpCookieQueue;
 use App\Core\Http\Middleware\Impl\DefaultErrorMiddleware;
-use App\Core\Http\Middleware\Impl\MiddlewareArrayStack;
+use App\Core\Http\Middleware\Impl\MiddlewareArrayChain;
 use App\Core\Http\Middleware\MiddlewareNamedCollection;
 use App\Core\Http\Middleware\ReadonlyMiddlewareNamedCollection;
-use App\Core\Http\Middleware\MiddlewareStack;
+use App\Core\Http\Middleware\MiddlewareChain;
 use App\Core\Http\Request\HttpRequest;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Request\RequestGlobalCollection;
@@ -36,6 +40,8 @@ use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\TemplateParser;
 use App\Core\Template\HurrycanTemplateEngine;
 use App\Core\Template\HurrycanTemplateParser;
+use App\Core\Validation\Contracts\Validator;
+use App\Core\Validation\Validators\AttributeBasedValidator;
 
 class AppProvider
 {
@@ -84,15 +90,15 @@ class AppProvider
             ->to(Router::class);
 
         $container
-            ->bind(MiddlewareStack::class)
-            ->toFactory(fn () => new MiddlewareArrayStack(DefaultErrorMiddleware::class))
+            ->bind(MiddlewareChain::class)
+            ->toFactory(fn () => new MiddlewareArrayChain(DefaultErrorMiddleware::class))
             ->inSingletonScope();
         $container
             ->bind(MiddlewareNamedCollection::class)
-            ->to(MiddlewareStack::class);
+            ->to(MiddlewareChain::class);
         $container
             ->bind(ReadonlyMiddlewareNamedCollection::class)
-            ->to(MiddlewareStack::class);
+            ->to(MiddlewareChain::class);
         
         $container
             ->bind(GlobalCollection::class)
@@ -156,13 +162,29 @@ class AppProvider
             ->bind(ResponseFactory::class)
             ->to(DefaultResponseFactory::class)
             ->inSingletonScope();
+    
+
+        $container
+            ->bind(PlainModelMapper::class)
+            ->to(KeyConvertedPlainModelMapper::class)
+            ->inSingletonScope();
+
+        $container
+            ->bind(PlainTransformer::class)
+            ->to(AttributeBasedPlainTransformer::class)
+            ->inSingletonScope();
+
+        $container
+            ->bind(Validator::class)
+            ->to(AttributeBasedValidator::class)
+            ->inSingletonScope();
     }
 
     private static function configApplication(DiContainer $container) {
         /**
-         * @var MiddlewareStack
+         * @var MiddlewareChain
          */
-        $middlewares = $container->get(MiddlewareStack::class);
+        $middlewares = $container->get(MiddlewareChain::class);
         /**
          * @var RouteBuilder
          */

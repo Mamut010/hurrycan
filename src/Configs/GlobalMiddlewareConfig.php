@@ -1,14 +1,14 @@
 <?php
 namespace App\Configs;
 
-use App\Core\Http\Middleware\MiddlewareStack;
+use App\Core\Http\Middleware\MiddlewareChain;
 
 class GlobalMiddlewareConfig
 {
     /**
      * Configure global middlewares
      */
-    public static function register(MiddlewareStack $middlewares) {
+    public static function register(MiddlewareChain $middlewares) {
         $middlewares->use([
             'cors' => \App\Http\Middlewares\CorsMiddleware::class,
             'session' => \App\Http\Middlewares\SessionStartMiddleware::class,

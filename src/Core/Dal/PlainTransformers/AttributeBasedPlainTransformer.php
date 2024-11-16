@@ -2,14 +2,14 @@
 namespace App\Core\Dal\PlainTransformers;
 
 use App\Core\Dal\Attributes\Column;
-use App\Core\Dal\Attributes\Computed;
 use App\Core\Dal\Attributes\RefBase;
 use App\Core\Dal\Attributes\RefType;
 use App\Core\Dal\Contracts\PlainModelMapper;
 use App\Core\Dal\Contracts\PlainTransformer;
 use App\Core\Di\Exceptions\CycleDetectedException;
 use App\Core\Di\Exceptions\DepthLimitReachException;
-use App\Http\Exceptions\InternalServerErrorException;
+use App\Core\Shared\Computed;
+use App\Core\Shared\LateComputed;
 use App\Utils\Arrays;
 use App\Utils\Converters;
 use App\Utils\Reflections;
@@ -89,27 +89,30 @@ class AttributeBasedPlainTransformingExecution
         $reflector = new \ReflectionClass($class);
         $refBaseAttribute = Reflections::getAttribute($reflector, RefBase::class);
         $instance = null;
+        $baseInstance = null;
         if ($refBaseAttribute) {
             $baseInstance = $this->instantiate($refBaseAttribute->base);
-            $instance = Converters::instanceToObject($baseInstance, $class);
-            if (!$instance) {
-                throw new InternalServerErrorException();
-            }
         }
         
         $props = $reflector->getProperties(\ReflectionProperty::IS_PUBLIC);
-        [$keyMappers, $refTypeCallbacks, $computeds] = $this->prepareParams($props, $class);
+        [$keyMappers, $refTypeCallbacks, $computeds, $lateComputeds] = $this->prepareParams($props, $class);
 
-        $instance ??= $this->mapper->map($this->plain, $class, keyMappers: $keyMappers);
+        if (!$baseInstance) {
+            $instance = $this->mapper->map($this->plain, $class, valueGetters: $computeds, keyMappers: $keyMappers);
+        }
+        else {
+            $instance = Converters::instanceToObject($baseInstance, $class, propSetters: $computeds);
+        }
+        
         if (!$instance) {
-            throw new InternalServerErrorException();
+            throw new \InvalidArgumentException("Unexpected non-instantiable class [$class] given");
         }
         $this->built[$class] = $instance;
 
         foreach ($refTypeCallbacks as $propName => $callback) {
             $instance->{$propName} = call_user_func($callback);
         }
-        foreach ($computeds as $propName => $callback) {
+        foreach ($lateComputeds as $propName => $callback) {
             $instance->{$propName} = call_user_func($callback, $instance);
         }
         return $instance;
@@ -122,12 +125,10 @@ class AttributeBasedPlainTransformingExecution
         $keyMappers = [];
         $refTypeCallbacks = [];
         $computeds = [];
+        $lateComputeds = [];
         $classKeyMapper = Arrays::getOrDefaultExists($this->classKeyMappers, $class);
         foreach ($props as $prop) {
-            if ($this->handleRefTypeAttribute($prop, $keyMappers, $refTypeCallbacks)
-                || $this->handleColumnAttribute($prop, $keyMappers, $classKeyMapper)
-                || $this->handleComputedAttribute($prop, $keyMappers, $computeds)
-            ) {
+            if ($this->handleAttributes($prop, $classKeyMapper, $keyMappers, $refTypeCallbacks, $computeds, $lateComputeds)) {
                 continue;
             }
             
@@ -136,10 +137,24 @@ class AttributeBasedPlainTransformingExecution
                 $keyMappers[$propName] = $classKeyMapper;
             }
         }
-        return [$keyMappers, $refTypeCallbacks, $computeds];
+        return [$keyMappers, $refTypeCallbacks, $computeds, $lateComputeds];
     }
 
-    private function handleRefTypeAttribute(\ReflectionProperty $prop, array &$keyMappers, array &$refTypeCallbacks): bool {
+    private function handleAttributes(
+        \ReflectionProperty $prop,
+        ?callable $classKeyMapper,
+        array &$keyMappers,
+        array &$refTypeCallbacks,
+        array &$computeds,
+        array &$lateComputeds,
+    ) {
+        return $this->handleRefTypeAttribute($prop, $refTypeCallbacks, $keyMappers)
+            || $this->handleColumnAttribute($prop, $classKeyMapper, $keyMappers)
+            || $this->handleComputedAttribute($prop, $computeds)
+            || $this->handleLateComputedAttribute($prop, $lateComputeds, $keyMappers);
+    }
+
+    private function handleRefTypeAttribute(\ReflectionProperty $prop, array &$refTypeCallbacks, array &$keyMappers) {
         $propName = $prop->getName();
         $refTypeAttribute = Reflections::getAttribute($prop, RefType::class);
         if (!$refTypeAttribute) {
@@ -155,7 +170,7 @@ class AttributeBasedPlainTransformingExecution
         return true;
     }
 
-    private function handleColumnAttribute(\ReflectionProperty $prop, array &$keyMappers, ?callable $classKeyMapper): bool {
+    private function handleColumnAttribute(\ReflectionProperty $prop, ?callable $classKeyMapper, array &$keyMappers) {
         $propName = $prop->getName();
         $columnAttribute = Reflections::getAttribute($prop, Column::class);
         if (!$columnAttribute) {
@@ -168,13 +183,26 @@ class AttributeBasedPlainTransformingExecution
         return true;
     }
 
-    private function handleComputedAttribute(\ReflectionProperty $prop, array &$keyMappers, array &$computeds): bool {
+    private function handleComputedAttribute(\ReflectionProperty $prop, array &$computeds) {
         $propName = $prop->getName();
         $computedAttribute = Reflections::getAttribute($prop, Computed::class);
         if (!$computedAttribute) {
             return false;
         }
-        $computeds[$propName] = fn(object $instance) => $computedAttribute->compute($instance);
+
+        $computeds[$propName] = fn(object $instance, mixed $value, \ReflectionProperty $prop)
+            => $computedAttribute->compute($instance, $value, $prop);
+        return true;
+    }
+
+    private function handleLateComputedAttribute( \ReflectionProperty $prop, array &$lateComputeds, array &$keyMappers) {
+        $propName = $prop->getName();
+        $lateComputedAttribute = Reflections::getAttribute($prop, LateComputed::class);
+        if (!$lateComputedAttribute) {
+            return false;
+        }
+
+        $lateComputeds[$propName] = fn(object $instance) => $lateComputedAttribute->compute($instance, $prop);
         $keyMappers[$propName] = static::skipProp();
         return true;
     }

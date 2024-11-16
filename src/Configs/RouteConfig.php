@@ -7,10 +7,9 @@ use App\Core\Routing\Contracts\RouteBuilder;
 use App\Dal\Contracts\RefreshTokenRepo;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MemeController;
-use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
-use App\Utils\Converters;
+use App\Utils\Uuids;
 
 class RouteConfig
 {
@@ -23,24 +22,6 @@ class RouteConfig
         $route->view('/home', 'home');
 
         $route->get('/info', function() { phpinfo(); });
-
-        $route
-            ->get('/environment', function() {
-                function checkEnv(string $env) {
-                    $env_value = getenv($env);
-                    if ($env_value) {
-                        echo $env."=".$env_value."<br>";
-                    }
-                    else {
-                        echo $env." environment variable not found! <br>";
-                    }
-                }
-                checkEnv("VERSION");
-                checkEnv("APP_ENV");
-                checkEnv("DB_NAME");
-                checkEnv("DB_USER");
-                checkEnv("RANDOM_ENV");
-            });
 
         $route->prefix('/api')->group([
             $route->get('/param-{param}', function (string $param) {
@@ -57,18 +38,6 @@ class RouteConfig
                 $clientIp = $request->ipAddress();
                 var_dump("Server IP Address: $serverIp");
                 var_dump("Client IP Address: $clientIp");
-            }),
-
-            $route->get('/server', function () {
-                var_dump($_SERVER);
-            }),
-
-            $route->get('/cookie', function () {
-                var_dump($_COOKIE);
-            }),
-
-            $route->get('/session', function () {
-                var_dump($_SESSION);
             }),
         ]);
 
@@ -143,14 +112,6 @@ class RouteConfig
                 ->prefix('/users')
                 ->group([
                     $route->get('', 'index'),
-                ]),
-
-            $route
-                ->controller(MessageController::class)
-                ->prefix('/messages')
-                ->group([
-                    $route->get('', 'index'),
-                    $route->post('', 'store'),
                 ]),
 
             $route
@@ -342,7 +303,7 @@ class RouteConfig
         $route->get('/users/{userId}/tokens', function (int $userId, RefreshTokenRepo $refreshTokenRepo) {
             $tokens = $refreshTokenRepo->findManyByUserId($userId);
             foreach ($tokens as $token) {
-                $token->jti = Converters::binaryToUuid($token->jti);
+                $token->jti = Uuids::binaryToUuid($token->jti);
             }
             return response()->json($tokens);
         })->whereNumber('userId');
