@@ -1,9 +1,9 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
+use App\Constants\Delimiter;
 use App\Core\Validation\Contracts\Validator;
 use Attribute;
-use ReflectionProperty;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class IsPattern extends IsString
@@ -18,8 +18,14 @@ class IsPattern extends IsString
         if ($msg !== null) {
             return $msg;
         }
+        
+         // Escape special regex characters in the pattern
+        $escapedPattern = preg_quote($this->pattern, Delimiter::REGEX);
 
-        if (!preg_match($this->pattern, $value)) {
+        // Create a valid regex by enclosing in delimiters
+        $regex = Delimiter::REGEX. $escapedPattern . Delimiter::REGEX;
+
+        if (!preg_match($regex, $value)) {
             $msg = "'$propName' does not satisfy the pattern '$this->pattern'";
         }
         return $msg;
