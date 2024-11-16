@@ -3,31 +3,38 @@ namespace App\Core\Validation\Bases;
 
 use App\Core\Validation\Contracts\PropertyValidator;
 use App\Core\Validation\Contracts\Validator;
+use App\Core\Validation\ValidationContext;
 use App\Core\Validation\ValidationErrorBag;
 use App\Core\Validation\ValidationResult;
 
 abstract class ArraySupportPropertyValidator implements PropertyValidator
 {
     protected readonly bool $each;
+    protected readonly ?string $msg;
 
-    public function __construct(?bool $each = null) {
+    /**
+     * @param ?bool $each [optional] Specify whether the validation will be applied to each elements in an array property
+     * @param ?string $msg [optional] The custom error message
+     */
+    public function __construct(?bool $each = null, ?string $msg = null) {
         $this->each = $each === true;
+        $this->msg = $msg;
     }
 
     /**
      * Do validation logic per appropriate value in the subject. In case of validating an array,
      * the value is the element of the array in the subject. In other cases, the value is taken
-     * directly from the corresponding property in subject.  
-     * 
-     * @param Validator $validator The validator used in the current validation context
-     * @param array<string,mixed> $subject The subject to validate
-     * @param string $propName The name of the property to validate in the validation model
-     * @param mixed $value The value to validate
+     * directly from the corresponding property in subject.
+     *
+     * @template T of object
+     * @param ValidationContext<T> $ctx The validation context
+     * @param string $propName Name of the property associated with the value
+     * @param mixed $value The value to validate, either an element in an array property or the value of a property.
      * @return null|string|object|ValidationErrorBag|ValidationResult The result of the validation operation.
      * A ValidationResult instance can be returned directly. Otherwise, If a string or ValidationErrorBag is
      * returned, it implies a failure. In other cases, it implies a success.
      */
-    abstract protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed;
+    abstract protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed;
 
     /**
      * Get a string describing the constraint associated with this PropertyValidator.
@@ -37,17 +44,19 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
     abstract protected function getConstraint(): string;
 
     #[\Override]
-    public function validate(Validator $validator, array $subject, string $propName): ValidationResult {
+    public function validate(ValidationContext $ctx, string $propName): ValidationResult {
         if (!$this->each) {
-            $result = $this->execute($validator, $subject, $propName, $subject[$propName]);
+            $subject = $ctx->subject();
+            $result = $this->execute($ctx, $propName, $subject[$propName]);
             return $this->convertExecutionResultToValidationResult($result);
         }
         else {
-            return $this->validateArray($validator, $subject, $propName);
+            return $this->validateArray($ctx, $propName);
         }
     }
 
-    private function validateArray(Validator $validator, array $subject, string $propName): ValidationResult {
+    private function validateArray(ValidationContext $ctx, string $propName): ValidationResult {
+        $subject = $ctx->subject();
         $values = $subject[$propName];
         if (!is_array($values)) {
             return ValidationResult::failure("'$propName' is not an array");
@@ -56,7 +65,7 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
         $results = [];
         $success = true;
         foreach ($values as $value) {
-            $result = $this->execute($validator, $subject, $propName, $value);
+            $result = $this->execute($ctx, $propName, $value);
             $validationResult = $this->convertExecutionResultToValidationResult($result);
             if ($validationResult->isFailure()) {
                 $success = false;
@@ -74,8 +83,9 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
         }
         else {
             $constraint = $this->getConstraint();
-            $msg = "an element in '$propName' failed the constraint: $constraint";
-            return ValidationResult::failure($msg);
+            $message = $this->getMessage($constraint);
+            $message = "an element in '$propName' failed the validation: $message";
+            return ValidationResult::failure($message);
         }
     }
 
@@ -84,10 +94,15 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
             return $result;
         }
         elseif (is_string($result) || $result instanceof ValidationErrorBag) {
+            $result = is_string($result) ? $this->getMessage($result) : $result;
             return ValidationResult::failure($result);
         }
         else {
             return $result !== null ? ValidationResult::successValue($result) : ValidationResult::success();
         }
+    }
+
+    protected function getMessage(string $defaultMsg): string {
+        return $this->msg ?? $defaultMsg;
     }
 }

@@ -1,9 +1,8 @@
 <?php
 namespace App\Core\Validation\Attributes;
 
-use App\Core\Validation\Contracts\Validator;
+use App\Core\Validation\ValidationContext;
 use Attribute;
-use ReflectionProperty;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class BetweenLength extends IsString
@@ -11,8 +10,8 @@ class BetweenLength extends IsString
     private readonly int $minLength;
     private readonly int $maxLength;
 
-    public function __construct(private int $length1, private int $length2, ?bool $each = null) {
-        parent::__construct($each);
+    public function __construct(private int $length1, private int $length2, ?bool $each = null, ?string $msg = null) {
+        parent::__construct($each, $msg);
 
         $this->minLength = min($length1, $length2);
         $this->maxLength = max($length1, $length2);
@@ -22,8 +21,8 @@ class BetweenLength extends IsString
     }
 
     #[\Override]
-    protected function execute(Validator $validator, array $subject, string $propName, mixed $value): mixed {
-        $msg = parent::execute($validator, $subject, $propName, $value);
+    protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
+        $msg = parent::execute($ctx, $propName, $value);
         if ($msg !== null) {
             return $msg;
         }

@@ -1,11 +1,13 @@
 <?php
 namespace App\Core\Validation\Contracts;
 
+use App\Core\Validation\ValidationErrorBag;
+
 interface Validator
 {
     /**
      * Validate a given subject against a validation model and return the instantiated model
-     * if success or an array containing all validation errors on failure.
+     * if success or a {@see ValidationErrorBag} containing all validation errors on failure.
      *
      * @template T of object
      * @param array<string,mixed>|object $subject The subject to validate

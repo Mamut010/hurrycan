@@ -6,12 +6,12 @@ use App\Core\Validation\ValidationContext;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
-class IsNumeric extends ArraySupportPropertyValidator
+class IsFloat extends ArraySupportPropertyValidator
 {
     #[\Override]
     protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
-        if (!is_numeric($value)) {
-            return "'$propName' is not numeric";
+        if (!filter_var($value, FILTER_VALIDATE_FLOAT)) {
+            return "'$propName' is not a floating-point number";
         }
         else {
             return null;
@@ -20,6 +20,6 @@ class IsNumeric extends ArraySupportPropertyValidator
 
     #[\Override]
     protected function getConstraint(): string {
-        return 'is numeric';
+        return 'is floating-point number';
     }
 }
