@@ -231,8 +231,8 @@ class AttributeBasedValidatingExecution
             if ($validationResult->isFailure()) {
                 return $validationResult->getError();
             }
-            elseif ($validationResult->containsSuccessfulValue()) {
-                $outputValue = $validationResult->getResult();
+            elseif ($validationResult->containsValue()) {
+                $outputValue = $validationResult->getValue();
                 $isOutputset = true;
             }
         }

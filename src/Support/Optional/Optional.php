@@ -6,17 +6,15 @@ namespace App\Support\Optional;
  */
 class Optional
 {
-    /**
-     * @var T
-     */
-    private mixed $value;
-
-    private bool $set = false;
-
     private static ?Optional $empty = null;
 
-    // No direct construction allowed
-    private function __construct() {
+    /**
+     * No direct construction allowed. Use of() or empty() instead.
+     *
+     * @param T $value
+     * @param bool $set
+     */
+    private function __construct(private readonly mixed $value, private readonly bool $set) {
         
     }
 
@@ -27,11 +25,8 @@ class Optional
      * @param T $value The value of the Optional
      * @return Optional<T> An Optional containing a given value
      */
-    public static function of(mixed $value): Optional {
-        $instance = new Optional();
-        $instance->value = $value;
-        $instance->set = true;
-        return $instance;
+    public static function of(mixed $value): self {
+        return new Optional($value, true);
     }
 
     /**
@@ -40,9 +35,9 @@ class Optional
      * @template T
      * @return Optional<T> An Optional without any value
      */
-    public static function empty(): Optional {
+    public static function empty(): self {
         if (!static::$empty) {
-            static::$empty = new Optional();
+            static::$empty = new Optional(null, false);
         }
         return static::$empty;
     }
