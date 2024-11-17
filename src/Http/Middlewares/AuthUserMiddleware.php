@@ -33,12 +33,18 @@ class AuthUserMiddleware implements Middleware
             throw new UnauthorizedException();
         }
 
-        /**
-         * @var AuthUserDto
-         */
-        $authUser = Converters::instanceToObject($tokenContent->payload, AuthUserDto::class);
-        $authUser->id = intval($tokenContent->claims->sub);
-        $this->container->bind(AuthUserDto::class)->toConstant($authUser);
+        $this->container
+            ->bind(AuthUserDto::class)
+            ->toFactory(function () use ($tokenContent) {
+                $authUser = Converters::instanceToObject($tokenContent->payload, AuthUserDto::class);
+                if (!$authUser) {
+                    $msg = $tokenContent->payload::class . ' cannot be mapped to ' . AuthUserDto::class;
+                    $reason = 'These classes are required to have a no-arg constructor';
+                    throw new \UnexpectedValueException("$msg. $reason");
+                }
+                $authUser->id = intval($tokenContent->claims->sub);
+                return $authUser;
+            });
 
         return $next();
     }
