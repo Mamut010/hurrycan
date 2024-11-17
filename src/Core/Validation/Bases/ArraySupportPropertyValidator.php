@@ -24,7 +24,7 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
     /**
      * Do validation logic per appropriate value in the subject. In case of validating an array,
      * the value is the element of the array in the subject. In other cases, the value is taken
-     * directly from the corresponding property in subject.
+     * directly from the corresponding property of the subject.
      *
      * @template T of object
      * @param ValidationContext<T> $ctx The validation context
@@ -71,10 +71,8 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
                 $success = false;
                 break;
             }
-
-            $result = $validationResult->getResult();
-            if ($result !== null) {
-                $results[] = $result;
+            if ($validationResult->containsValue()) {
+                $results[] = $validationResult->getValue();
             }
         }
 
