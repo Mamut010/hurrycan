@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Utils;
 
 class Arrays
@@ -164,5 +163,21 @@ class Arrays
             $result[$newKey] = $value;
         }
         return $result;
+    }
+
+    /**
+     * @template T
+     * @param T[] $array
+     * @param callable(T $item):bool $pred
+     * @return T[] An array containing a single item which is the first item satisfying the predicate.
+     *             Otherwise, an empty array is returned.
+     */
+    public static function findFirst(array $array, callable $pred) {
+        foreach ($array as $item) {
+            if (call_user_func($pred, $item) === true) {
+                return [$item];
+            }
+        }
+        return [];
     }
 }
