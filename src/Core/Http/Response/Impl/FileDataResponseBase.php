@@ -10,9 +10,7 @@ abstract class FileDataResponseBase extends HttpResponse
 {
     private bool $shouldSendFile = false;
 
-    public function __construct(
-        CookieQueue $cookieQueue,
-        private readonly ContentDisposition $contentDisposition) {
+    public function __construct(CookieQueue $cookieQueue, private readonly ContentDisposition $contentDisposition) {
         parent::__construct($cookieQueue, null);
     }
 

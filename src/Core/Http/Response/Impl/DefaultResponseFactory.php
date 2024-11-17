@@ -65,7 +65,7 @@ class DefaultResponseFactory implements ResponseFactory
     public function view(string $viewName, ?array $context = null): Response {
         $view = $this->templateEngine->view($viewName, $context);
         if (!$view instanceof Renderable) {
-            throw new \LogicException("View [$viewName] is not renderable");
+            throw new \InvalidArgumentException("View [$viewName] is not renderable");
         }
         return new RenderableResponse($this->cookieQueue, $view);
     }

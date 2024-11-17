@@ -17,6 +17,9 @@ class MiddlewareArrayChain implements MiddlewareChain
      */
     private array $middlewares;
 
+    /**
+     * @var MultiMap<string,class-string<Middleware>|string>
+     */
     private MultiMap $namedMiddlewares;
 
     /**
@@ -47,14 +50,19 @@ class MiddlewareArrayChain implements MiddlewareChain
         return $this->getMiddlewaresByNameImpl($name, []);
     }
 
+    /**
+     * @param string $name
+     * @param array<string,true> $finding
+     * @return (class-string<Middleware>|string)[]
+     */
     private function getMiddlewaresByNameImpl(string $name, array $finding) {
-        $finding[$name] = true;
-
-        $middlewares = $this->namedMiddlewares->get($name);
-        if ($middlewares === false) {
+        if (!$this->namedMiddlewares->contains($name)) {
             return [$name];
         }
 
+        $finding[$name] = true;
+        
+        $middlewares = $this->namedMiddlewares->get($name);
         $result = [];
         foreach ($middlewares as $middleware) {
             if (isset($finding[$middleware])) {

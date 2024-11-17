@@ -3,10 +3,21 @@ namespace App\Support\Collection;
 
 use App\Utils\Arrays;
 
+/**
+ * @template TKey of int|string
+ * @template TValue
+ * @template-implements Map<TKey,TValue>
+ */
 class ArrayMap implements Map
 {
+    /**
+     * @var array<TKey,TValue>
+     */
     private array $storage;
 
+    /**
+     * @param ?array<TKey,TValue> $data
+     */
     public function __construct(?array $data = null) {
         $this->storage = [];
         if ($data) {
@@ -32,7 +43,7 @@ class ArrayMap implements Map
     }
 
     #[\Override]
-    public function contains(string $key): bool {
+    public function contains(int|string $key): bool {
         return array_key_exists($key, $this->storage);
     }
 
@@ -42,34 +53,34 @@ class ArrayMap implements Map
     }
 
     #[\Override]
-    public function get(string $key): mixed {
-        if ($this->contains($key)) {
-            throw new \OutOfBoundsException("Attempt to access a non-existent key [$key] in a map");
+    public function get(int|string $key): mixed {
+        if (!$this->contains($key)) {
+            throw new \OutOfBoundsException("Attempt to access a non-existent key [$key]");
         }
         return $this->storage[$key];
     }
 
     #[\Override]
-    public function getOrDefault(string $key, mixed $default): mixed {
+    public function getOrDefault(int|string $key, mixed $default): mixed {
         return Arrays::getOrDefaultExists($this->storage, $key, $default);
     }
 
     #[\Override]
-    public function put(string $key, mixed $value): void {
+    public function put(int|string $key, mixed $value): void {
         $this->storage[$key] = $value;
     }
 
     #[\Override]
-    public function putIfAbsent(string $key, mixed $value): void {
+    public function putIfAbsent(int|string $key, mixed $value): void {
         if (!$this->contains($key)) {
             $this->put($key, $value);
         }
     }
 
     #[\Override]
-    public function remove(string $key): mixed {
+    public function remove(int|string $key): mixed {
         if (!$this->contains($key)) {
-            return null;
+            throw new \OutOfBoundsException("Attempt to remove a non-existent key [$key]");
         }
         
         $value = $this->storage[$key];
@@ -81,11 +92,6 @@ class ArrayMap implements Map
     public function toArray(): array {
         return $this->storage;
     }
-    
-    #[\Override]
-    public function iter(): \Iterator {
-        return new \ArrayIterator($this->storage);
-    }
 
     #[\Override]
     public function keys(): array {
@@ -95,5 +101,10 @@ class ArrayMap implements Map
     #[\Override]
     public function values(): array {
         return array_values($this->storage);
+    }
+    
+    #[\Override]
+    public function getIterator(): \Traversable {
+        return new \ArrayIterator($this->storage);
     }
 }
