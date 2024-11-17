@@ -18,19 +18,13 @@ class AttributeBasedValidator implements Validator
 {
     #[\Override]
     public function validate(array|object $subject, string $validationModel): object {
-        $modelInstance = Reflections::instantiateClass($validationModel);
-        if (!$modelInstance) {
-            $reason = "validation model must be a class having a no-argument constructor";
-            throw new \InvalidArgumentException("Invalid validation model [$validationModel]: $reason");
-        }
-
         try {
             if (!is_array($subject)) {
                 $subject = Converters::objectToArray($subject);
             }
 
-            $execution = new AttributeBasedValidatingExecution($this, $modelInstance, $subject);
-            return $execution->validate($validationModel);
+            $execution = new AttributeBasedValidatingExecution($this, $validationModel, $subject);
+            return $execution->run();
         }
         catch (\ReflectionException $e) {
             throw new \InvalidArgumentException("Invalid validation model [$validationModel]", 0, $e);
@@ -52,19 +46,19 @@ class AttributeBasedValidatingExecution
 
     /**
      * @param Validator $validator The validator used in the current validation context
-     * @param T $modelInstance An instance of validation model
+     * @param class-string<T> $validationModel The validation model to validate against
      * @param array<string,mixed> $subject The subject to validate
      */
     public function __construct(
-        private readonly Validator $validator,
-        private readonly object $modelInstance,
+        Validator $validator,
+        private readonly string $validationModel,
         private readonly array $subject
     ) {
         $this->passedPropNames = [];
         $this->errorPropNames = [];
         $this->ctx = new ValidationContext(
             $validator,
-            $modelInstance,
+            $this->generateDummyModelInstance(), // Dummy instance is used to avoid unintenional changes to the actual instance
             $subject,
             $this->passedPropNames,
             $this->errorPropNames
@@ -72,28 +66,36 @@ class AttributeBasedValidatingExecution
     }
 
     /**
-     * @param class-string<T> $validationModel
      * @return T|ValidationErrorBag
      */
-    public function validate(string $validationModel): object {
-        $reflector = new \ReflectionClass($validationModel);
-        $this->checkClassAttributes($reflector);
+    public function run(): object {
+        $class = new \ReflectionClass($this->validationModel);
+        $this->checkClassAttributes($class);
 
-        [$passedProps, $errorBag, $computeds, $lateComputeds] = $this->validateModelProperties($reflector);
+        [$passedProps, $errorBag, $computeds, $lateComputeds] = $this->validateModelProperties($class);
 
         if (!$errorBag->isEmpty()) {
             return $errorBag;
         }
 
-        $instance = Converters::arrayToObject($passedProps, $validationModel, propSetters: $computeds);
+        $instance = Converters::arrayToObject($passedProps, $this->validationModel, propSetters: $computeds);
         if (!$instance) {
-            throw new \ReflectionException("Unable to instantiate validation model [$validationModel]");
+            throw new \ReflectionException("Unable to instantiate validation model [$this->validationModel]");
         }
 
         foreach ($lateComputeds as $propName => $callback) {
             $instance->{$propName} = call_user_func($callback, $instance);
         }
         return $instance;
+    }
+
+    private function generateDummyModelInstance() {
+        $modelInstance = Reflections::instantiateClass($this->validationModel);
+        if (!$modelInstance) {
+            $reason = "validation model must be a class having a no-argument constructor";
+            throw new \InvalidArgumentException("Invalid validation model [$this->validationModel]: $reason");
+        }
+        return $modelInstance;
     }
 
     private function checkClassAttributes(\ReflectionClass $class) {
@@ -105,7 +107,7 @@ class AttributeBasedValidatingExecution
         ) ?: null;
     }
 
-    private function validateModelProperties(\ReflectionClass $reflector) {
+    private function validateModelProperties(\ReflectionClass $class) {
         $errorBag = new ValidationErrorBag();
         /**
          * @var array<string,mixed>
@@ -120,7 +122,7 @@ class AttributeBasedValidatingExecution
          */
         $lateComputeds = [];
 
-        $props = $reflector->getProperties(\ReflectionProperty::IS_PUBLIC);
+        $props = $class->getProperties(\ReflectionProperty::IS_PUBLIC);
         foreach ($props as $prop) {
             $propName = $prop->getName();
             $failFast = $this->failFastModel || (Reflections::getAttribute($prop, FailFast::class) !== false);
@@ -130,7 +132,7 @@ class AttributeBasedValidatingExecution
             }
 
             if (!array_key_exists($propName, $this->subject)) {
-                $passed = $this->handleMissingProp($reflector, $prop, $errorBag, $passedProps);
+                $passed = $this->handleMissingProp($class, $prop, $errorBag, $passedProps);
                 $this->updateValidationContext($propName, $passed);
                 if (!$passed && $failFast) {
                     break;
