@@ -3,8 +3,6 @@ namespace App\Core\Http\Response\Impl;
 
 use App\Constants\Delimiter;
 use App\Constants\HttpCode;
-use App\Constants\HttpHeader;
-use App\Constants\MimeType;
 use App\Core\Exceptions\ResponseAlreadySentException;
 use App\Core\Http\Cookie\CookieOptions;
 use App\Core\Http\Cookie\CookieQueue;
@@ -17,6 +15,10 @@ class HttpResponse implements Response
     protected const HEADER_NAME_VALUE_SEPARATOR = ': ';
 
     private CookieQueue $cookieQueue;
+
+    /**
+     * @var MultiMap<string,string>
+     */
     protected MultiMap $headers;
     protected int $statusCode;
     protected ?string $data;
@@ -59,12 +61,6 @@ class HttpResponse implements Response
         $this->statusCode = $code;
         return $this;
     }
-    
-    #[\Override]
-    public function withData(?string $data): self {
-        $this->data = $data !== null ? trim($data) : null;
-        return $this;
-    }
 
     #[\Override]
     public function cookie(string $name, string $value, int $seconds, ?CookieOptions $options = null): self {
@@ -100,14 +96,6 @@ class HttpResponse implements Response
     }
 
     #[\Override]
-    public function json(array|object $data): self
-    {
-        $this->data = json_encode($data);
-        $this->header(HttpHeader::CONTENT_TYPE, MimeType::APPLICATION_JSON);
-        return $this;
-    }
-
-    #[\Override]
     public function isSent(): bool {
         return $this->sent;
     }
@@ -134,8 +122,7 @@ class HttpResponse implements Response
     }
 
     protected function sendHeaders(): void {
-        $iter = $this->headers->iter();
-        foreach ($iter as $headerName => $values) {
+        foreach ($this->headers as $headerName => $values) {
             $headerValue = implode(Delimiter::HTTP_HEADER_VALUE, $values);
             header($headerName . static::HEADER_NAME_VALUE_SEPARATOR . $headerValue);
         }

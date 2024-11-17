@@ -21,7 +21,7 @@ class RenderableResponse extends HttpResponse
     #[\Override]
     protected function sendData(): void {
         $viewContent = $this->renderable->render();
-        $this->withData($viewContent);
+        $this->data = $viewContent;
         parent::sendData();
     }
 }

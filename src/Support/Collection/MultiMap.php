@@ -1,34 +1,91 @@
 <?php
 namespace App\Support\Collection;
 
-interface MultiMap
+/**
+ * Represent a collection of key-value pairs where a key can be associated with multiple values.
+ *
+ * @template TKey of int|string
+ * @template-covariant TValue
+ * @template-implements \IteratorAggregate<TKey, TValue[]>
+ */
+interface MultiMap extends \IteratorAggregate
 {
     function size(): int;
     function isEmpty(): bool;
     function clear(): void;
     
-    function get(string $key): array|false;
-    function put(string $key, mixed $value): void;
-    function putIfAbsent(string $key, mixed $value): void;
-    function set(string $key, mixed $values): void;
-    function remove(string $key): array|false;
-    function removeValue(mixed $value, string $key): bool;
-    function contains(string $key): bool;
-    function containsValue(mixed $value, string $key): bool;
+    /**
+     * @param TKey $key
+     * @return TValue[]
+     * @throws \OutOfBoundsException
+     */
+    function get(int|string $key): array|false;
 
     /**
-     * @return array<string,array>
+     * @param TKey $key
+     * @param TValue $value
+     * @return void
+     */
+    function put(int|string $key, mixed $value): void;
+
+    /**
+     * @param TKey $key
+     * @param TValue $value
+     * @return void
+     */
+    function putIfAbsent(int|string $key, mixed $value): void;
+
+    /**
+     * @param TKey $key
+     * @param TValue|TValue[] $values
+     * @return void
+     */
+    function set(int|string $key, mixed $values): void;
+
+    /**
+     * @param TKey $key
+     * @return TValue[]
+     * @throws \OutOfBoundsException
+     */
+    function remove(int|string $key): array|false;
+
+    /**
+     * @param TValue $value
+     * @param TKey $key
+     * @return bool
+     */
+    function removeValue(mixed $value, int|string $key): bool;
+
+    /**
+     * @param TKey $key
+     * @return bool
+     */
+    function contains(int|string $key): bool;
+
+    /**
+     * @param TValue $value
+     * @param TKey $key
+     * @return bool
+     */
+    function containsValue(mixed $value, int|string $key): bool;
+
+    /**
+     * @return array<TKey,TValue[]>
      */
     function toArray(): array;
-    function iter(): \Iterator;
 
     /**
-     * @return string[]
+     * @return TKey[]
      */
     function keys(): array;
 
     /**
-     * @return mixed[][]
+     * @return TValue[][]
      */
     function values(): array;
+
+    /**
+     * @return \Traversable<TKey,TValue[]>
+     */
+    function getIterator(): \Traversable;
 }

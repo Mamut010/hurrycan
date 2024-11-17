@@ -66,7 +66,7 @@ class AppProvider
                 continue;
             }
             $prop = $method->getName();
-            $container->bind($prop)->toFactory(fn() => $method->invoke(null))->inSingletonScope();
+            $container->bind($prop)->toFactory(fn() => $method->invoke(null));
         }
     }
 
