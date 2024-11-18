@@ -41,8 +41,8 @@ class Reflections
     public static function getAttribute(
         \ReflectionProperty|\ReflectionClass|\ReflectionParameter|\ReflectionFunctionAbstract|\ReflectionClassConstant $reflector,
         string $targetAttribute,
-        int $flags = 0) {
-        
+        int $flags = 0
+    ) {
         $attributes = $reflector->getAttributes($targetAttribute, $flags);
         if (empty($attributes)) {
             return false;
@@ -53,8 +53,7 @@ class Reflections
     /**
      * @see {@link https://www.php.net/manual/en/reflectionparameter.isarray.php }
      */
-    public static function isArray(\ReflectionParameter|\ReflectionProperty|\ReflectionClassConstant $reflector): bool
-    {
+    public static function isArray(\ReflectionParameter|\ReflectionProperty|\ReflectionClassConstant $reflector): bool {
         $reflectionType = $reflector->getType();
     
         if (!$reflectionType) {
@@ -69,8 +68,29 @@ class Reflections
         return in_array($arrayType, array_map(fn(\ReflectionNamedType $t) => $t->getName(), $types));
     }
 
-    public static function isBackedEnum(\ReflectionType $type): string|false
-    {
+    /**
+     * @return class-string<\BackedEnum>|false
+     */
+    public static function isBackedEnum(string|\ReflectionType $classOrType): string|false {
+        if (is_string($classOrType)) {
+            return static::isStringBackedEnum($classOrType);
+        }
+        else {
+            return static::isTypeBackedEnum($classOrType);
+        }
+    }
+
+    private static function isStringBackedEnum(string $class) {
+        try {
+            $reflector = new \ReflectionEnum($class);
+            return $reflector->isBacked() ? $class : false;
+        }
+        catch (\ReflectionException $e) {
+            return false;
+        }
+    }
+
+    private static function isTypeBackedEnum(\ReflectionType $type) {
         $typeNames = static::getTypeName($type);
         if ($typeNames === false) {
             return false;
@@ -82,7 +102,6 @@ class Reflections
                 return $typeName;
             }
         }
-
         return false;
     }
 
