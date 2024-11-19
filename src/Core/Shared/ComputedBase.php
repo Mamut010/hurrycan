@@ -6,9 +6,9 @@ use App\Utils\Reflections;
 class ComputedBase
 {
     /**
-     * @param string $callback A callable string
+     * @param string|array $callback A callable string or array
      */
-    public function __construct(private readonly string $callback) {
+    public function __construct(private readonly string|array $callback) {
         
     }
 

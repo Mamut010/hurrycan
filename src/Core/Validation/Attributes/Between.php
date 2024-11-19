@@ -32,7 +32,7 @@ class Between extends IsNumeric
         }
 
         if ($value < $this->minValue || $value > $this->maxValue) {
-            $msg = "'$propName' is not between $this->minValue and $this->maxValue";
+            $msg = "'$propName' must be between $this->minValue and $this->maxValue";
         }
         return $msg;
     }

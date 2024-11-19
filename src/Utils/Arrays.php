@@ -24,6 +24,10 @@ class Arrays
         return is_array($value) && array_is_list($value);
     }
 
+    public static function isAssocArray(mixed $value): bool {
+        return is_array($value) && !array_is_list($value);
+    }
+
     public static function keysExcludeByNames(array $arr, array $excludedNames) {
         return array_filter($arr, fn($key) => !in_array($key, $excludedNames));
     }

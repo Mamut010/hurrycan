@@ -119,4 +119,16 @@ class Functions
             throw new \ArgumentCountError($msg);
         }
     }
+
+    public static function getPossibleCallbackName(callable $callback): ?string {
+        if (is_string($callback)) {
+            return $callback;
+        }
+        elseif (is_array($callback)) {
+            return $callback[1];
+        }
+        else {
+            return null;
+        }
+    }
 }

@@ -10,7 +10,7 @@ class IsInteger extends ArraySupportPropertyValidator
 {
     #[\Override]
     protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
-        if (!filter_var($value, FILTER_VALIDATE_INT)) {
+        if (filter_var($value, FILTER_VALIDATE_INT) === false) {
             return "'$propName' is not an integer";
         }
         else {

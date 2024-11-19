@@ -29,7 +29,7 @@ class BetweenLength extends IsString
 
         $valueLength = strlen($value);
         if ($valueLength < $this->minLength || $valueLength > $this->maxLength) {
-            $msg = "'$propName' is not between $this->minLength and $this->maxLength in length";
+            $msg = "'$propName' must be between $this->minLength and $this->maxLength in length";
         }
         return $msg;
     }

@@ -4,6 +4,7 @@ namespace App\Core\Http\Request\Traits;
 
 use App\Constants\Delimiter;
 use App\Utils\Arrays;
+use App\Utils\Jsons;
 use App\Utils\Strings;
 
 trait RequestUriQueryable
@@ -30,12 +31,16 @@ trait RequestUriQueryable
     }
 
     public function queryAll(): array {
-        $query = [];
         parse_str($this->queryString(), $query);
+        foreach ($query as &$value) {
+            if (is_string($value) && Jsons::tryDecode($value, $result)) {
+                $value = $result;
+            }
+        }
         return $query;
     }
 
-    public function query(string $name, ?string $default = null): ?string {
+    public function query(string $name, mixed $default = null): mixed {
         return Arrays::getOrDefault($this->queryAll(), $name, $default);
     }
 

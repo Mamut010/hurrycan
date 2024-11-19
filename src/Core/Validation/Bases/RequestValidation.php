@@ -7,11 +7,23 @@ use App\Core\Validation\ValidationErrorBag;
 
 abstract class RequestValidation
 {
-    public function __construct(public readonly ?string $errorMessage = null) {
+    public function __construct(private readonly bool $required = true, private readonly ?string $errorMessage = null) {
         
     }
 
     abstract protected function getSubject(Request $request): array;
+
+    public function isRequired(): bool {
+        return $this->required;
+    }
+
+    public function isOptional(): bool {
+        return !$this->isRequired();
+    }
+
+    public function getErrorMessage(): ?string {
+        return $this->errorMessage;
+    }
 
     /**
      * @template T of object

@@ -4,6 +4,7 @@ namespace App\Core\Validation\Attributes;
 use App\Constants\Delimiter;
 use App\Core\Validation\Bases\ArraySupportPropertyValidator;
 use App\Core\Validation\ValidationContext;
+use App\Utils\Arrays;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
@@ -22,16 +23,21 @@ class ValidateNested extends ArraySupportPropertyValidator
 
     #[\Override]
     protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
-        if (!is_array($value) && !is_object($value)) {
-            return "'$propName' does not satisfy the validation model $this->validationModel";
+        if (!Arrays::isAssocArray($value) && !is_object($value)) {
+            $modelName = $this->getModelName();
+            return "'$propName' does not satisfy the validation model $modelName";
         }
         return $ctx->validator()->validate($value, $this->validationModel);
     }
 
     #[\Override]
     protected function getConstraint(): string {
-        $modelFullnameSegments = explode(Delimiter::NAMESPACE, $this->validationModel);
-        $modelName = $modelFullnameSegments[count($modelFullnameSegments) - 1];
+        $modelName = $this->getModelName();
         return "satisfies validation model [$modelName]";
+    }
+
+    private function getModelName() {
+        $modelFullnameSegments = explode(Delimiter::NAMESPACE, $this->validationModel);
+        return $modelFullnameSegments[count($modelFullnameSegments) - 1];
     }
 }
