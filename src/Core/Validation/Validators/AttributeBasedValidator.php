@@ -243,7 +243,7 @@ class AttributeBasedValidatingExecution
         $isOutputset = false;
         foreach ($validatorAttributes as $validatorAttribute) {
             $validator = $validatorAttribute->newInstance();
-            $validationResult = $validator->validate($this->ctx, $propName);
+            $validationResult = $validator->validate($this->ctx, $propName, $this->subject[$propName]);
             if ($validationResult->isFailure()) {
                 return $validationResult->getError();
             }

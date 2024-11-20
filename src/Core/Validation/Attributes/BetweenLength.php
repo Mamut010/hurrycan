@@ -4,6 +4,9 @@ namespace App\Core\Validation\Attributes;
 use App\Core\Validation\ValidationContext;
 use Attribute;
 
+/**
+ * Validate if a string property's length is between two specified lengths.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class BetweenLength extends IsString
 {
@@ -35,7 +38,7 @@ class BetweenLength extends IsString
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return "length between $this->minLength and $this->maxLength";
     }
 }

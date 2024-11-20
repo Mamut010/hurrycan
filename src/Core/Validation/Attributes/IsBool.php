@@ -5,6 +5,9 @@ use App\Core\Validation\Bases\ArraySupportPropertyValidator;
 use App\Core\Validation\ValidationContext;
 use Attribute;
 
+/**
+ * Validate if a property is a boolean.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class IsBool extends ArraySupportPropertyValidator
 {
@@ -19,7 +22,7 @@ class IsBool extends ArraySupportPropertyValidator
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return 'is boolean';
     }
 }

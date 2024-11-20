@@ -36,28 +36,18 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
      */
     abstract protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed;
 
-    /**
-     * Get a string describing the constraint associated with this PropertyValidator.
-     *
-     * @return string A string describing the constraint associated with this PropertyValidator
-     */
-    abstract protected function getConstraint(): string;
-
     #[\Override]
-    public function validate(ValidationContext $ctx, string $propName): ValidationResult {
+    public function validate(ValidationContext $ctx, string $propName, mixed $value): ValidationResult {
         if (!$this->each) {
-            $subject = $ctx->subject();
-            $result = $this->execute($ctx, $propName, $subject[$propName]);
+            $result = $this->execute($ctx, $propName, $value);
             return $this->convertExecutionResultToValidationResult($result);
         }
         else {
-            return $this->validateArray($ctx, $propName);
+            return $this->validateArray($ctx, $propName, $value);
         }
     }
 
-    private function validateArray(ValidationContext $ctx, string $propName): ValidationResult {
-        $subject = $ctx->subject();
-        $values = $subject[$propName];
+    private function validateArray(ValidationContext $ctx, string $propName, mixed $values): ValidationResult {
         if (!is_array($values)) {
             return ValidationResult::failure("'$propName' is not an array");
         }

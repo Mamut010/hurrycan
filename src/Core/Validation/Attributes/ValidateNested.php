@@ -7,6 +7,9 @@ use App\Core\Validation\ValidationContext;
 use App\Utils\Arrays;
 use Attribute;
 
+/**
+ * Validate if a property satisfies a validation model.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class ValidateNested extends ArraySupportPropertyValidator
 {
@@ -31,7 +34,7 @@ class ValidateNested extends ArraySupportPropertyValidator
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         $modelName = $this->getModelName();
         return "satisfies validation model [$modelName]";
     }

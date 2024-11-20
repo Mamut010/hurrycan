@@ -7,6 +7,9 @@ use App\Utils\Functions;
 use App\Utils\Reflections;
 use Attribute;
 
+/**
+ * Validate if a property's value satisfies a specified callback.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class SatisfyCallback extends ArraySupportPropertyValidator
 {
@@ -37,8 +40,8 @@ class SatisfyCallback extends ArraySupportPropertyValidator
 
         $success = boolval($result);
         if (!$success) {
-            $callbackName = Functions::getPossibleCallbackName($this->callback);
-            return "'$propName' does not satisfy the callback '$callbackName'";
+            $constraintMsg = $this->getConstraint();
+            return "'$propName' does not $constraintMsg";
         }
         else {
             return null;
@@ -46,7 +49,7 @@ class SatisfyCallback extends ArraySupportPropertyValidator
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         $callbackName = Functions::getPossibleCallbackName($this->callback);
         return "satisfy callback '$callbackName'";
     }

@@ -4,6 +4,9 @@ namespace App\Core\Validation\Attributes;
 use App\Core\Validation\ValidationContext;
 use Attribute;
 
+/**
+ * Validate if a string property's length is lower than or equal to a specified length.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class MaxLength extends IsString
 {
@@ -25,7 +28,7 @@ class MaxLength extends IsString
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return 'max length ' . $this->maxLength;
     }
 }

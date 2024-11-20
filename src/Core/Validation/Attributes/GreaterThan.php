@@ -5,14 +5,14 @@ use App\Core\Validation\ValidationContext;
 use Attribute;
 
 /**
- * Validate if a numeric property's value is greater than or equal to a specified value.
+ * Validate if a numeric property's value is greater than a specified value.
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-class Min extends IsNumeric
+class GreaterThan extends IsNumeric
 {
-    public function __construct(private readonly string $minValue, ?bool $each = null, ?string $msg = null) {
-        if (!is_numeric($minValue)) {
-            throw new \InvalidArgumentException("Invalid min value [$minValue] - min value must be numberic");
+    public function __construct(private readonly string $bound, ?bool $each = null, ?string $msg = null) {
+        if (!is_numeric($bound)) {
+            throw new \InvalidArgumentException("Invalid bound value [$bound] - bound value must be numberic");
         }
 
         parent::__construct($each, $msg);
@@ -24,15 +24,15 @@ class Min extends IsNumeric
         if ($msg !== null) {
             return $msg;
         }
-
-        if ($value < $this->minValue) {
-            $msg = "'$propName' must be greater than or equal to $this->minValue";
+        
+        if ($value <= $this->bound) {
+            $msg = "'$propName' must be greater than $this->bound";
         }
         return $msg;
     }
 
     #[\Override]
     public function getConstraint(): string {
-        return 'min value ' . $this->minValue;
+        return 'greater than ' . $this->bound;
     }
 }

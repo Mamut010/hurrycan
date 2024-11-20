@@ -4,6 +4,9 @@ namespace App\Core\Validation\Attributes;
 use App\Core\Validation\ValidationContext;
 use Attribute;
 
+/**
+ * Validate if a numeric property's value is less than or equal to a specified value.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class Max extends IsNumeric
 {
@@ -23,13 +26,13 @@ class Max extends IsNumeric
         }
         
         if ($value > $this->maxValue) {
-            $msg = "'$propName' must be lower than or equal to $this->maxValue";
+            $msg = "'$propName' must be less than or equal to $this->maxValue";
         }
         return $msg;
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return 'max value ' . $this->maxValue;
     }
 }

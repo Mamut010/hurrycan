@@ -5,6 +5,9 @@ use App\Core\Validation\Bases\ArraySupportPropertyValidator;
 use App\Core\Validation\ValidationContext;
 use Attribute;
 
+/**
+ * Validate if a property is an integer.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class IsInteger extends ArraySupportPropertyValidator
 {
@@ -19,7 +22,7 @@ class IsInteger extends ArraySupportPropertyValidator
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return 'is integer';
     }
 }
