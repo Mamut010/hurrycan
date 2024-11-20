@@ -288,36 +288,36 @@ class DefaultApplication implements Application
 
         $validationModel = $type?->getName();
         $validationResult = $requestValidation->invoke($validator, $this->request, $validationModel);
-        if ($validationResult instanceof ValidationErrorBag) {
-            $errorMsg = $requestValidation->errorMessage ?? $validationResult;
+        // If the validation is sucessful
+        if (!$validationResult instanceof ValidationErrorBag) {
+            // Use the result
+            return Optional::of($validationResult);
+        }
+        // If the validation failed and is required
+        elseif ($requestValidation->isRequired()) {
+            // Throw a 400 Bad Request error with a message
+            $errorMsg = $requestValidation->getErrorMessage() ?? $validationResult;
             $errorMsg = strval(json_encode($errorMsg));
             throw new HttpException(HttpCode::BAD_REQUEST, $errorMsg);
         }
         else {
-            return Optional::of($validationResult);
+            // Get the default value of param if possible. Else, delegate to other checks
+            return Reflections::getParamDefaultValue($param);
         }
     }
 
     private static function handleUntypedOrRouteBoundParam(\ReflectionParameter $param, array $routeParams): Optional {
-        $result = null;
-        $success = false;
         $paramName = $param->getName();
         if (array_key_exists($paramName, $routeParams)) {
             $routeParamValue = $routeParams[$paramName];
-            $result = $routeParamValue === null && $param->isDefaultValueAvailable()
+            $value = $routeParamValue === null && $param->isDefaultValueAvailable()
                 ? $param->getDefaultValue()
                 : $routeParams[$paramName];
-            $success = true;
+            return Optional::of($value);
         }
-        elseif ($param->isDefaultValueAvailable()) {
-            $result = $param->getDefaultValue();
-            $success = true;
+        else {
+            return Reflections::getParamDefaultValue($param);
         }
-        elseif ($param->allowsNull()) {
-            $result = null;
-            $success = true;
-        }
-        return $success ? Optional::of($result) : Optional::empty();
     }
 
     private function getCurrentRoute() {

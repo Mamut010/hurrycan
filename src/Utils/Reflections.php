@@ -1,6 +1,8 @@
 <?php
 namespace App\Utils;
 
+use App\Support\Optional\Optional;
+
 class Reflections
 {
     private function __construct() {
@@ -164,6 +166,17 @@ class Reflections
         return $reflector->invoke($obj, ...$args);
     }
 
+    public static function invokeMethodOrCallNoInstance(object $instance, string|array $callback, mixed ...$args): mixed {
+        if (is_string($callback) && method_exists($instance, $callback)) {
+            return Reflections::invokeMethod($instance, $callback, ...$args);
+        }
+        elseif (is_callable($callback)) {
+            return call_user_func($callback, ...$args);
+        }
+
+        throw new \InvalidArgumentException("Invalid callback provided");
+    }
+
     public static function getPropValue(object $obj, string $propName, ?int $filter = null): mixed {
         $reflector = new \ReflectionObject($obj);
         $prop = $reflector->getProperty($propName);
@@ -184,5 +197,17 @@ class Reflections
             }
         }
         return $prop->getValue($obj); // NOSONAR
+    }
+
+    public static function getParamDefaultValue(\ReflectionParameter $param): Optional {
+        if ($param->isDefaultValueAvailable()) {
+            return Optional::of($param->getDefaultValue());
+        }
+        elseif ($param->allowsNull()) {
+            return Optional::of(null);
+        }
+        else {
+            return Optional::empty();
+        }
     }
 }

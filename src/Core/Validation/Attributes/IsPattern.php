@@ -5,6 +5,9 @@ use App\Core\Validation\ValidationContext;
 use App\Utils\Regexes;
 use Attribute;
 
+/**
+ * Validate if a string property satisfies a regex pattern.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class IsPattern extends IsString
 {
@@ -29,7 +32,7 @@ class IsPattern extends IsString
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return 'is pattern ' . $this->pattern;
     }
 }

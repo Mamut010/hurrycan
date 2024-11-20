@@ -7,8 +7,8 @@ use App\Utils\Strings;
 use Attribute;
 
 /**
- * Validate if property value contains a substring. If multiple substrings are provided, the validator will perform
- * an OR operation.
+ * Validate if a string property's value contains a substring. If multiple substrings are provided,
+ * the validator will perform an OR operation.
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class Contains extends IsString
@@ -55,7 +55,7 @@ class Contains extends IsString
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         $substrMessage = $this->getSubstringMessage();
         return "contain $substrMessage";
     }

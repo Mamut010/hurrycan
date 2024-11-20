@@ -4,6 +4,9 @@ namespace App\Core\Validation\Attributes;
 use App\Core\Validation\ValidationContext;
 use Attribute;
 
+/**
+ * Validate if a numeric property's value is between two specified values.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class Between extends IsNumeric
 {
@@ -32,13 +35,13 @@ class Between extends IsNumeric
         }
 
         if ($value < $this->minValue || $value > $this->maxValue) {
-            $msg = "'$propName' is not between $this->minValue and $this->maxValue";
+            $msg = "'$propName' must be between $this->minValue and $this->maxValue";
         }
         return $msg;
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return "value between $this->minValue and $this->maxValue";
     }
 }

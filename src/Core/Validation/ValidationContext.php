@@ -18,7 +18,7 @@ class ValidationContext
     public function __construct(
         private readonly Validator $validator,
         private readonly object $modelInstance,
-        private readonly array $subject,
+        private array &$subject,
         private array &$passedProps,
         private array &$errorProps,
     ) {

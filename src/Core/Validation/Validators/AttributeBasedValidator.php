@@ -6,6 +6,7 @@ use App\Core\Shared\LateComputed;
 use App\Core\Validation\Attributes\FailFast;
 use App\Core\Validation\Attributes\IsRequired;
 use App\Core\Validation\Attributes\RequiredMessage;
+use App\Core\Validation\Attributes\Transform;
 use App\Core\Validation\Bases\IsOptionalBase;
 use App\Core\Validation\Contracts\PropertyValidator;
 use App\Core\Validation\Contracts\Validator;
@@ -52,7 +53,7 @@ class AttributeBasedValidatingExecution
     public function __construct(
         Validator $validator,
         private readonly string $validationModel,
-        private readonly array $subject
+        private array &$subject
     ) {
         $this->passedPropNames = [];
         $this->errorPropNames = [];
@@ -140,6 +141,7 @@ class AttributeBasedValidatingExecution
                 continue;
             }
             
+            $this->tryTransformSubjectValue($prop);
             $this->handleComputedAttribute($prop, $computeds);
 
             $error = $this->invokePropertyValidators($prop, $outputValue);
@@ -222,6 +224,18 @@ class AttributeBasedValidatingExecution
         }
     }
 
+    private function tryTransformSubjectValue(\ReflectionProperty $prop) {
+        $transform = Reflections::getAttribute($prop, Transform::class);
+        if ($transform === false) {
+            return;
+        }
+
+        $propName = $prop->getName();
+        $value = $this->subject[$propName];
+        $newValue = $transform->invoke($this->generateDummyModelInstance(), $value);
+        $this->subject[$propName] = $newValue;
+    }
+
     private function invokePropertyValidators(\ReflectionProperty $prop, mixed &$outputValue) {
         $validatorAttributes = $prop->getAttributes(PropertyValidator::class, \ReflectionAttribute::IS_INSTANCEOF);
         $propName = $prop->getName();
@@ -229,7 +243,7 @@ class AttributeBasedValidatingExecution
         $isOutputset = false;
         foreach ($validatorAttributes as $validatorAttribute) {
             $validator = $validatorAttribute->newInstance();
-            $validationResult = $validator->validate($this->ctx, $propName);
+            $validationResult = $validator->validate($this->ctx, $propName, $this->subject[$propName]);
             if ($validationResult->isFailure()) {
                 return $validationResult->getError();
             }

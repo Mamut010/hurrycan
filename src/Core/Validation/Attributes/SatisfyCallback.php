@@ -3,20 +3,24 @@ namespace App\Core\Validation\Attributes;
 
 use App\Core\Validation\Bases\ArraySupportPropertyValidator;
 use App\Core\Validation\ValidationContext;
+use App\Utils\Functions;
 use App\Utils\Reflections;
 use Attribute;
 
+/**
+ * Validate if a property's value satisfies a specified callback.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class SatisfyCallback extends ArraySupportPropertyValidator
 {
     /**
-     * @param string $callback A callable string that accepts the value to validate as the first argument,
-     * the second argument is the passed properties so far, the third argument
-     * is the names of properties that failed the validation so far.
+     * @param string|array $callback A callable string or array that accepts the value to validate
+     * as the first argument, the second argument is the passed properties so far, the third argument
+     * is the names of propertiesthat failed the validation so far.
      * @param ?bool $each [optional] Specify whether the validation will be applied to each elements in an array property
      * @param ?string $msg [optional] The custom error message
      */
-    public function __construct(private readonly string $callback, ?bool $each = null, ?string $msg = null) {
+    public function __construct(private readonly string|array $callback, ?bool $each = null, ?string $msg = null) {
         parent::__construct($each, $msg);
     }
 
@@ -26,19 +30,18 @@ class SatisfyCallback extends ArraySupportPropertyValidator
         $passProps = $ctx->passedProperties();
         $errorProps = $ctx->errorProperties();
 
-        if (is_string($this->callback) && method_exists($modelInstance, $this->callback)) {
-            $result = Reflections::invokeMethod($modelInstance, $this->callback, $value, $passProps, $errorProps);
-        }
-        elseif (is_callable($this->callback)) {
-            $result = call_user_func($this->callback, $value, $passProps, $errorProps);
-        }
-        else {
-            throw new \InvalidArgumentException("Invalid callback [$this->callback] provided");
-        }
+        $result = Reflections::invokeMethodOrCallNoInstance(
+            $modelInstance,
+            $this->callback,
+            $value,
+            $passProps,
+            $errorProps
+        );
 
         $success = boolval($result);
         if (!$success) {
-            return "'$propName' does not satisfy the callback '$this->callback'";
+            $constraintMsg = $this->getConstraint();
+            return "'$propName' does not $constraintMsg";
         }
         else {
             return null;
@@ -46,7 +49,8 @@ class SatisfyCallback extends ArraySupportPropertyValidator
     }
 
     #[\Override]
-    protected function getConstraint(): string {
-        return "satisfy callback '$this->callback'";
+    public function getConstraint(): string {
+        $callbackName = Functions::getPossibleCallbackName($this->callback);
+        return "satisfy callback '$callbackName'";
     }
 }

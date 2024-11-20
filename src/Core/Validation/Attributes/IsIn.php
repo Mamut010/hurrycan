@@ -4,9 +4,11 @@ namespace App\Core\Validation\Attributes;
 use App\Core\Validation\Bases\ArraySupportPropertyValidator;
 use App\Core\Validation\ValidationContext;
 use App\Utils\Enums;
-use App\Utils\Reflections;
 use Attribute;
 
+/**
+ * Validate if a property's value is in a list of values or a case of a {@see BackedEnum}.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class IsIn extends ArraySupportPropertyValidator
 {
@@ -15,7 +17,7 @@ class IsIn extends ArraySupportPropertyValidator
     /**
      * @template TValue
      * @template TBackedEnum of \BackedEnum
-     * @param class-string<\TBackedEnum>|TValue[] $values
+     * @param class-string<TBackedEnum>|TValue[] $values
      */
     public function __construct(string|array $enumOrValues, ?bool $each = null, ?string $msg = null) {
         parent::__construct($each, $msg);
@@ -39,7 +41,7 @@ class IsIn extends ArraySupportPropertyValidator
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         $valuesMessage = $this->getValuesMessage();
         return "is in $valuesMessage";
     }

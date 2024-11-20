@@ -4,6 +4,9 @@ namespace App\Core\Validation\Attributes;
 use App\Core\Validation\ValidationContext;
 use Attribute;
 
+/**
+ * Validate if a string property's length is between two specified lengths.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class BetweenLength extends IsString
 {
@@ -29,13 +32,13 @@ class BetweenLength extends IsString
 
         $valueLength = strlen($value);
         if ($valueLength < $this->minLength || $valueLength > $this->maxLength) {
-            $msg = "'$propName' is not between $this->minLength and $this->maxLength in length";
+            $msg = "'$propName' must be between $this->minLength and $this->maxLength in length";
         }
         return $msg;
     }
 
     #[\Override]
-    protected function getConstraint(): string {
+    public function getConstraint(): string {
         return "length between $this->minLength and $this->maxLength";
     }
 }

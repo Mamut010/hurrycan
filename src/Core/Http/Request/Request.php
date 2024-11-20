@@ -12,7 +12,7 @@ interface UriInfoOperation
     function url(): string;
     function queryString(): string;
     function queryAll(): array;
-    function query(string $name, ?string $default = null): ?string;
+    function query(string $name, mixed $default = null): mixed;
     function fullUrl(): string;
     function fullUrlWithQuery(array $query): string;
     function fullUrlWithoutQuery(array $queryKeys): string;
