@@ -1,10 +1,10 @@
 <?php
-namespace App\Http\Traits;
+namespace App\Dal\Traits;
 
 use App\Core\Validation\Attributes\IsOptional;
 use App\Core\Validation\Attributes\Transform;
 use App\Core\Validation\Attributes\ValidateNested;
-use App\Http\Support\OrderBy;
+use App\Dal\Support\OrderBy;
 use App\Utils\Arrays;
 
 trait HasOrderBy

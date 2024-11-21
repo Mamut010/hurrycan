@@ -188,9 +188,9 @@ class AttributeBasedValidatingExecution
         array &$passedProps,
     ) {
         $propName = $prop->getName();
-        $isOptional = $this->optionalModel;
+        $isOptional = Reflections::getAttribute($prop, IsOptionalBase::class, \ReflectionAttribute::IS_INSTANCEOF);
         if (!$isOptional) {
-            $isOptional = Reflections::getAttribute($prop, IsOptionalBase::class, \ReflectionAttribute::IS_INSTANCEOF);
+            $isOptional = $this->optionalModel;
         }
 
         $isRequiredProp = Reflections::getAttribute($prop, IsRequired::class) !== false;

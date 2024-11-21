@@ -1,9 +1,9 @@
 <?php
-namespace App\Http\Traits;
+namespace App\Dal\Traits;
 
 use App\Core\Validation\Attributes\IsOptionalDefaulted;
 use App\Core\Validation\Attributes\ValidateNested;
-use App\Http\Support\Pagination;
+use App\Dal\Support\Pagination;
 
 trait HasPagination
 {

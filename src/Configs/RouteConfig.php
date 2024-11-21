@@ -98,6 +98,15 @@ class RouteConfig
                 $route->post('/token', 'reissueTokens'),
             ]);
 
+        $route
+            ->controller(ProductController::class)
+            ->prefix('/products')
+            ->group([
+                $route->get('', 'index'),
+                $route->get('/{id}', 'getById')->whereNumber('id'),
+                $route->get('/shops/{shopId}', 'getByShopId')->whereNumber('shopId'),
+            ]);
+
         static::registerTestingRoutes($route);
 
         $route->middleware('auth')->group(static::registerProtectedRoutes($route));
@@ -112,16 +121,6 @@ class RouteConfig
                 ->prefix('/users')
                 ->group([
                     $route->get('', 'index'),
-                ]),
-
-            $route
-                ->controller(ProductController::class)
-                ->prefix('/products')
-                ->withoutMiddleware('auth') // Testing
-                ->group([
-                    $route->get('', 'index'),
-                    $route->get('/{id}', 'getById')->whereNumber('id'),
-                    $route->get('/shops/{shopId}', 'getByShopId')->whereNumber('shopId'),
                 ]),
         ];
     }

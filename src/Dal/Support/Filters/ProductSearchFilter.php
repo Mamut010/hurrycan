@@ -1,5 +1,5 @@
 <?php
-namespace App\Http\Support;
+namespace App\Dal\Support\Filters;
 
 use App\Core\Validation\Attributes\OptionalModel;
 use App\Core\Validation\Attributes\ValidateNested;

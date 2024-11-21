@@ -1,5 +1,5 @@
 <?php
-namespace App\Http\Support;
+namespace App\Dal\Support;
 
 use App\Core\Validation\Attributes\Between;
 use App\Core\Validation\Attributes\IsInteger;

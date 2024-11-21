@@ -2,12 +2,16 @@
 namespace App\Dal\Repos;
 
 use App\Core\Dal\Contracts\DatabaseHandler;
-use App\Dal\Dtos\UserDto;
 use App\Core\Dal\Contracts\PlainTransformer;
 use App\Dal\Contracts\ProductRepo;
 use App\Dal\Dtos\ProductDto;
+use App\Dal\Models\Product;
 use App\Dal\Models\Shop;
 use App\Dal\Models\User;
+use App\Dal\Requests\ProductQueryRequest;
+use App\Dal\Support\Filters\ProductSearchFilter;
+use App\Dal\Utils\Queries;
+use App\Utils\Converters;
 
 class ProductRepoImpl implements ProductRepo
 {
@@ -37,8 +41,40 @@ class ProductRepoImpl implements ProductRepo
     }
 
     #[\Override]
-    public function getAll(): array {
-        $rows = $this->db->query(static::BASE_QUERY);
+    public function query(?ProductQueryRequest $request): array {
+        if (!$request) {
+            $rows = $this->db->query(static::BASE_QUERY);
+            return $this->rowsToDtos($rows);
+        }
+
+        $whereSegments = [];
+        $params = [];
+        if (!isNullOrEmpty($request->keyword)) {
+            $whereSegments[] = 'p.`name` LIKE (?)';
+            $params[] = "%$request->keyword%";
+        }
+        if ($request->filter !== null) {
+            [$filterWhereSegments, $filterParams] = $this->makeFilterQuerySegments($request->filter);
+            array_push($whereSegments, ...$filterWhereSegments);
+            array_push($params, ...$filterParams);
+        }
+
+        $where = !empty($whereSegments) ? 'WHERE ' . implode(' AND ', $whereSegments) : null;
+        $orderByQuery = Queries::createOrderByQueryFromModel(
+            $request->orderBy,
+            Product::class,
+            fn(string $key) => 'p.`' . Converters::camelToSnake($key) . '`'
+        );
+        if ($orderByQuery === null) {
+            $orderByQuery = 'ORDER BY p.`updated_at` DESC';
+        }
+        $paginationQuery = Queries::createPaginationQuery($request->pagination);
+        $optionSegments = [$where, $orderByQuery, $paginationQuery];
+
+        $option = implode(' ', array_filter($optionSegments, 'is_string'));
+
+        $query = static::BASE_QUERY . ' ' . $option;
+        $rows = $this->db->query($query, ...$params);
         return $this->rowsToDtos($rows);
     }
 
@@ -54,6 +90,30 @@ class ProductRepoImpl implements ProductRepo
         $query = static::BASE_QUERY . 'WHERE p.`shop_id` = (?)';
         $rows = $this->db->query($query, $shopId);
         return $this->rowsToDtos($rows);
+    }
+
+    private function makeFilterQuerySegments(ProductSearchFilter $filter) {
+        if (!$filter->rating || ($filter->rating->gt && $filter->rating->lt)) {
+            return [[], []];
+        }
+
+        $whereSegments = [];
+        $params = [];
+
+        if ($filter->rating->gt) {
+            $whereSegments[] = 'p.`average_rating` >= (?)';
+            $params[] = $filter->rating->value;
+        }
+        elseif ($filter->rating->lt) {
+            $whereSegments[] = 'p.`average_rating` <= (?)';
+            $params[] = $filter->rating->value;
+        }
+        else {
+            $whereSegments[] = 'p.`average_rating` = (?)';
+            $params[] = $filter->rating->value;
+        }
+
+        return [$whereSegments, $params];
     }
 
     private function singleOrFalse(array $rows) {
