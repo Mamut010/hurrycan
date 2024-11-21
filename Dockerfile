@@ -18,10 +18,14 @@ FROM php:8.2-apache AS base
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
     && mkdir /var/www/html/public /var/www/html/resources /var/www/db \
     && a2enmod rewrite \
+    && pecl install \
+        redis \
     && docker-php-ext-install \
         mysqli \
         bcmath \
-    && docker-php-ext-enable mysqli
+    && docker-php-ext-enable \
+        mysqli \
+        redis
 # Copy custom ini files into conf.d
 COPY ./.docker/php/*.ini /usr/local/etc/php/conf.d/
 # Copy source code

@@ -245,6 +245,8 @@ END//
 
 DELIMITER ;
 
+DELIMITER //
+
 -- Event Scheduler
 CREATE EVENT purge_expired_refresh_tokens
 ON SCHEDULE EVERY 1 DAY
@@ -252,4 +254,6 @@ DO
 BEGIN
     DELETE FROM refresh_token
     WHERE expires_at IS NOT NULL AND expires_at <= NOW();
-END;
+END//
+
+DELIMITER ;
