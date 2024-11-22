@@ -15,6 +15,7 @@ final class HttpHeader
     const ACCESS_CONTROL_MAX_AGE = 'Access-Control-Max-Age';
     const ACCESS_CONTROL_REQUEST_METHOD = 'Access-Control-Request-Method';
     const ACCESS_CONTROL_REQUEST_HEADERS = 'Access-Control-Request-Headers';
+    const CACHE_CONTROL = 'Cache-Control';
     const CONTENT_DISPOSITION = 'Content-Disposition';
     const CONTENT_TYPE = 'Content-Type';
     const CONTENT_LANGUAGE = 'Content-Language';
@@ -23,8 +24,8 @@ final class HttpHeader
     const LOCATION = 'Location';
     const ORIGIN = 'Origin';
     const VARY = 'Vary';
+    const RETRY_AFTER = 'Retry-After';
     const X_REQUESTED_WITH = 'X-Requested-With';
-
     const X_CSRF_TOKEN = 'X-CSRF-Token';
     const X_XSRF_TOKEN = 'X-XSRF-Token';
 }

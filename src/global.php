@@ -1,6 +1,7 @@
 <?php
 
 use App\AppProvider;
+use App\Constants\Delimiter;
 use App\Constants\HttpCode;
 use App\Constants\HttpHeader;
 use App\Constants\MimeType;
@@ -222,5 +223,18 @@ if (!function_exists('bc')) {
             throw new \InvalidArgumentException('Given arguments are not valid bc expression');
         }
         return $expression;
+    }
+}
+
+if (!function_exists('classBasename')) {
+    /**
+     * Get the class "basename" of the given object / class.
+     *
+     * @param object|string $objectOrClass
+     * @return string
+     */
+    function classBasename(string|object $objectOrClass) {
+        $class = is_object($objectOrClass) ? get_class($objectOrClass) : $objectOrClass;
+        return basename(str_replace(Delimiter::NAMESPACE, DIRECTORY_SEPARATOR, $class));
     }
 }

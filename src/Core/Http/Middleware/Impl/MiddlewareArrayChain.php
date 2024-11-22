@@ -43,11 +43,16 @@ class MiddlewareArrayChain implements MiddlewareChain
     }
 
     #[\Override]
-    public function getMiddlewaresByName(string $name): array|false {
-        if (!$this->namedMiddlewares->contains($name)) {
-            return false;
+    public function getMiddlewaresByName(string|array $name): array|false {
+        $middlewares = [];
+        $names = Arrays::asArray($name);
+        foreach ($names as $currentName) {
+            if ($this->namedMiddlewares->contains($currentName)) {
+                $associatedMiddlewares = $this->getMiddlewaresByNameImpl($name, []);
+                array_push($middlewares, ...$associatedMiddlewares);
+            }
         }
-        return $this->getMiddlewaresByNameImpl($name, []);
+        return !empty($middlewares) ? $middlewares : false;
     }
 
     /**

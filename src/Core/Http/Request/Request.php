@@ -80,7 +80,7 @@ interface Request extends UriInfoOperation, HeaderInfoOperation, InputInfoOperat
 {
     function method(): string;
     function isMethod(string $method): bool;
-    function ipAddress(): string|false;
+    function ipAddress(): string;
     function schemeAndHost(): string;
 
     /**

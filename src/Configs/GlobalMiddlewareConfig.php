@@ -11,6 +11,10 @@ class GlobalMiddlewareConfig
     public static function register(MiddlewareChain $middlewares) {
         $middlewares->use([
             'cors' => \App\Http\Middlewares\CorsMiddleware::class,
+            'rate-limit' => [
+                \App\Http\Middlewares\ServerRateLimitMiddleware::class,
+                \App\Http\Middlewares\IpRateLimitMiddleware::class
+            ],
             'session' => \App\Http\Middlewares\SessionStartMiddleware::class,
             'bc' => \App\Http\Middlewares\BcSetupMiddleware::class,
         ]);

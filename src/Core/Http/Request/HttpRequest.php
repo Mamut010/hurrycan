@@ -97,7 +97,7 @@ class HttpRequest implements Request
     }
 
     #[\Override]
-    public function ipAddress(): string|false {
+    public function ipAddress(): string {
         $server = $this->global->server();
         $possibleSources = [
             'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED',
@@ -109,9 +109,10 @@ class HttpRequest implements Request
         foreach ($possibleSources as $source) {
             if (isset($server[$source])) {
                 $ipAddress = $server[$source];
+                break;
             }
         }
-        return $ipAddress;
+        return $ipAddress ?: '';
     }
 
     #[\Override]
