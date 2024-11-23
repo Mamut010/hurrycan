@@ -20,6 +20,7 @@ class CsrfMiddleware implements Middleware
         
     }
     
+    #[\Override]
     public function handle(Request $request, Closure $next): Response {
         if (static::isSafeRequest($request)) {
             return $next();
