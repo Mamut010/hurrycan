@@ -6,16 +6,20 @@ use App\Core\Di\InjectionContext;
 use App\Dal\Contracts\UserRepo;
 use App\Core\Dal\Contracts\DatabaseHandler;
 use App\Core\Dal\DatabaseHandlers\MysqlDatabaseHandler;
+use App\Dal\Contracts\CartRepo;
 use App\Dal\Contracts\CustomerRepo;
 use App\Dal\Contracts\ProductRepo;
 use App\Dal\Contracts\RefreshTokenRepo;
+use App\Dal\Repos\CartRepoImpl;
 use App\Dal\Repos\CustomerRepoImpl;
 use App\Dal\Repos\ProductRepoImpl;
 use App\Dal\Repos\RefreshTokenRepoImpl;
 use App\Dal\Repos\UserRepoImpl;
 use App\Http\Contracts\AuthService;
+use App\Http\Contracts\CartService;
 use App\Http\Contracts\UserService;
 use App\Http\Services\AuthServiceImpl;
+use App\Http\Services\CartServiceImpl;
 use App\Http\Services\UserServiceImpl;
 use App\Support\Caching\Cacher;
 use App\Support\Caching\Cachers\RedisCacher;
@@ -58,8 +62,10 @@ class ContainerConfig
         $container->bind(RefreshTokenRepo::class)->to(RefreshTokenRepoImpl::class);
         $container->bind(ProductRepo::class)->to(ProductRepoImpl::class);
         $container->bind(CustomerRepo::class)->to(CustomerRepoImpl::class);
+        $container->bind(CartRepo::class)->to(CartRepoImpl::class);
 
         $container->bind(AuthService::class)->to(AuthServiceImpl::class);
         $container->bind(UserService::class)->to(UserServiceImpl::class);
+        $container->bind(CartService::class)->to(CartServiceImpl::class);
     }
 }

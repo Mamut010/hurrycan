@@ -2,10 +2,12 @@
 namespace App\Configs;
 
 use App\Constants\HttpCode;
+use App\Constants\HttpMethod;
 use App\Core\Http\Request\Request;
 use App\Core\Routing\Contracts\RouteBuilder;
 use App\Dal\Contracts\RefreshTokenRepo;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\MemeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
@@ -123,6 +125,16 @@ class RouteConfig
                 ->group([
                     $route->get('', 'index'),
                 ]),
+            
+            $route
+                ->controller(CartController::class)
+                ->prefix('/carts/user-cart')
+                ->group([
+                    $route->get('/', 'show'),
+                    $route->post('/', 'store'),
+                    $route->match([HttpMethod::PUT, HttpMethod::PATCH], '/', 'update'),
+                    $route->delete('/', 'destroy')
+                ])
         ];
     }
 

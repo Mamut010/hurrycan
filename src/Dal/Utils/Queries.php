@@ -104,13 +104,18 @@ class Queries
         }
 
         $column = implode(static::PARAM_SEPARATOR, $columns);
-        $placeholder = implode(static::PARAM_SEPARATOR, array_fill(0, count($values), static::PLACEHOLDER));
+        $placeholder = static::createPlaceholder($values);
 
         $writeParam = new WriteParam;
         $writeParam->column = $column;
         $writeParam->placeholder = $placeholder;
         $writeParam->values = $values;
         return $writeParam;
+    }
+
+    public static function createPlaceholder(int|array $countOrValues): string {
+        $count = is_array($countOrValues) ? count($countOrValues) : $countOrValues;
+        return implode(static::PARAM_SEPARATOR, array_fill(0, $count, static::PLACEHOLDER));
     }
 }
 

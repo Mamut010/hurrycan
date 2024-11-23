@@ -102,6 +102,11 @@ final class HttpCode
     const IM_A_TEAPOT = 418;
 
     /**
+     * The request was well-formed but was unable to be followed due to semantic errors.
+     */
+    const UNPROCESSABLE_CONTENT = 422;
+
+    /**
      * The user has sent too many requests in a given amount of time (rate limiting).
      */
     const TOO_MANY_REQUESTS = 429;

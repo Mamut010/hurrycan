@@ -57,6 +57,11 @@ class MysqlDatabaseHandler implements DatabaseHandler
     public function lastInsertId(): int|string|null {
         return $this->insertId;
     }
+
+    #[\Override]
+    public function lastAffectedRows(): int|string {
+        return $this->dbHandler->affected_rows;
+    }
     
     #[\Override]
     public function execute(string $query, mixed ...$params): bool {

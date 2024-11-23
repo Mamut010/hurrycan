@@ -46,6 +46,13 @@ class ProductController extends Controller
             if (isset($product->shop)) {
                 unset($product->shop->user);
             }
+            if (isset($product->cartProducts)) {
+                unset($product->cartProducts);
+            }
+            
+            foreach ($product->illustrations as &$illustration) {
+                unset($illustration->product);
+            }
         }
     }
 }

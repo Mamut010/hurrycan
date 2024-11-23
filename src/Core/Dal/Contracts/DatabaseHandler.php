@@ -10,6 +10,8 @@ interface DatabaseHandler
     function execute(string $query, mixed ...$params): bool;
 
     function lastInsertId(): int|string|null;
+
+    function lastAffectedRows(): int|string;
     
     /**
      * @return array<string,mixed>[]

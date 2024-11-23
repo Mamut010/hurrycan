@@ -42,6 +42,9 @@ class AttributeBasedPlainTransformingExecution
 {
     private array $built = [];
 
+    /**
+     * @param array<string,string|callable(string $defaultKey, string $propName): string> $classKeyMappers
+     */
     public function __construct(
         private array &$buildings,
         private int &$depth,
@@ -131,9 +134,15 @@ class AttributeBasedPlainTransformingExecution
             if ($this->handleAttributes($prop, $classKeyMapper, $keyMappers, $refTypeCallbacks, $computeds, $lateComputeds)) {
                 continue;
             }
-            
-            if ($classKeyMapper) {
-                $propName = $prop->getName();
+            if ($classKeyMapper === null) {
+                continue;
+            }
+
+            $propName = $prop->getName();
+            if (is_string($classKeyMapper)) {
+                $keyMappers[$propName] = static::stringClassKeyMapperToFn($classKeyMapper);
+            }
+            else {
                 $keyMappers[$propName] = $classKeyMapper;
             }
         }
@@ -142,7 +151,7 @@ class AttributeBasedPlainTransformingExecution
 
     private function handleAttributes(
         \ReflectionProperty $prop,
-        ?callable $classKeyMapper,
+        string|callable|null $classKeyMapper,
         array &$keyMappers,
         array &$refTypeCallbacks,
         array &$computeds,
@@ -170,16 +179,29 @@ class AttributeBasedPlainTransformingExecution
         return true;
     }
 
-    private function handleColumnAttribute(\ReflectionProperty $prop, ?callable $classKeyMapper, array &$keyMappers) {
+    private function handleColumnAttribute(
+        \ReflectionProperty $prop,
+        string|callable|null $classKeyMapper,
+        array &$keyMappers
+    ) {
         $propName = $prop->getName();
         $columnAttribute = Reflections::getAttribute($prop, Column::class);
         if (!$columnAttribute) {
             return false;
         }
         $column = $columnAttribute->name;
-        $keyMappers[$propName] = fn() => $classKeyMapper
-            ? call_user_func($classKeyMapper, $column, $propName)
-            : $column;
+
+        if ($classKeyMapper === null) {
+            $fn = fn() => $column;
+        }
+        elseif (is_string($classKeyMapper)) {
+            $fn = static::stringClassKeyMapperToFn($classKeyMapper);
+        }
+        else {
+            $fn = fn() => call_user_func($classKeyMapper, $column, $propName);
+        }
+
+        $keyMappers[$propName] = $fn;
         return true;
     }
 
@@ -205,6 +227,10 @@ class AttributeBasedPlainTransformingExecution
         $lateComputeds[$propName] = fn(object $instance) => $lateComputedAttribute->compute($instance, $prop);
         $keyMappers[$propName] = static::skipProp();
         return true;
+    }
+
+    private static function stringClassKeyMapperToFn(string $classKeyMapper) {
+        return fn (string $defaultKey) => $classKeyMapper . $defaultKey;
     }
 
     private static function skipProp() {
