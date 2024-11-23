@@ -8,6 +8,8 @@ interface DatabaseHandler
     function commit(): void;
 
     function execute(string $query, mixed ...$params): bool;
+
+    function lastInsertId(): int|string|null;
     
     /**
      * @return array<string,mixed>[]

@@ -37,7 +37,7 @@ class Converters
      * Convert a given object into an array.
      * @param object $object The converted object
      * @param bool $recursive Whether to recursively convert object property to array
-     * @return array The result array
+     * @return array<string,mixed> The result array
      */
     public static function objectToArray(object $object, bool $recursive = false): array {
         $result = [];

@@ -93,6 +93,7 @@ class RouteConfig
             ->controller(AuthController::class)
             ->prefix('/auth')
             ->group([
+                $route->post('/sign-up', 'customerSignUp'),
                 $route->post('/login', 'login'),
                 $route->post('/logout', 'logout')->middleware('auth'),
                 $route->post('/token', 'reissueTokens'),

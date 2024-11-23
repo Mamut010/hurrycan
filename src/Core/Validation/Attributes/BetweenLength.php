@@ -16,11 +16,11 @@ class BetweenLength extends IsString
     public function __construct(private int $length1, private int $length2, ?bool $each = null, ?string $msg = null) {
         parent::__construct($each, $msg);
 
-        $this->minLength = min($length1, $length2);
-        $this->maxLength = max($length1, $length2);
+        $minLength = min($length1, $length2);
+        $maxLength = max($length1, $length2);
 
-        $this->minLength = max(0, $this->minLength);
-        $this->maxLength = max(0, $this->maxLength);
+        $this->minLength = max(0, $minLength);
+        $this->maxLength = max(0, $maxLength);
     }
 
     #[\Override]

@@ -4,9 +4,13 @@ namespace App\Dal\Utils;
 use App\Dal\Support\OrderBy;
 use App\Dal\Support\Pagination;
 use App\Utils\Arrays;
+use App\Utils\Converters;
 
 class Queries
 {
+    public const PARAM_SEPARATOR = ', ';
+    public const PLACEHOLDER = '?';
+
     private function __construct() {
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
@@ -84,4 +88,40 @@ class Queries
         $orderByQuery = implode(', ', $orderBySegments);
         return "ORDER BY $orderByQuery";
     }
+
+    /**
+     * @param array<string,mixed> $src
+     * @param ?callable(string $key):string $keyMapper
+     */
+    public static function createWriteParam(array $src, ?callable $keyMapper = null): WriteParam {
+        $keyMapper ??= fn (string $key) => Converters::camelToSnake($key);
+
+        $columns = [];
+        $values = [];
+        foreach ($src as $key => $value) {
+            $columns[] = call_user_func($keyMapper, $key);
+            $values[] = $value;
+        }
+
+        $column = implode(static::PARAM_SEPARATOR, $columns);
+        $placeholder = implode(static::PARAM_SEPARATOR, array_fill(0, count($values), static::PLACEHOLDER));
+
+        $writeParam = new WriteParam;
+        $writeParam->column = $column;
+        $writeParam->placeholder = $placeholder;
+        $writeParam->values = $values;
+        return $writeParam;
+    }
+}
+
+class WriteParam
+{
+    public string $column;
+
+    /**
+     * @var array<string,mixed>
+     */
+    public array $values;
+
+    public string $placeholder;
 }

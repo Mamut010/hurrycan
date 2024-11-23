@@ -6,10 +6,11 @@ use App\Constants\SameSite;
 use App\Core\Http\Cookie\CookieOptions;
 use App\Core\Http\Request\Request;
 use App\Core\Validation\Attributes\ReqBody;
-use App\Dal\Contracts\UserRepo;
 use App\Http\Contracts\AuthService;
+use App\Http\Contracts\UserService;
 use App\Http\Dtos\AccessTokenPayloadDto;
 use App\Http\Exceptions\UnauthorizedException;
+use App\Http\Requests\CustomerSignUpRequest;
 use App\Http\Requests\LoginRequest;
 use App\Settings\Auth;
 use App\Utils\Converters;
@@ -18,13 +19,25 @@ class AuthController
 {
     public function __construct(
         private readonly AuthService $authService,
-        private readonly UserRepo $userRepo,
+        private readonly UserService $userService,
     ) {
         
     }
 
+    public function customerSignUp(#[ReqBody] CustomerSignUpRequest $signUpRequest) {
+        $user = $this->userService->findOneByUsername($signUpRequest->username);
+        if ($user) {
+            return response()->err(HttpCode::BAD_REQUEST, 'Username already exists');
+        }
+
+        $success = $this->userService->createCustomer($signUpRequest);
+        $msg = $success ? 'Success' : 'Failed to sign up';
+        $status = $success ? HttpCode::CREATED : HttpCode::CONFLICT;
+        return response()->make($msg)->statusCode($status);
+    }
+
     public function login(#[ReqBody] LoginRequest $loginRequest) {
-        $user = $this->userRepo->findOneByUsername($loginRequest->username);
+        $user = $this->userService->findOneByUsername($loginRequest->username);
         if (!$user || !password_verify($loginRequest->password, $user->password)) {
             throw new UnauthorizedException("Wrong username or password");
         }

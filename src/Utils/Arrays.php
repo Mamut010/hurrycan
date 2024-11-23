@@ -98,10 +98,10 @@ class Arrays
     }
 
     /**
-     * @template TKey
+     * @template TKey of int|string
      * @template TValue
      * @param array<TKey,TValue> $array
-     * @param mixed[] $keys
+     * @param TKey[] $keys
      * @return array<TKey,TValue>
      */
     public static function retainKeys(array $array, array $keys) {

@@ -6,13 +6,17 @@ use App\Core\Di\InjectionContext;
 use App\Dal\Contracts\UserRepo;
 use App\Core\Dal\Contracts\DatabaseHandler;
 use App\Core\Dal\DatabaseHandlers\MysqlDatabaseHandler;
+use App\Dal\Contracts\CustomerRepo;
 use App\Dal\Contracts\ProductRepo;
 use App\Dal\Contracts\RefreshTokenRepo;
+use App\Dal\Repos\CustomerRepoImpl;
 use App\Dal\Repos\ProductRepoImpl;
 use App\Dal\Repos\RefreshTokenRepoImpl;
 use App\Dal\Repos\UserRepoImpl;
 use App\Http\Contracts\AuthService;
+use App\Http\Contracts\UserService;
 use App\Http\Services\AuthServiceImpl;
+use App\Http\Services\UserServiceImpl;
 use App\Support\Caching\Cacher;
 use App\Support\Caching\Cachers\RedisCacher;
 use App\Support\Caching\ExpirySupportCacher;
@@ -22,8 +26,6 @@ use App\Support\Jwt\JwtHandler;
 use App\Support\Jwt\StandardJwtHandler;
 use App\Support\Throttle\BucketFactory;
 use App\Support\Throttle\Factories\CacherBucketFactory;
-use App\Support\Throttle\RateLimitBucket;
-use App\Support\Throttle\TokenBucket;
 
 class ContainerConfig
 {
@@ -55,7 +57,9 @@ class ContainerConfig
         $container->bind(UserRepo::class)->to(UserRepoImpl::class);
         $container->bind(RefreshTokenRepo::class)->to(RefreshTokenRepoImpl::class);
         $container->bind(ProductRepo::class)->to(ProductRepoImpl::class);
+        $container->bind(CustomerRepo::class)->to(CustomerRepoImpl::class);
 
         $container->bind(AuthService::class)->to(AuthServiceImpl::class);
+        $container->bind(UserService::class)->to(UserServiceImpl::class);
     }
 }
