@@ -2,9 +2,12 @@
 namespace App\Support;
 
 use App\Support\Unit\TimeUnit;
+use App\Utils\Converters;
 
-class Rate
+class Rate implements \Stringable, \JsonSerializable
 {
+    public const SEPARATOR = '/';
+
     /**
      * @param int|float $value The rate value
      * @param TimeUnit $unit [optional] The time unit of the rate. Defauled to {@see TimeUnit::SECOND}.
@@ -15,6 +18,49 @@ class Rate
     ) {
         if ($value < 0) {
             $value = 0;
+        }
+    }
+
+    #[\Override]
+    public function __toString(): string {
+        return $this->value . static::SEPARATOR . $this->unit->symbol();
+    }
+
+    public function __serialize(): array {
+        return [
+            'value' => $this->value,
+            'unit' => $this->unit->value,
+        ];
+    }
+
+    public function __unserialize(array $data): void {
+        $this->value = $data['value'];
+        $this->unit = TimeUnit::from($data['unit']);
+    }
+
+    public static function parse(string $str): Rate {
+        $segments = explode(static::SEPARATOR, $str);
+        if (empty($segments) || count($segments) > 2) {
+            throw new \InvalidArgumentException("Invalid string '$str': not a valid rate");
+        }
+
+        $valueSegment = $segments[0];
+        $value = Converters::strToNumber($valueSegment);
+        if ($value === false) {
+            $valueSegment = trim($valueSegment);
+            throw new \InvalidArgumentException("Invalid value '$valueSegment': not a numeric value");
+        }
+
+        if (count($segments) === 2) {
+            $unitSegment = trim($segments[1]);
+            $unit = TimeUnit::tryFrom(strtolower($unitSegment));
+            if (!$unit) {
+                throw new \InvalidArgumentException("Invalid unit '$unitSegment': not a valid time unit");
+            }
+            return new Rate($value, $unit);
+        }
+        else {
+            return new Rate($value);
         }
     }
 
@@ -68,5 +114,10 @@ class Rate
             $period *= $ratio;
         }
         return $period;
+    }
+
+    #[\Override]
+    public function jsonSerialize(): mixed {
+        return $this->__toString();
     }
 }

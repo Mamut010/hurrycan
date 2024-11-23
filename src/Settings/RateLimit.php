@@ -1,23 +1,19 @@
 <?php
 namespace App\Settings;
 
-use App\Support\Unit\TimeUnit;
-
 final class RateLimit
 {
     /**
      * Maximum number of tokens in a bucket used for the whole server
      */
-    public const SERVER_BUCKET_CAPACITY = 1000;
-    public const SERVER_BUCKET_RATE_VALUE = 100; // 100 tokens per second
-    public const SERVER_BUCKET_RATE_TIME_UNIT = TimeUnit::SECOND;
+    public const SERVER_BUCKET_CAPACITY = 10000;
+    public const SERVER_BUCKET_FILL_RATE = '50/s';
 
     /**
      * Maximum number of tokens in a bucket used for request IP
      */
     public const IP_BUCKET_CAPACITY = 50;
-    public const IP_BUCKET_RATE_VALUE = 0.5; // 1 tokens per 2 seconds
-    public const IP_BUCKET_RATE_TIME_UNIT = TimeUnit::SECOND;
+    public const IP_BUCKET_FILL_RATE = '0.5/s'; // 1 token per 2 seconds
 
     /**
      * Threshold to detect abnormal request calls.

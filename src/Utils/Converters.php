@@ -29,6 +29,10 @@ class Converters
         return new JsonSerializableDateTime($formattedDate, $timezone);
     }
 
+    public static function strToNumber(string $numericString): int|float|false {
+        return is_numeric($numericString) ? $numericString + 0 : false;
+    }
+
     /**
      * Convert a given object into an array.
      * @param object $object The converted object

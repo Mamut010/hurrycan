@@ -109,7 +109,8 @@ class SavedStateTokenBucket implements TokenBucket
     }
 
     private function saveBucketState(TokenBucketState $state): void {
-        $ttl = $this->fillRate->calculateTime($this->capacity, TimeUnit::MILLI_SECOND);
+        $tokensTillCapacity = $this->capacity - $state->tokens;
+        $ttl = $this->fillRate->calculateTime($tokensTillCapacity, TimeUnit::MILLI_SECOND);
         $ttl = (int) ceil($ttl);
         $this->storage->store(json_encode($state), $ttl);
     }

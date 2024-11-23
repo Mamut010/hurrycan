@@ -30,7 +30,7 @@ class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
         $this->request = $request;
 
         $key = $this->request->ipAddress();
-        $bucketFillRate = new Rate(RateLimit::IP_BUCKET_RATE_VALUE, RateLimit::IP_BUCKET_RATE_TIME_UNIT);
+        $bucketFillRate = Rate::parse(RateLimit::IP_BUCKET_FILL_RATE);
         $bucket = $this->bucketFactory->token($key, RateLimit::IP_BUCKET_CAPACITY, $bucketFillRate);
         $bucket->setTokenConsumedListener($this);
 

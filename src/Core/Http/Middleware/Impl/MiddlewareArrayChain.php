@@ -48,7 +48,7 @@ class MiddlewareArrayChain implements MiddlewareChain
         $names = Arrays::asArray($name);
         foreach ($names as $currentName) {
             if ($this->namedMiddlewares->contains($currentName)) {
-                $associatedMiddlewares = $this->getMiddlewaresByNameImpl($name, []);
+                $associatedMiddlewares = $this->getMiddlewaresByNameImpl($currentName, []);
                 array_push($middlewares, ...$associatedMiddlewares);
             }
         }

@@ -27,7 +27,7 @@ class ServerRateLimitMiddleware implements Middleware, TokenConsumedListener
     #[\Override]
     public function handle(Request $request, Closure $next): Response {
         $key = $this::class;
-        $bucketFillRate = new Rate(RateLimit::SERVER_BUCKET_RATE_VALUE, RateLimit::SERVER_BUCKET_RATE_TIME_UNIT);
+        $bucketFillRate = Rate::parse(RateLimit::SERVER_BUCKET_FILL_RATE);
         $bucket = $this->bucketFactory->token($key, RateLimit::SERVER_BUCKET_CAPACITY, $bucketFillRate);
         $bucket->setTokenConsumedListener($this);
 
