@@ -7,8 +7,8 @@ use App\Core\Dal\Contracts\PlainTransformer;
 use App\Dal\Contracts\CustomerRepo;
 use App\Dal\Dtos\CustomerDto;
 use App\Dal\Exceptions\DatabaseException;
+use App\Dal\Input\CustomerCreate;
 use App\Dal\Models\Customer;
-use App\Dal\Requests\CustomerCreateRequest;
 use App\Dal\Utils\Queries;
 use App\Utils\Arrays;
 use App\Utils\Converters;
@@ -46,19 +46,19 @@ class CustomerRepoImpl implements CustomerRepo
     }
 
     #[\Override]
-    public function create(CustomerCreateRequest $request): bool {
-        if (!$this->createUser($request)) {
+    public function create(CustomerCreate $data): bool {
+        if (!$this->createUser($data)) {
             return false;
         }
         $userId = $this->db->lastInsertId();
         if ($userId === null) {
             throw new DatabaseException('Failed to retrieve user_id');
         }
-        return $this->createCustomer($request, $userId);
+        return $this->createCustomer($data, $userId);
     }
 
-    private function createUser(CustomerCreateRequest $request): bool {
-        $src = Converters::objectToArray($request);
+    private function createUser(CustomerCreate $data): bool {
+        $src = Converters::objectToArray($data);
         $src['role'] = Role::CUSTOMER;
         $src = Arrays::retainKeys($src, ['name', 'username', 'password', 'email', 'role']);
         $writeParam = Queries::createWriteParam($src);
@@ -70,10 +70,10 @@ class CustomerRepoImpl implements CustomerRepo
         return $this->db->execute($query, ...$writeParam->values);
     }
 
-    private function createCustomer(CustomerCreateRequest $request, int|string $userId): bool {
+    private function createCustomer(CustomerCreate $data, int|string $userId): bool {
         $src = [
             'userId' => $userId,
-            'phoneNumber' => $request->phoneNumber,
+            'phoneNumber' => $data->phoneNumber,
         ];
         $writeParam = Queries::createWriteParam($src);
 

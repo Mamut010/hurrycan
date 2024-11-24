@@ -1,8 +1,8 @@
 <?php
 namespace App\Dal\Utils;
 
-use App\Dal\Support\OrderBy;
-use App\Dal\Support\Pagination;
+use App\Dal\Input\Internal\OrderBy;
+use App\Dal\Input\Internal\Pagination;
 use App\Utils\Arrays;
 use App\Utils\Converters;
 
@@ -15,20 +15,24 @@ class Queries
         // STATIC CLASS SHOULD NOT BE INSTANTIATED
     }
 
-    public static function createPaginationQuery(Pagination $pagination): string {
-        return "LIMIT $pagination->take OFFSET $pagination->skip";
+    public static function createPaginationQuery(?Pagination $pagination): ?string {
+        return $pagination ? "LIMIT $pagination->take OFFSET $pagination->skip" : null;
     }
 
     /**
-     * @param OrderBy|OrderBy[] $orderBy
+     * @param null|OrderBy|OrderBy[] $orderBy
      * @param string $model
      * @param ?callable(string $key): string
      */
     public static function createOrderByQueryFromModel(
-        OrderBy|array $orderBy,
+        null|OrderBy|array $orderBy,
         string $model,
         ?callable $keyTransformer = null
     ): ?string {
+        if ($orderBy === null) {
+            return null;
+        }
+
         try {
             $reflector = new \ReflectionClass($model);
         }

@@ -17,9 +17,11 @@ use App\Dal\Repos\RefreshTokenRepoImpl;
 use App\Dal\Repos\UserRepoImpl;
 use App\Http\Contracts\AuthService;
 use App\Http\Contracts\CartService;
+use App\Http\Contracts\ProductService;
 use App\Http\Contracts\UserService;
 use App\Http\Services\AuthServiceImpl;
 use App\Http\Services\CartServiceImpl;
+use App\Http\Services\ProductServiceImpl;
 use App\Http\Services\UserServiceImpl;
 use App\Support\Caching\Cacher;
 use App\Support\Caching\Cachers\RedisCacher;
@@ -66,6 +68,7 @@ class ContainerConfig
 
         $container->bind(AuthService::class)->to(AuthServiceImpl::class);
         $container->bind(UserService::class)->to(UserServiceImpl::class);
+        $container->bind(ProductService::class)->to(ProductServiceImpl::class);
         $container->bind(CartService::class)->to(CartServiceImpl::class);
     }
 }

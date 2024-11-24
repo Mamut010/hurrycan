@@ -2,8 +2,8 @@
 namespace App\Http\Services;
 
 use App\Dal\Contracts\RefreshTokenRepo;
-use App\Dal\Requests\RefreshTokenCreateRequest;
-use App\Dal\Requests\RefreshTokenUpdateRequest;
+use App\Dal\Input\RefreshTokenCreate;
+use App\Dal\Input\RefreshTokenUpdate;
 use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AccessTokenClaims;
 use App\Http\Dtos\AccessTokenDto;
@@ -81,13 +81,13 @@ class AuthServiceImpl implements AuthService
         $options = new JwtOptions($claims);
         $token = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
 
-        $request = new RefreshTokenCreateRequest();
-        $request->jti = Uuids::uuidToBinary($jti);
-        $request->hash = Crypto::hash($token, $this->refreshTokenSecret);
-        $request->userId = $userId;
-        $request->issuedAt = Converters::timestampToDate($now);
-        $request->expiresAt = Converters::timestampToDate($exp);
-        if (!$this->refreshTokenRepo->create($request)) {
+        $data = new RefreshTokenCreate();
+        $data->jti = Uuids::uuidToBinary($jti);
+        $data->hash = Crypto::hash($token, $this->refreshTokenSecret);
+        $data->userId = $userId;
+        $data->issuedAt = Converters::timestampToDate($now);
+        $data->expiresAt = Converters::timestampToDate($exp);
+        if (!$this->refreshTokenRepo->create($data)) {
             throw new ConflictException('Unable to generate a valid credential');
         }
 
@@ -140,9 +140,9 @@ class AuthServiceImpl implements AuthService
         $options = new JwtOptions($claims);
         $newToken = $this->jwt->sign($payload, $this->refreshTokenSecret, $options);
 
-        $request = new RefreshTokenUpdateRequest();
-        $request->hash = Crypto::hash($newToken, $this->refreshTokenSecret);
-        if (!$this->refreshTokenRepo->update($jti, $request)) {
+        $data = new RefreshTokenUpdate();
+        $data->hash = Crypto::hash($newToken, $this->refreshTokenSecret);
+        if (!$this->refreshTokenRepo->update($jti, $data)) {
             throw new ConflictException('Unable to generate a valid credential');
         }
 

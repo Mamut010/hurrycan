@@ -2,8 +2,8 @@
 namespace App\Dal\Contracts;
 
 use App\Dal\Dtos\RefreshTokenDto;
-use App\Dal\Requests\RefreshTokenCreateRequest;
-use App\Dal\Requests\RefreshTokenUpdateRequest;
+use App\Dal\Input\RefreshTokenCreate;
+use App\Dal\Input\RefreshTokenUpdate;
 
 interface RefreshTokenRepo
 {
@@ -14,9 +14,9 @@ interface RefreshTokenRepo
      */
     function findManyByUserId(int $userId): array;
 
-    function create(RefreshTokenCreateRequest $request): bool;
+    function create(RefreshTokenCreate $data): bool;
 
-    function update(string $jti, RefreshTokenUpdateRequest $request): bool;
+    function update(string $jti, RefreshTokenUpdate $data): bool;
 
     function delete(string $jti): bool;
 }

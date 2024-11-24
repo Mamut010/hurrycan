@@ -1,5 +1,5 @@
 <?php
-namespace App\Dal\Support;
+namespace App\Dal\Input\Internal;
 
 use App\Constants\SortDirection;
 use App\Core\Validation\Attributes\IsIn;

@@ -1,7 +1,7 @@
 <?php
-namespace App\Dal\Requests;
+namespace App\Dal\Input;
 
-class CustomerCreateRequest
+class CustomerCreate
 {
     public string $name;
     public string $username;

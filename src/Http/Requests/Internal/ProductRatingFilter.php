@@ -1,5 +1,5 @@
 <?php
-namespace App\Dal\Support\Filters;
+namespace App\Http\Requests\Internal;
 
 use App\Core\Validation\Attributes\IsBool;
 use App\Core\Validation\Attributes\IsInteger;

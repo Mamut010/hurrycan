@@ -64,7 +64,7 @@ class Converters
         array $propSetters = null,
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
-        $valueChecker = fn(\ReflectionProperty $prop) => array_key_exists($prop->getName(), $array);
+        $valueChecker = static::arrayValueChecker($array);
         $valueGetter = function (object $obj, \ReflectionProperty $prop) use ($array, $propSetters) {
             $propName = $prop->getName();
             $value = Arrays::getOrDefaultExists($array, $propName);
@@ -91,7 +91,7 @@ class Converters
         array $propSetters = null,
         array $ctorArgs = null): object|false {
         $propSetters ??= [];
-        $valueChecker = fn(\ReflectionProperty $prop) => isset($instance->{$prop->getName()});
+        $valueChecker = static::instanceValueChecker($instance);
         $valueGetter = function (object $obj, \ReflectionProperty $prop) use ($instance, $propSetters) {
             $propName = $prop->getName();
             $value = $instance->{$propName};
@@ -104,6 +104,54 @@ class Converters
             }
         };
         return static::createAndInitObjectValues($valueChecker, $valueGetter, $objOrClass, $ctorArgs);
+    }
+
+    /**
+     * @template T of object
+     * @param array|object $data
+     * @param class-string<T>|T $objOrClass
+     * @return T|false
+     */
+    public static function instantiateObjectRecursive(array|object $data, string|object $objOrClass): object|false {
+        $obj = is_string($objOrClass) ? Reflections::instantiateClass($objOrClass) : $objOrClass;
+        if (!$obj) {
+            return false;
+        }
+
+        $valueChecker = is_array($data) ? static::arrayValueChecker($data) : static::instanceValueChecker($data);
+        $reflector = new \ReflectionObject($obj);
+        $props = $reflector->getProperties(\ReflectionProperty::IS_PUBLIC);
+        foreach ($props as $prop) {
+            if (!call_user_func($valueChecker, $prop)) {
+                if (!$prop->isInitialized($obj) && $prop->getType()?->allowsNull()) {
+                    $propName = $prop->getName();
+                    $obj->{$propName} = null;
+                }
+                continue;
+            }
+            static::assignOrRecursion($data, $obj, $prop);
+        }
+        return $obj;
+    }
+
+    private static function assignOrRecursion(array|object $data, object $obj, \ReflectionProperty $prop) {
+        $propName = $prop->getName();
+        $assignedValue = is_array($data) ? $data[$propName] : $data->{$propName};
+        try {
+            $obj->{$propName} = $assignedValue;
+        }
+        catch (\TypeError $e) {
+            $type = $prop->getType();
+            if (!$type instanceof \ReflectionNamedType || !(is_object($assignedValue) || is_array($assignedValue))) {
+                return;
+            }
+            $typeName = $type->getName();
+            $result = static::instantiateObjectRecursive($assignedValue, $typeName);
+            if (!$result) {
+                return;
+            }
+            $obj->{$propName} = $result;
+        }
     }
 
     private static function createAndInitObjectValues(
@@ -162,5 +210,13 @@ class Converters
         }
 
         return $result ?? $value;
+    }
+
+    private static function arrayValueChecker(array $array) {
+        return fn(\ReflectionProperty $prop) => array_key_exists($prop->getName(), $array);
+    }
+
+    private static function instanceValueChecker(object $instance) {
+        return fn(\ReflectionProperty $prop) => isset($instance->{$prop->getName()});
     }
 }

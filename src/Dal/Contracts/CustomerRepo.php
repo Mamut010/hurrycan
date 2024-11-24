@@ -2,7 +2,7 @@
 namespace App\Dal\Contracts;
 
 use App\Dal\Dtos\CustomerDto;
-use App\Dal\Requests\CustomerCreateRequest;
+use App\Dal\Input\CustomerCreate;
 
 interface CustomerRepo
 {
@@ -10,5 +10,5 @@ interface CustomerRepo
 
     function findOneByUserId(int $userId): CustomerDto|false;
 
-    function create(CustomerCreateRequest $request): bool;
+    function create(CustomerCreate $data): bool;
 }

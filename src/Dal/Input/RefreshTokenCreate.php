@@ -1,7 +1,7 @@
 <?php
-namespace App\Dal\Requests;
+namespace App\Dal\Input;
 
-class RefreshTokenCreateRequest
+class RefreshTokenCreate
 {
     public string $jti;
     public string $hash;

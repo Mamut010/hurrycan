@@ -11,7 +11,7 @@ class UserGuard
         
     }
 
-    public function canViewAll(AuthUserDto $user) {
+    public function canReadUsers(AuthUserDto $user) {
         return $user->role === Role::ADMIN;
     }
 }

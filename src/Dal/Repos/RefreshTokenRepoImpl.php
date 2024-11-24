@@ -5,9 +5,9 @@ use App\Core\Dal\Contracts\DatabaseHandler;
 use App\Dal\Contracts\RefreshTokenRepo;
 use App\Dal\Dtos\RefreshTokenDto;
 use App\Dal\Models\RefreshToken;
-use App\Dal\Requests\RefreshTokenCreateRequest;
-use App\Dal\Requests\RefreshTokenUpdateRequest;
 use App\Core\Dal\Contracts\PlainTransformer;
+use App\Dal\Input\RefreshTokenCreate;
+use App\Dal\Input\RefreshTokenUpdate;
 use App\Utils\Converters;
 
 class RefreshTokenRepoImpl implements RefreshTokenRepo
@@ -44,8 +44,8 @@ class RefreshTokenRepoImpl implements RefreshTokenRepo
     }
 
     #[\Override]
-    public function create(RefreshTokenCreateRequest $request): bool {
-        $createValues = Converters::objectToArray($request);
+    public function create(RefreshTokenCreate $data): bool {
+        $createValues = Converters::objectToArray($data);
         $insertColumns = array_map(
             fn(string $column) => Converters::camelToSnake($column),
             array_keys($createValues)
@@ -62,8 +62,8 @@ class RefreshTokenRepoImpl implements RefreshTokenRepo
     }
 
     #[\Override]
-    public function update(string $jti, RefreshTokenUpdateRequest $request): bool {
-        $updatedValues = Converters::objectToArray($request);
+    public function update(string $jti, RefreshTokenUpdate $data): bool {
+        $updatedValues = Converters::objectToArray($data);
         if (empty($updatedValues)) {
             return true;
         }
