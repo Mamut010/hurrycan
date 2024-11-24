@@ -76,6 +76,11 @@ class DefaultResponseFactory implements ResponseFactory
     }
 
     #[\Override]
+    public function errJson(int $statusCode, mixed $data): Response {
+        return $this->json($data)->statusCode($statusCode);
+    }
+
+    #[\Override]
     public function errView(int $statusCode, string $viewName, ?array $context = null): Response {
         return $this->view($viewName, $context)->statusCode($statusCode);
     }

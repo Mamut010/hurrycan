@@ -1,4 +1,4 @@
 @ECHO off
 cd "%~dp0/.."
-docker exec php-apache /var/www/docker/migration.sh
+docker exec php-server /var/www/docker/migration.sh
 pause

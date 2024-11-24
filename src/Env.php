@@ -57,7 +57,10 @@ final class Env
         return static::env('CSRF_SECRET');
     }
 
-    public static function corsOrigin() {
+    /**
+     * @return string|string[]
+     */
+    public static function corsOrigin(): string|array {
         $origin = static::envOrDefault('CORS_ORIGIN');
         $origin = trim($origin);
         if ($origin === '') {
@@ -71,6 +74,14 @@ final class Env
         else {
             return $origins;
         }
+    }
+
+    public static function redisHost(): string {
+        return static::env('REDIS_HOST');
+    }
+
+    public static function redisPort(): int {
+        return static::env('REDIS_PORT');
     }
 
     private static function env(string $name): string {

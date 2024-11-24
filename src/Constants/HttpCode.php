@@ -102,7 +102,28 @@ final class HttpCode
     const IM_A_TEAPOT = 418;
 
     /**
+     * The request was well-formed but was unable to be followed due to semantic errors.
+     */
+    const UNPROCESSABLE_CONTENT = 422;
+
+    /**
+     * The user has sent too many requests in a given amount of time (rate limiting).
+     */
+    const TOO_MANY_REQUESTS = 429;
+
+    /**
      * The server has encountered a situation it does not know how to handle.
      */
     const INTERNAL_SERVER_ERROR = 500;
+
+    /**
+     * The server is not ready to handle the request. Common causes are a server that is down
+     * for maintenance or that is overloaded. Note that together with this response, a user-friendly
+     * page explaining the problem should be sent. This response should be used for temporary
+     * conditions and the Retry-After HTTP header should, if possible, contain the estimated time
+     * before the recovery of the service. The webmaster must also take care about the
+     * caching-related headers that are sent along with this response, as these temporary
+     * condition responses should usually not be cached.
+     */
+    const SERVICE_UNAVAILABLE = 503;
 }

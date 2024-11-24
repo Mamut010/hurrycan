@@ -97,21 +97,22 @@ class HttpRequest implements Request
     }
 
     #[\Override]
-    public function ipAddress(): string|false {
+    public function ipAddress(): string {
         $server = $this->global->server();
         $possibleSources = [
-            'REMOTE_ADDR', 'HTTP_CLIENT_IP',
             'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED',
-            'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED'
+            'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED',
+            'REMOTE_ADDR', 'HTTP_CLIENT_IP',
         ];
 
         $ipAddress = false;
         foreach ($possibleSources as $source) {
             if (isset($server[$source])) {
                 $ipAddress = $server[$source];
+                break;
             }
         }
-        return $ipAddress;
+        return $ipAddress ?: '';
     }
 
     #[\Override]

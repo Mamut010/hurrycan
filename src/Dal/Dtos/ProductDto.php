@@ -22,4 +22,16 @@ class ProductDto
 
     #[RefType(ShopDto::class)]
     public ShopDto $shop;
+
+    /**
+     * @var CartProductDto[]
+     */
+    #[RefType(CartProductDto::class)]
+    public array $cartProducts;
+    
+    /**
+     * @var IllustrationDto[]
+     */
+    #[RefType(IllustrationDto::class)]
+    public array $illustrations;
 }

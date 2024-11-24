@@ -10,6 +10,7 @@ use Closure;
 
 class SessionStartMiddleware implements Middleware
 {
+    #[\Override]
     public function handle(Request $request, Closure $next): Response
     {
         if (!Sessions::isStarted()) {

@@ -53,12 +53,11 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
         }
 
         $results = [];
-        $success = true;
+        $validationResult = ValidationResult::success();
         foreach ($values as $value) {
             $result = $this->execute($ctx, $propName, $value);
             $validationResult = $this->convertExecutionResultToValidationResult($result);
             if ($validationResult->isFailure()) {
-                $success = false;
                 break;
             }
             if ($validationResult->containsValue()) {
@@ -66,12 +65,12 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
             }
         }
 
-        if ($success) {
+        if ($validationResult->isSuccessful()) {
             return !empty($results) ? ValidationResult::successValue($results) : ValidationResult::success();
         }
         else {
-            $constraint = $this->getConstraint();
-            $message = $this->getMessage($constraint);
+            $validationErrorMessage = strval($validationResult->getError());
+            $message = $this->getMessage($validationErrorMessage);
             $message = "an element in '$propName' failed the validation: $message";
             return ValidationResult::failure($message);
         }

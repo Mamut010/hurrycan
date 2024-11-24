@@ -1,0 +1,26 @@
+{
+  "name": "PHP Development Container",
+  "build": {
+    // "dockerFile": "../Dockerfile",
+    "dockerComposeFile": "../compose.yaml"
+  },
+  "context": "..",   // The context is typically the root of the project
+  "runArgs": [
+    "--volume", "/var/www/html:/var/www/html"  // Make sure your project files are accessible to the container
+  ],
+  "forwardPorts": [8080, 3306],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php",
+        "php.executablePath": "/usr/local/bin/php"
+      },
+      "extensions": [
+        "xdebug.php",
+        "bmewburn.vscode-intelephense-client"
+      ]
+    }
+  },
+  "shutdownAction": "stopContainer",
+  "remoteUser": "root"   // Set the user for the container (depends on your image configuration)
+}

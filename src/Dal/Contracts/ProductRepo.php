@@ -2,13 +2,14 @@
 namespace App\Dal\Contracts;
 
 use App\Dal\Dtos\ProductDto;
+use App\Dal\Input\ProductQuery;
 
 interface ProductRepo
 {
     /**
      * @return ProductDto[]
      */
-    function getAll(): array;
+    function query(?ProductQuery $data): array;
 
     function findOneById(int $id): ProductDto|false;
 
@@ -16,4 +17,9 @@ interface ProductRepo
      * @return ProductDto[]
      */
     function findManyByShopId(int $shopId): array;
+
+    /**
+     * @return ProductDto[]
+     */
+    function findManyByShopUserId(int $userId): array;
 }

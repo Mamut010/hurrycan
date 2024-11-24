@@ -9,9 +9,8 @@ class Arrays
 
     /**
      * @template T
-     * @template TArray of array
-     * @param TArray|T $value
-     * @return TArray|T[]
+     * @param T|T[] $value
+     * @return T[]
      */
     public static function asArray(mixed $value) {
         if (!is_array($value)) {
@@ -99,10 +98,10 @@ class Arrays
     }
 
     /**
-     * @template TKey
+     * @template TKey of int|string
      * @template TValue
      * @param array<TKey,TValue> $array
-     * @param mixed[] $keys
+     * @param TKey[] $keys
      * @return array<TKey,TValue>
      */
     public static function retainKeys(array $array, array $keys) {
@@ -183,5 +182,18 @@ class Arrays
             }
         }
         return [];
+    }
+
+    /**
+     * @template T of int|string
+     * @param T[] $array
+     * @return array<T, true>
+     */
+    public static function createLookupArray(array $items) {
+        $lookup = [];
+        foreach ($items as $item) {
+            $lookup[$item] = true;
+        }
+        return $lookup;
     }
 }

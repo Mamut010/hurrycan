@@ -12,6 +12,7 @@ trait MySqliQueryable
     private const PARAM_TYPE_BLOB = 'b';
     
     private int $blobThreshold = 8 * 1024 * 1024;
+    private int|string|null $insertId = null;
 
     abstract protected function getDbHandler(): \mysqli;
 
@@ -177,7 +178,9 @@ trait MySqliQueryable
             }
         }
 
-        return $stmt->execute();
+        $success = $stmt->execute();
+        $this->updateInsertId($stmt->insert_id);
+        return $success;
     }
 
     private function sendBlob(\mysqli_stmt $stmt, int $idx, string $blob) {
@@ -190,5 +193,9 @@ trait MySqliQueryable
             }
         }
         return true;
+    }
+
+    private function updateInsertId(int|string $result): void {
+        $this->insertId = $result !== 0 ? $result : null;
     }
 }

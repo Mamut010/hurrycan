@@ -9,10 +9,10 @@ interface ReadonlyMiddlewareNamedCollection
     function getMiddlewares(): array;
 
     /**
-     * @param string $name
+     * @param string|string[] $name
      * @return class-string<Middleware>[]|false
      */
-    function getMiddlewaresByName(string $name): array|false;
+    function getMiddlewaresByName(string|array $name): array|false;
 
     /**
      * @return class-string<ErrorMiddleware>

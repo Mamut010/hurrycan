@@ -67,6 +67,20 @@ function randomItem(array $items) {
     return $items[$randomIdx];
 }
 
+function imageUrl(string $filename) {
+    $url = 'assets/images';
+    $filename = ltrim($filename, '/');
+    return $url . '/' . $filename;
+}
+
+/**
+ * @return string[]
+ */
+function getFilesInDir(string $path) {
+    $filenames = scandir($path);
+    return $filenames ? array_values(array_diff($filenames, ['.', '..'])) : [];
+}
+
 $adminIds = [];
 $shopIds = [];
 $customerIds = [];
@@ -95,9 +109,11 @@ $insertProductsQuery = '
     INSERT INTO `product` (name, original_price, price, brief_description, detail_description, shop_id)
     VALUES
 ';
+$insertIllustrationsQuery = 'INSERT INTO `illustration` (product_id, main, image_path) VALUES ';
 
 $users = [];
-for ($i = 1; $i <= 10; $i++) {
+$userCount = 10;
+for ($i = 1; $i <= $userCount; $i++) {
     $name = valueOrNull("user-$i");
     $email = valueOrNull($i <= 7 ? "user$i@example.com" : null);
     $username = valueOrNull("username$i");
@@ -132,7 +148,8 @@ $insertShopsQuery .= implode(', ', $shops);
 
 $products = [];
 $productIds = [];
-for ($i = 1; $i <= 10; $i++) {
+$productCount = 10;
+for ($i = 1; $i <= $productCount; $i++) {
     $name = valueOrNull("product-$i");
     $originalPrice = valueOrNull(randomOriginalPrice());
     $price = valueOrNull(randomPrice());
@@ -144,6 +161,21 @@ for ($i = 1; $i <= 10; $i++) {
     $products[] = $value;
 }
 $insertProductsQuery .= implode(', ', $products);
+
+$imageNames = getFilesInDir('../html/public/assets/images');
+$imageCount = count($imageNames);
+$illustrations = [];
+for ($imageId = 1; $imageId <= $imageCount; $imageId++) {
+    $productId = 1 + ($imageId - 1) % $productCount;
+    $main = $imageId <= $productId;
+
+    $productId = valueOrNull($productId);
+    $main = valueOrNull($main);
+    $imagePath = valueOrNull(imageUrl($imageNames[$imageId - 1]));
+    $illustration = "($productId, $main, $imagePath)";
+    $illustrations[] = $illustration;
+}
+$insertIllustrationsQuery .= implode(', ', $illustrations);
 
 // UPDATES
 $updateProductPriceQueryFormat = 'UPDATE `product` SET `price` = %s WHERE `id` = %d';
@@ -157,7 +189,8 @@ $insertQueries = [
     $insertUsersQuery,
     $insertCustomersQuery,
     $insertShopsQuery,
-    $insertProductsQuery
+    $insertProductsQuery,
+    $insertIllustrationsQuery,
 ];
 $updateQueries = [...$updateProductPriceQueries];
 

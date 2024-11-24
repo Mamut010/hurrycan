@@ -26,6 +26,7 @@ class CorsMiddleware implements Middleware
         
     }
 
+    #[\Override]
     public function handle(Request $request, Closure $next): Response {
         $isPreflight = static::isPreflight($request);
         // Preflight requests are standalone and should stop the chain as some other

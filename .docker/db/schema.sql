@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS user;
 -- Create all tables
 CREATE TABLE user (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name NVARCHAR(255) NOT NULL UNIQUE,
+    name NVARCHAR(255) NOT NULL,
     email NVARCHAR(255),
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE product (
 
 CREATE TABLE cart (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    customer_id INT NOT NULL,
+    customer_id INT NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (customer_id) REFERENCES customer(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -245,6 +245,8 @@ END//
 
 DELIMITER ;
 
+DELIMITER //
+
 -- Event Scheduler
 CREATE EVENT purge_expired_refresh_tokens
 ON SCHEDULE EVERY 1 DAY
@@ -252,4 +254,6 @@ DO
 BEGIN
     DELETE FROM refresh_token
     WHERE expires_at IS NOT NULL AND expires_at <= NOW();
-END;
+END//
+
+DELIMITER ;

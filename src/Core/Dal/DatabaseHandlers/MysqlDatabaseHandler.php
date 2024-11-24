@@ -54,6 +54,16 @@ class MysqlDatabaseHandler implements DatabaseHandler
     }
 
     #[\Override]
+    public function lastInsertId(): int|string|null {
+        return $this->insertId;
+    }
+
+    #[\Override]
+    public function lastAffectedRows(): int|string {
+        return $this->dbHandler->affected_rows;
+    }
+    
+    #[\Override]
     public function execute(string $query, mixed ...$params): bool {
         try {
             return $this->queryImpl($query, $params);
@@ -81,6 +91,8 @@ class MysqlDatabaseHandler implements DatabaseHandler
     #[\Override]
     public function queryRaw(string $query): array|true {
         $result = $this->dbHandler->query($query);
+        $this->updateInsertId($this->dbHandler->insert_id);
+        
         if (!$result) {
             throw new DatabaseException("Unable to fetch result from query: $query");
         }

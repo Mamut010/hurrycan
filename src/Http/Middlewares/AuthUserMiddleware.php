@@ -21,7 +21,7 @@ class AuthUserMiddleware implements Middleware
         
     }
 
-    
+    #[\Override]
     public function handle(Request $request, Closure $next): Response {
         $token = $request->cookie(Auth::ACCESS_TOKEN_KEY);
         if ($token === false) {
