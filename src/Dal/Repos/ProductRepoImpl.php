@@ -162,11 +162,12 @@ class ProductRepoImpl implements ProductRepo
         $illustrationGroups = [];
         foreach ($rows as $row) {
             $illustration = $this->transformer->transform($row, IllustrationDto::class);
+            $productId = $illustration->productId;
             if (isset($illustrationGroups[$illustration->productId])) {
-                $illustrationGroups[$productIds][] = $illustration;
+                $illustrationGroups[$productId][] = $illustration;
             }
             else {
-                $illustrationGroups[$productIds] = [$illustration];
+                $illustrationGroups[$productId] = [$illustration];
             }
         }
 

@@ -153,11 +153,12 @@ class CartRepoImpl implements CartRepo
         $illustrationGroups = [];
         foreach ($rows as $row) {
             $illustration = $this->transformer->transform($row, IllustrationDto::class);
-            if (isset($illustrationGroups[$illustration->productId])) {
-                $illustrationGroups[$productIds][] = $illustration;
+            $productId = $illustration->productId;
+            if (isset($illustrationGroups[$productId])) {
+                $illustrationGroups[$productId][] = $illustration;
             }
             else {
-                $illustrationGroups[$productIds] = [$illustration];
+                $illustrationGroups[$productId] = [$illustration];
             }
         }
 
