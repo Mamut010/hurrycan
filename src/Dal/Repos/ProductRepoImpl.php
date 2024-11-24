@@ -7,11 +7,14 @@ use App\Dal\Contracts\ProductRepo;
 use App\Dal\Dtos\IllustrationDto;
 use App\Dal\Dtos\ProductDto;
 use App\Dal\Input\Internal\ProductFilter;
+use App\Dal\Input\Internal\ProductPrice;
+use App\Dal\Input\Internal\ProductRating;
 use App\Dal\Input\ProductQuery;
 use App\Dal\Models\Product;
 use App\Dal\Models\Shop;
 use App\Dal\Models\User;
 use App\Dal\Utils\Queries;
+use App\Support\Pair;
 use App\Utils\Arrays;
 use App\Utils\Converters;
 
@@ -50,43 +53,54 @@ class ProductRepoImpl implements ProductRepo
     #[\Override]
     public function query(?ProductQuery $data): array {
         if (!$data) {
-            $rows = $this->db->query(static::PRODUCT_BASE_QUERY);
-            return $this->rowsToDtos($rows);
+            $productRows = $this->db->query(static::PRODUCT_BASE_QUERY);
+        }
+        else {
+            $result = $this->buildProductQuery($data);
+            $option = $result->first[0];
+            $params = $result->second;
+            $productsQuery = static::PRODUCT_BASE_QUERY . $option;
+            $productRows = $this->db->query($productsQuery, ...$params);
         }
 
-        $whereSegments = [];
-        $params = [];
-        if (!isNullOrEmpty($data->keyword)) {
-            $whereSegments[] = 'p.`name` LIKE (?)';
-            $params[] = "%$data->keyword%";
+        return  $this->rowsToDtos($productRows);
+    }
+
+    #[\Override]
+    public function queryWithCount(?ProductQuery $data): Pair {
+        if (!$data) {
+            $productRows = $this->db->query(static::PRODUCT_BASE_QUERY);
+            $countRows = $this->db->query('SELECT COUNT(*) AS count FROM `product`');
         }
-        if ($data->filter !== null) {
-            [$filterWhereSegments, $filterParams] = $this->createFilterSegments($data->filter);
-            array_push($whereSegments, ...$filterWhereSegments);
-            array_push($params, ...$filterParams);
+        else {
+            $result = $this->buildProductQuery($data);
+            [$option, $rawOption] = $result->first;
+            $params = $result->second;
+    
+            $baseCountQuery = '
+                SELECT COUNT(*) AS count
+                FROM `product` AS p
+                    INNER JOIN `shop` AS s ON p.`shop_id` = s.`id`
+                    INNER JOIN `user` AS u ON s.`user_id` = u.`id`
+            ';
+            $productsQuery = static::PRODUCT_BASE_QUERY . $option;
+            $countQuery = $baseCountQuery . $rawOption;
+    
+            $productRows = $this->db->query($productsQuery, ...$params);
+            $countRows = $this->db->query($countQuery, ...$params);
         }
 
-        $where = !empty($whereSegments) ? 'WHERE ' . implode(' AND ', $whereSegments) : null;
-        $orderByQuery = Queries::createOrderByQueryFromModel(
-            $data->orderBy,
-            Product::class,
-            fn(string $key) => 'p.`' . Converters::camelToSnake($key) . '`'
-        );
-        $paginationQuery = Queries::createPaginationQuery($data->pagination);
-        $optionSegments = [$where, $orderByQuery, $paginationQuery];
+        $products = $this->rowsToDtos($productRows);
+        $count = $countRows[0]['count'];
 
-        $option = implode(' ', array_filter($optionSegments, 'is_string'));
-
-        $query = static::PRODUCT_BASE_QUERY . ' ' . $option;
-        $rows = $this->db->query($query, ...$params);
-        return $this->rowsToDtos($rows);
+        return new Pair($products, $count);
     }
 
     #[\Override]
     public function findOneById(int $id): ProductDto|false {
         $query = static::PRODUCT_BASE_QUERY . 'WHERE p.`id` = (?)';
         $rows = $this->db->query($query, $id);
-        return $this->singleOrFalse($rows);
+        return count($rows) === 1 ? $this->rowsToDtos($rows)[0] : false;
     }
 
     #[\Override]
@@ -103,41 +117,116 @@ class ProductRepoImpl implements ProductRepo
         return $this->rowsToDtos($rows);
     }
 
-    private function createFilterSegments(ProductFilter $filter) {
-        if (!$filter->rating) {
-            return [[], []];
-        }
-
+    private function buildProductQuery(ProductQuery $data) {
         $whereSegments = [];
         $params = [];
+        if (!isNullOrEmpty($data->keyword)) {
+            $whereSegments[] = 'p.`name` LIKE ?';
+            $params[] = "%$data->keyword%";
+        }
+        if ($data->filter !== null) {
+            [$filterWhereSegments, $filterParams] = $this->createFilterSegments($data->filter);
+            array_push($whereSegments, ...$filterWhereSegments);
+            array_push($params, ...$filterParams);
+        }
 
-        if ($filter->rating->lt && $filter->rating->gt) {
-            $whereSegments[] = 'p.`average_rating` IS NOT NULL';
+        if (count($whereSegments) > 1) {
+            $whereSegments = array_map(fn ($segment) => "($segment)", $whereSegments);
         }
-        elseif ($filter->rating->gt) {
-            $whereSegments[] = 'p.`average_rating` >= (?)';
-            $params[] = $filter->rating->value;
+
+        $where = !empty($whereSegments) ? 'WHERE ' . implode(' AND ', $whereSegments) : null;
+        $orderByQuery = Queries::createOrderByQueryFromModel(
+            $data->orderBy,
+            Product::class,
+            fn(string $key) => 'p.`' . Converters::camelToSnake($key) . '`'
+        );
+        $paginationQuery = Queries::createPaginationQuery($data->pagination);
+
+        $optionSegments = [$where, $orderByQuery, $paginationQuery];
+        $option = implode(' ', array_filter($optionSegments, 'is_string'));
+        $rawOption = $where ?? '';
+
+        return new Pair([$option, $rawOption], $params);
+    }
+
+    private function createFilterSegments(ProductFilter $filter) {
+        $wheres = [];
+        $params = [];
+
+        if ($filter->rating) {
+            $this->handleRatingFilter($filter->rating, $wheres, $params);
         }
-        elseif ($filter->rating->lt) {
-            $whereSegments[] = 'p.`average_rating` <= (?)';
-            $params[] = $filter->rating->value;
+        if (!isNullOrEmpty($filter->shops)) {
+            $this->handleShopsFilter($filter->shops, $wheres, $params);
+        }
+        if (!isNullOrEmpty($filter->prices)) {
+            $this->handlePricesFilter($filter->prices, $wheres, $params);
+        }
+
+        return [$wheres, $params];
+    }
+
+    private function handleRatingFilter(ProductRating $rating, array &$wheres, array &$params) {
+        if ($rating->lt && $rating->gt) {
+            $wheres[] = 'p.`average_rating` IS NOT NULL';
+        }
+        elseif ($rating->gt) {
+            $wheres[] = 'p.`average_rating` >= ?';
+            $params[] = $rating->value;
+        }
+        elseif ($rating->lt) {
+            $wheres[] = 'p.`average_rating` <= ?';
+            $params[] = $rating->value;
         }
         else {
-            $whereSegments[] = 'p.`average_rating` = (?)';
-            $params[] = $filter->rating->value;
+            $wheres[] = 'p.`average_rating` = ?';
+            $params[] = $rating->value;
+        }
+    }
+
+    /**
+     * @param string[] $shop
+     */
+    private function handleShopsFilter(array $shops, array &$wheres, array &$params) {
+        $placeholder = Queries::createPlaceholder($shops);
+        $wheres[] = "u.`name` IN ($placeholder)";
+        array_push($params, ...$shops);
+    }
+
+    /**
+     * @param ProductPrice[] $prices
+     */
+    private function handlePricesFilter(array $prices, array &$wheres, array &$params) {
+        $conditions = [];
+        foreach ($prices as $price) {
+            if ($price->value2 !== null) {
+                $conditions[] = '(p.`price` BETWEEN ? AND ?)';
+                $params[] = $price->value;
+                $params[] = $price->value2;
+                continue;
+            }
+
+            if ($price->lt && $price->gt) {
+                $conditions[] = '(p.`price` <> ?)';
+            }
+            elseif ($price->lt) {
+                $conditions[] = '(p.`price` < ?)';
+            }
+            elseif ($price->gt) {
+                $conditions[] = '(p.`price` > ?)';
+            }
+            else {
+                $conditions[] = '(p.`price` = ?)';
+            }
+            $params[] = $price->value;
         }
 
-        return [$whereSegments, $params];
+        $wheres[] = implode(' OR ', $conditions);
     }
 
-    private function singleOrFalse(array $rows) {
-        return count($rows) === 1 ? $this->rowToDto($rows[0]) : false;
-    }
-
-    private function rowToDto(array $row) {
-        return $this->rowsToDtos([$row])[0];
-    }
-
+    /**
+     * @param array<string,mixed>[] $rows
+     */
     private function rowsToDtos(array $rows) {
         if (empty($rows)) {
             return [];

@@ -14,6 +14,7 @@ $db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
 // HELPERS
 $numbers = '0123456789';
+$nonZeroNumbers = '123456789';
 
 function valueOrNull($value) {
     global $db;
@@ -40,11 +41,15 @@ function randomString(int $length, ?string $characters = null) {
     $randomChar = [];
     
     for ($i = 0; $i < $length; $i++) {
-        $randomIndex = random_int(0, $charactersLength - 1);
+        $randomIndex = rand(0, $charactersLength - 1);
         $randomChar[] = $characters[$randomIndex];
     }
     
     return implode('', $randomChar);
+}
+
+function randomBoolean() {
+    return rand(0,1) === 1;
 }
 
 function randomPhoneNumber() {
@@ -52,19 +57,26 @@ function randomPhoneNumber() {
     return randomString(8, $numbers);
 }
 
-function randomOriginalPrice() {
-    global $numbers;
-    return randomString(4, $numbers) . '.' . randomString(3, $numbers);
-}
+function randomPrice(int $len) {
+    if ($len <= 0) {
+        return 0;
+    }
 
-function randomPrice() {
     global $numbers;
-    return randomString(3, $numbers) . '.' . randomString(3, $numbers);
+    global $nonZeroNumbers;
+
+    return randomString(1, $nonZeroNumbers) . randomString($len - 1, $numbers). '.' . randomString(3, $numbers);
 }
 
 function randomItem(array $items) {
     $randomIdx = random_int(0, count($items) - 1);
     return $items[$randomIdx];
+}
+
+function rangeRandom(int $from, int $to) {
+    $range = range($from, $to);
+    shuffle($range);
+    return $range;
 }
 
 function imageUrl(string $filename) {
@@ -148,11 +160,19 @@ $insertShopsQuery .= implode(', ', $shops);
 
 $products = [];
 $productIds = [];
+/**
+ * @var array<int,int>
+ */
+$productIdWholePriceLenMap = [];
 $productCount = 10;
 for ($i = 1; $i <= $productCount; $i++) {
+    $wholePriceLen = rand(2, 4);
+    $randomPrice = randomPrice($wholePriceLen);
+    $productIdWholePriceLenMap[$i] = $wholePriceLen;
+
     $name = valueOrNull("product-$i");
-    $originalPrice = valueOrNull(randomOriginalPrice());
-    $price = valueOrNull(randomPrice());
+    $originalPrice = valueOrNull($randomPrice);
+    $price = $originalPrice;
     $briefDescription = valueOrNull(randomString(30));
     $detailDescription = valueOrNull(randomString(100));
     $shopId = valueOrNull(randomItem($shopActualIds));
@@ -162,16 +182,19 @@ for ($i = 1; $i <= $productCount; $i++) {
 }
 $insertProductsQuery .= implode(', ', $products);
 
-$imageNames = getFilesInDir('../html/public/assets/images');
-$imageCount = count($imageNames);
+$illustrationNames = getFilesInDir('../html/public/assets/images');
+shuffle($illustrationNames);
+$illustrationCount = count($illustrationNames);
 $illustrations = [];
-for ($imageId = 1; $imageId <= $imageCount; $imageId++) {
-    $productId = 1 + ($imageId - 1) % $productCount;
-    $main = $imageId <= $productId;
+$currentProductIds = [];
+for ($i = 1; $i <= $illustrationCount; $i++) {
+    if (empty($currentProductIds)) {
+        $currentProductIds = rangeRandom(1, $productCount);
+    }
 
-    $productId = valueOrNull($productId);
-    $main = valueOrNull($main);
-    $imagePath = valueOrNull(imageUrl($imageNames[$imageId - 1]));
+    $productId = valueOrNull(array_pop($currentProductIds));
+    $main = valueOrNull($i <= $productCount);
+    $imagePath = valueOrNull(imageUrl($illustrationNames[$i - 1]));
     $illustration = "($productId, $main, $imagePath)";
     $illustrations[] = $illustration;
 }
@@ -181,7 +204,12 @@ $insertIllustrationsQuery .= implode(', ', $illustrations);
 $updateProductPriceQueryFormat = 'UPDATE `product` SET `price` = %s WHERE `id` = %d';
 $updateProductPriceQueries = [];
 foreach ($productIds as $productId) {
-    $updateProductPriceQueries[] = sprintf($updateProductPriceQueryFormat, randomPrice(), $productId);
+    $discounted = randomBoolean();
+    if (!$discounted) {
+        continue;
+    }
+    $wholePriceLen = $productIdWholePriceLenMap[$productId];
+    $updateProductPriceQueries[] = sprintf($updateProductPriceQueryFormat, randomPrice($wholePriceLen - 1), $productId);
 }
 
 // COMBINING QUERIES

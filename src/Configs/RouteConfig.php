@@ -8,6 +8,7 @@ use App\Core\Routing\Contracts\RouteBuilder;
 use App\Dal\Contracts\RefreshTokenRepo;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MemeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
@@ -21,7 +22,7 @@ class RouteConfig
     public static function register(RouteBuilder $route) {
         $route->redirect('/', '/home');
 
-        $route->view('/home', 'home');
+        $route->get('/home', [HomeController::class, 'index']);
 
         $route
             ->controller(AuthController::class)
