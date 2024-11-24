@@ -10,6 +10,8 @@ class CartResponse
     public int $customerId;
     public ?\DateTimeImmutable $createdAt;
 
+    public string $totalPrice;
+
     public CustomerUserDto $customer;
 
     /**

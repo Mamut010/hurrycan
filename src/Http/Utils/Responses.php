@@ -31,6 +31,15 @@ class Responses
             fn($cartProduct) => static::cartProduct($cartProduct),
             $cart->cartProducts
         );
+        
+        $totalPrice = "0";
+        foreach ($response->cartProducts as $cartProduct) {
+            $price = $cartProduct->product->price;
+            $quantity = max(0, $cartProduct->quantity);
+            $totalPrice = bc("$1 + $2 * $3", $totalPrice, $price, $quantity);
+        }
+        $response->totalPrice = $totalPrice;
+
         return $response;
     }
 
