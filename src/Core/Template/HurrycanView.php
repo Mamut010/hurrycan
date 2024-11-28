@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Template;
 
+use App\Core\Exceptions\UnsupportedOperationException;
 use App\Core\Exceptions\ViewRenderException;
 use App\Core\Template\Contracts\RenderableView;
 use App\Utils\Arrays;
@@ -44,19 +45,45 @@ class HurrycanView implements RenderableView
     }
 
     private function createViewContext(): array {
-        return array_merge($this->parameters, array(
-            '_view' => new class ($this->parameters) {
-                public function __construct(private array $parameters)
-                {
+        return array_merge($this->parameters, [
+            '_view' => new class ($this->parameters) implements \ArrayAccess {
+                public function __construct(private readonly array $parameters) {
                     
                 }
 
-                public function get(string $key)
-                {
+                public function __get(mixed $name) {
+                    return is_string($name) ? $this->get($name) : null;
+                }
+
+                public function __invoke(mixed $arg) {
+                    return $this->__get($arg);
+                }
+
+                public function get(string $key) {
                     return Arrays::getOrDefaultExists($this->parameters, $key);
                 }
+
+                #[\Override]
+                public function offsetExists(mixed $offset): bool {
+                    return array_key_exists($offset, $this->parameters);
+                }
+
+                #[\Override]
+                public function offsetGet(mixed $offset): mixed {
+                    return $this->__get($offset);
+                }
+
+                #[\Override]
+                public function offsetUnset(mixed $offset): void {
+                    throw new UnsupportedOperationException('View data is readonly');
+                }
+
+                #[\Override]
+                public function offsetSet(mixed $offset, mixed $value): void {
+                    throw new UnsupportedOperationException('View data is readonly');
+                }
             }
-        ));
+        ]);
     }
 
     private function renderWithContext(array $context) {

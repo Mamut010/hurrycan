@@ -19,6 +19,7 @@
         <br>
         <span id="number"></span>
     </p>
+    <br>
 </body>
 
 </html>
