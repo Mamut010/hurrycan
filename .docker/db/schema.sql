@@ -63,7 +63,7 @@ CREATE TABLE product (
     name NVARCHAR(255) NOT NULL UNIQUE,
     original_price DECIMAL(10, 3) NOT NULL,
     price DECIMAL(10, 3) NOT NULL,
-    brief_description NVARCHAR(500),
+    brief_description NVARCHAR(2000),
     detail_description TEXT,
     shop_id INT NOT NULL,
     -- Redundant fields to improve search speed

@@ -22,7 +22,7 @@ class IsPattern extends IsString
     #[\Override]
     protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
         $msg = parent::execute($ctx, $propName, $value);
-        if ($msg !== null) {
+        if ($this->isFailureResult($msg)) {
             return $msg;
         }
         if (!preg_match($this->pattern, $value)) {

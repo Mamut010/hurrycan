@@ -3,7 +3,7 @@ namespace App\Dal\Input\Internal;
 
 class ProductRating
 {
-    public int $value;
+    public string $value;
 
     public bool $lt = false;
 

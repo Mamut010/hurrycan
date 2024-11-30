@@ -61,8 +61,8 @@ class HurrycanTemplateParser implements TemplateParser
     }
 
     private function parseIf(string $template) {
-        $ifPattern = '/@if\s*\(\s*(.+?)\s*\)/';
-        $elseifPattern = '/@elseif\s*\(\s*(.+?)\s*\)/';
+        $ifPattern = '/@if\s*\(\s*(.+)\s*\)/';
+        $elseifPattern = '/@elseif\s*\(\s*(.+)\s*\)/';
         $elsePattern = '/@else\s/';
         $endifDirective = '@endif';
         $template = preg_replace(
@@ -85,7 +85,7 @@ class HurrycanTemplateParser implements TemplateParser
     }
 
     private function parseUnless(string $template) {
-        $unlessPattern = '/@unless\s*\(\s*(.+?)\s*\)/';
+        $unlessPattern = '/@unless\s*\(\s*(.+)\s*\)/';
         $endunlessDirective = '@endunless';
         $template = preg_replace(
             $unlessPattern,
@@ -97,7 +97,7 @@ class HurrycanTemplateParser implements TemplateParser
     }
 
     private function parseEmpty(string $template) {
-        $emptyPattern = '/@empty\s*\(\s*(.+?)\s*\)/';
+        $emptyPattern = '/@empty\s*\(\s*(.+)\s*\)/';
         $endemptyDirective = '@endempty';
         $template = preg_replace(
             $emptyPattern,
@@ -117,8 +117,8 @@ class HurrycanTemplateParser implements TemplateParser
     }
 
     private function parseSwitch(string $template) {
-        $switchPattern = '/@switch\s*\(\s*(.+?)\s*\)/';
-        $casePattern = '/\s*@case\s*\(\s*(.+?)\s*\)/';
+        $switchPattern = '/@switch\s*\(\s*(.+)\s*\)/';
+        $casePattern = '/\s*@case\s*\(\s*(.+)\s*\)/';
         $defaultPattern= '/\s*@default/';
         $endswitchPattern = '/\s*@endswitch/';
         $template = preg_replace(
@@ -145,7 +145,7 @@ class HurrycanTemplateParser implements TemplateParser
     }
 
     private function parseFor(string $template) {
-        $forPattern = '/@for\s*\(\s*(.+?)\s*\)/';
+        $forPattern = '/@for\s*\(\s*(.+)\s*\)/';
         $endforPattern = '/@endfor\s/';
         $template = preg_replace(
             $forPattern,
@@ -161,7 +161,7 @@ class HurrycanTemplateParser implements TemplateParser
     }
 
     private function parseWhile(string $template) {
-        $whilePattern = '/@while\s*\(\s*(.+?)\s*\)/';
+        $whilePattern = '/@while\s*\(\s*(.+)\s*\)/';
         $endwhilePattern = '/@endwhile\s/';
         $template = preg_replace(
             $whilePattern,
@@ -177,7 +177,7 @@ class HurrycanTemplateParser implements TemplateParser
     }
 
     private function parseForeach(string $template) {
-        $foreachPattern = '/@foreach\s*\(\s*(.+?)\s*\)/';
+        $foreachPattern = '/@foreach\s*\(\s*(.+)\s*\)/';
         $endforeachPattern = '/@endforeach\s/';
         $template = preg_replace(
             $foreachPattern,

@@ -3,6 +3,8 @@ namespace App\Core\Validation\Attributes;
 
 use App\Core\Validation\Bases\ArraySupportPropertyValidator;
 use App\Core\Validation\ValidationContext;
+use App\Core\Validation\ValidationResult;
+use App\Utils\Strings;
 use Attribute;
 
 /**
@@ -13,12 +15,11 @@ class IsString extends ArraySupportPropertyValidator
 {
     #[\Override]
     protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
-        if (!is_string($value)) {
+        if (!isToStringable($value)) {
             return "'$propName' is not a string";
         }
-        else {
-            return null;
-        }
+        $str = !is_string($value) ? Strings::valueOf($value) : $value;
+        return ValidationResult::successValue($str);
     }
 
     #[\Override]

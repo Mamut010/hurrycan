@@ -15,6 +15,7 @@ class ProductResponse
     public int $shopId;
     public ?string $averageRating;
     public string $discount;
+    public ?string $mainIllustrationPath;
     public ?\DateTimeImmutable $createdAt;
     public ?\DateTimeImmutable $updatedAt;
 

@@ -8,7 +8,7 @@ use App\Core\Http\Cookie\CookieQueue;
 class JsonResponse extends HttpResponse
 {
     public function __construct(CookieQueue $cookieQueue, mixed $data) {
-        $data = json_encode($data, JSON_PRETTY_PRINT);
+        $data = is_string($data) && json_validate($data) ? $data : json_encode($data);
         if ($data === false) {
             throw new \InvalidArgumentException('Given data is not json serializable');
         }

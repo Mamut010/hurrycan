@@ -13,7 +13,7 @@ class BetweenLength extends IsString
     private readonly int $minLength;
     private readonly int $maxLength;
 
-    public function __construct(private int $length1, private int $length2, ?bool $each = null, ?string $msg = null) {
+    public function __construct(int $length1, int $length2, ?bool $each = null, ?string $msg = null) {
         parent::__construct($each, $msg);
 
         $minLength = min($length1, $length2);
@@ -26,7 +26,7 @@ class BetweenLength extends IsString
     #[\Override]
     protected function execute(ValidationContext $ctx, string $propName, mixed $value): mixed {
         $msg = parent::execute($ctx, $propName, $value);
-        if ($msg !== null) {
+        if ($this->isFailureResult($msg)) {
             return $msg;
         }
 
