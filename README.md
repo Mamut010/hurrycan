@@ -12,8 +12,7 @@ A mini E-business project - server side
 - Open a terminal in the project root (ensure you're in the project root directory).
 - Run the following command to install and run the server:
   `docker compose up --watch --build`
-- For Windows users: Use the helper scripts in the scripts folder from the project root.
-- Run the docker-reset script to initialize everything and start the server.
+- For Windows users: Use the helper scripts in the scripts folder from the project root. Run the docker-reset script to initialize everything and start the server.
 - Wait until you see the line below in the console:
   `php-server    | [Thu Nov 28 03:16:17.049050 2024] [core:notice] [pid 1:tid 1] AH00094: Command line: 'apache2 -D FOREGROUND'`
 This indicates the server is ready.
