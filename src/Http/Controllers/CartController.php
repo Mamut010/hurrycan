@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 use App\Constants\HttpCode;
 use App\Core\Http\Controller\Controller;
 use App\Core\Validation\Attributes\ReqBody;
-use App\Dal\Dtos\CartDto;
 use App\Http\Contracts\CartService;
 use App\Http\Dtos\AuthUserDto;
 use App\Http\Requests\CartCreateRequest;
@@ -19,14 +18,23 @@ class CartController extends Controller
 
     public function show(AuthUserDto $authUser) {
         $this->authorize('read-cart', $authUser);
+        
+        [$cart, $status] = $this->getCartWithStatus($authUser);
+        return response()->view('cart', ['cart' => $cart])->statusCode($status);
+    }
 
-        $cart = $this->cartService->findUserCart($authUser->id);
-        if (!$cart) {
-            return response()->err(HttpCode::NOT_FOUND, "Cart not found for user '$authUser->id'");
-        }
-
-        $output = Responses::cartResponse($cart);
-        return response()->json($output);
+    public function showJson(AuthUserDto $authUser) {
+        $this->authorize('read-cart', $authUser);
+        
+        [$cart, $status] = $this->getCartWithStatus($authUser);
+        return response()->json($cart)->statusCode($status);
+    }
+    
+    public function showCheckout(AuthUserDto $authUser) {
+        $this->authorize('read-cart', $authUser);
+        
+        [$cart, $status] = $this->getCartWithStatus($authUser);
+        return response()->view('checkout', ['cart' => $cart])->statusCode($status);
     }
 
     public function store(AuthUserDto $authUser, #[ReqBody] CartCreateRequest $createRequest) {
@@ -54,5 +62,12 @@ class CartController extends Controller
         $msg = $success ? 'Deleted successfully' : "Failed to delete cart for user '$authUser->id'";
         $status = $success ? HttpCode::OK : HttpCode::UNPROCESSABLE_CONTENT;
         return response()->err($status, $msg);
+    }
+
+    private function getCartWithStatus(AuthUserDto $authUser) {
+        $cart = $this->cartService->findUserCart($authUser->id);
+        $status = $cart ? HttpCode::OK : HttpCode::NOT_FOUND;
+        $output = $cart ? Responses::cartResponse($cart) : null;
+        return [$output, $status];
     }
 }

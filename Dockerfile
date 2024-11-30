@@ -14,7 +14,7 @@ RUN --mount=type=bind,source=composer.json,target=composer.json \
     --mount=type=cache,target=/tmp/cache \
     composer install --no-dev --no-interaction
 
-FROM php:8.2-apache AS base
+FROM php:8.3-apache AS base
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf \
     && mkdir /var/www/html/public /var/www/html/resources /var/www/db \
     && a2enmod rewrite \

@@ -85,6 +85,78 @@ function imageUrl(string $filename) {
     return $url . '/' . $filename;
 }
 
+function generateBriefDescription() {
+    return <<<EOD
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Fusce nibh erat, malesuada id finibus id, consequat eu nunc.
+            Interdum et malesuada fames ac ante ipsum primis in faucibus.
+            Curabitur euismod justo lectus, non aliquet nibh porta at.
+            Sed rutrum auctor urna, id suscipit metus finibus nec.
+            Curabitur rhoncus libero sed viverra malesuada.
+            Sed ullamcorper risus libero, quis facilisis leo sagittis eget.
+            Vestibulum finibus malesuada bibendum.
+            Etiam vehicula turpis vitae enim euismod dictum et eget metus.
+        EOD;
+}
+
+function generateDetailedDescription() {
+    return <<<EOD
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Fusce nibh erat, malesuada id finibus id, consequat eu nunc.
+        Interdum et malesuada fames ac ante ipsum primis in faucibus.
+        Curabitur euismod justo lectus, non aliquet nibh porta at.
+        Sed rutrum auctor urna, id suscipit metus finibus nec.
+        Curabitur rhoncus libero sed viverra malesuada.
+        Sed ullamcorper risus libero, quis facilisis leo sagittis eget.
+        Vestibulum finibus malesuada bibendum.
+        Etiam vehicula turpis vitae enim euismod dictum et eget metus.
+
+        Maecenas eleifend enim id interdum varius.
+        Pellentesque tempor semper purus id aliquet.
+        Nunc turpis elit, sagittis eu nulla sed, tincidunt commodo erat.
+        Sed tincidunt semper nisl, quis lacinia ipsum.
+        Cras consectetur elit augue, non aliquet augue pulvinar in.
+        Maecenas ligula libero, fringilla vitae porta non, placerat nec velit.
+        Vestibulum scelerisque ipsum non turpis pharetra, non pretium ante aliquet.
+        Aliquam molestie aliquet risus, eget sodales dolor molestie sed.
+
+        Aenean at auctor odio.
+        Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+        Donec rhoncus suscipit bibendum.
+        Nulla purus augue, pellentesque non bibendum eget, egestas feugiat ante.
+        Integer eros nulla, ullamcorper at sagittis eget, facilisis sed metus.
+        Nam eu ligula ipsum. Cras at lacus nec ipsum lacinia mollis.
+        Nullam ullamcorper sodales sapien, et aliquet mi placerat non.
+        Mauris commodo augue risus, sed blandit lectus varius a.
+        Nam maximus ut metus et consectetur.
+        Maecenas eget sapien sit amet felis pharetra rutrum.
+        Nunc ultrices at felis eget semper.
+
+        Morbi arcu elit, auctor eu magna vestibulum, fermentum aliquam dui.
+        Suspendisse potenti. Integer vehicula erat sem, ullamcorper scelerisque magna dictum in.
+        Interdum et malesuada fames ac ante ipsum primis in faucibus.
+        Sed imperdiet ante vitae accumsan elementum.
+        Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae;
+        Duis aliquet lectus nunc, et molestie elit euismod et.
+        Pellentesque pulvinar sed leo in elementum.
+        Sed sit amet consectetur risus, a pretium enim.
+        Ut suscipit sem sit amet cursus malesuada. Vestibulum laoreet porta consectetur.
+        Maecenas dignissim urna in enim laoreet vehicula.
+        Aliquam dapibus consequat lectus, ut iaculis mauris rutrum sed.
+        Quisque dignissim, purus at hendrerit egestas, leo velit placerat ligula, ut gravida nunc arcu quis mi.
+        Vestibulum scelerisque nisl sed mi dignissim, non tempor quam malesuada.
+
+        Sed leo mi, gravida sed ultricies at, pharetra non lacus.
+        Cras at magna fermentum, porta ligula in, condimentum erat.
+        Mauris arcu nulla, vulputate et imperdiet eget, tincidunt ac eros.
+        Aenean vulputate, nunc a efficitur mattis, dolor nulla blandit nulla,
+        eget tincidunt libero elit quis lacus.
+        Praesent eu orci nec mauris rhoncus lobortis id eu erat.
+        Sed nec pellentesque augue. Ut accumsan, risus id venenatis semper,
+        justo lorem dictum massa, eu rhoncus velit diam nec dolor.
+        EOD;
+}
+
 /**
  * @return string[]
  */
@@ -125,12 +197,18 @@ $insertIllustrationsQuery = 'INSERT INTO `illustration` (product_id, main, image
 
 $users = [];
 $userCount = 10;
+$roleCounters = [];
 for ($i = 1; $i <= $userCount; $i++) {
-    $name = valueOrNull("user-$i");
-    $email = valueOrNull($i <= 7 ? "user$i@example.com" : null);
+    $roleById = getRole($i);
+    $roleByIdLower = strtolower($roleById);
+    $roleCounter = isset($roleCounters[$roleById]) ? $roleCounters[$roleById] : 1;
+    $roleCounters[$roleById] = $roleCounter + 1;
+
+    $name = valueOrNull("$roleById $roleCounter");
+    $email = valueOrNull($i <= 7 ? "$roleByIdLower$roleCounter@example.com" : null);
     $username = valueOrNull("username$i");
     $password = valueOrNull(password_hash("password$i", PASSWORD_DEFAULT));
-    $role = valueOrNull(getRole($i));
+    $role = valueOrNull($roleById);
     $value = "($name, $email, $username, $password, $role)";
     $users[] = $value;
 }
@@ -173,8 +251,8 @@ for ($i = 1; $i <= $productCount; $i++) {
     $name = valueOrNull("product-$i");
     $originalPrice = valueOrNull($randomPrice);
     $price = $originalPrice;
-    $briefDescription = valueOrNull(randomString(30));
-    $detailDescription = valueOrNull(randomString(100));
+    $briefDescription = valueOrNull(generateBriefDescription());
+    $detailDescription = valueOrNull(generateDetailedDescription());
     $shopId = valueOrNull(randomItem($shopActualIds));
     $value = "($name, $originalPrice, $price, $briefDescription, $detailDescription, $shopId)";
     $productIds[] = $i;

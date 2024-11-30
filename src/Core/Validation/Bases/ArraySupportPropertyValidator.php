@@ -92,4 +92,8 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
     protected function getMessage(string $defaultMsg): string {
         return $this->msg ?? $defaultMsg;
     }
+
+    protected function isFailureResult(mixed $result): bool {
+        return is_string($result) || $result instanceof ValidationErrorBag;
+    }
 }

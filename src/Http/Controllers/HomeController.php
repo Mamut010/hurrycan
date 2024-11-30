@@ -2,7 +2,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Contracts\ProductService;
+use App\Http\Responses\ProductResponse;
 use App\Http\Utils\Responses;
+use App\Utils\Converters;
 
 class HomeController
 {
@@ -16,9 +18,10 @@ class HomeController
         
         $hotResponses = array_map(fn ($product) => Responses::productResponse($product), $hot);
         $topDealResponses = array_map(fn ($product) => Responses::productResponse($product), $topDeal);
+
         return response()->view('home', [
-            'hot' => json_encode($hotResponses),
-            'topDeal' => json_encode($topDealResponses)
+            'hot' => $hotResponses,
+            'topDeal' => $topDealResponses
         ]);
     }
 }

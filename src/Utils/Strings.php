@@ -40,4 +40,16 @@ class Strings
         $lowerSubstr = strtolower($substr);
         return str_contains($lowerStr, $lowerSubstr);
     }
+
+    public static function valueOf(mixed $value): string {
+        if (is_resource($value)) {
+            throw new \InvalidArgumentException('resource cannot be converted to string');
+        }
+        elseif (is_object($value) && isToStringable($value)) {
+            return strval($value);
+        }
+        else {
+            return var_export($value, true);
+        }
+    }
 }

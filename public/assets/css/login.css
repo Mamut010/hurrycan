@@ -1,0 +1,101 @@
+/* Login */
+/* Not yet format for mobile view */
+.wrapper{
+    background-image: url(../images/hurrycanlogin.jpeg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position:center;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+.login{
+    width:40%;
+    background:transparent;
+    border:0.1em solid rgba(0, 0, 0, 0.2);
+    backdrop-filter:blur(100px);
+    box-shadow:0 0 5em rgba(0,0,0,.2);
+    color:black;
+    border-radius:10px;
+    padding:8% 5%;
+}
+
+.login h1{
+    font-size:2.2em;
+    text-align:center;
+    /* color: antiquewhite;  */
+}
+
+.login .input-box{
+    position:relative;
+    width:100%;
+    height:8%;
+    margin:5% 0;
+}
+
+.input-box input{
+    width:100%;
+    height:100%;
+    background:transparent;
+    border:none;
+    outline:none;
+    border:4px solid rgba(0, 0, 0, 0.2);
+    border-radius:40px;
+    font-size:1em;
+    color:#0b4a2c;
+    padding: 6% 14% 6% 6%;
+}
+
+.input-box input::placeholder{
+    color:#090808;
+}
+
+.input-box i{
+    position:absolute;
+    right:6%;
+    top: 50%;
+    transform:translateY(-50%);
+    font-size:6%;
+}
+
+.login .btn{
+    width:100%;
+    height:3em;
+    background:#fff;
+    border:none;
+    outline:none;
+    border-radius:40px;
+    box-shadow:0 0 1% rgba(0,0,0,.1);
+    cursor:pointer;
+    font-size:1.1em;
+    color:#333;
+    font-weight:600;
+}
+.login .register-link{
+    font-size:0.95em;
+    text-align:center;
+    margin:6% 0 6%;
+    color:rgb(95, 84, 84);
+}
+
+.register-link p a {
+    color:black;
+    text-decoration:none;
+    font-weight:600;
+}
+.register-link p a:hover{
+    text-decoration:underline;
+}
+
+/* Tablet Viewport */
+@media screen and (min-width: 630px) { 
+
+}
+
+
+/* Media Query for Desktop Viewport */
+@media screen and (min-width: 1015px) {
+  
+}

@@ -2,6 +2,7 @@
 namespace App\Configs;
 
 use App\Core\Http\Middleware\MiddlewareChain;
+use App\Http\Middlewares\ViewErrorMiddleware;
 
 class GlobalMiddlewareConfig
 {
@@ -11,6 +12,7 @@ class GlobalMiddlewareConfig
     public static function register(MiddlewareChain $middlewares) {
         static::assignNames($middlewares);
         $middlewares->use(static::globalMiddlewares());
+        $middlewares->useError(static::getErrorMiddleware());
     }
 
     private static function assignNames(MiddlewareChain $middlewares) {
@@ -31,5 +33,9 @@ class GlobalMiddlewareConfig
             'session' => \App\Http\Middlewares\SessionStartMiddleware::class,
             'bc' => \App\Http\Middlewares\BcSetupMiddleware::class,
         ];
+    }
+
+    private static function getErrorMiddleware() {
+        return ViewErrorMiddleware::class;
     }
 }

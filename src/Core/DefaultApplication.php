@@ -1,6 +1,7 @@
 <?php
 namespace App\Core;
 
+use App\Constants\ErrorMessage;
 use App\Constants\HttpCode;
 use App\Core\Di\Contracts\ReadonlyDiContainer;
 use App\Core\Exceptions\HttpException;
@@ -297,7 +298,7 @@ class DefaultApplication implements Application
         elseif ($requestValidation->isRequired()) {
             // Throw a 400 Bad Request error with a message
             $errorMsg = $requestValidation->getErrorMessage() ?? $validationResult;
-            $errorMsg = strval(json_encode($errorMsg));
+            $errorMsg = is_string($errorMsg) ? $errorMsg : json_encode($errorMsg);
             throw new HttpException(HttpCode::BAD_REQUEST, $errorMsg);
         }
         else {

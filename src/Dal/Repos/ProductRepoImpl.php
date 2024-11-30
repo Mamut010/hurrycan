@@ -246,6 +246,9 @@ class ProductRepoImpl implements ProductRepo
         $placeholder = Queries::createPlaceholder($productIds);
 
         $illustrationQuery = static::ILLUTRATION_BASE_QUERY . "WHERE i.`product_id` IN ($placeholder)";
+        $illustrationQuery .= '
+            ORDER BY i.`main` DESC, i.`id` ASC
+        ';
         $rows = $this->db->query($illustrationQuery, ...$productIds);
 
         $illustrationGroups = [];
