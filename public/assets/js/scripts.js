@@ -354,6 +354,7 @@ async function navigateToUrl(url, saveScrollPosition = false) {
 
         if (!response.ok) {
             if (url !== LOGIN_URL && response.status === UNAUTHORIZED_STATUS_CODE) {
+                alert('Please login to continue');
                 await redirectToLogin(url);
                 return;
             }
@@ -597,6 +598,7 @@ async function signUp(body) {
             return;
         }
 
+        alert('You have signed up successfully. Navigating to login page...');
         navigateToUrl(LOGIN_URL);
     }
     catch (error) {

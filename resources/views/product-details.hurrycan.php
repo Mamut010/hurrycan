@@ -63,9 +63,9 @@
       <div class="product-intro">
         <div class="detail-pic">
           <div class="main-picture">
-            <img src="{{ url($product->mainIllustrationPath) }}" alt="Main illustration">
+            <img id="display-img" src="{{ url($product->mainIllustrationPath) }}" alt="Product Illustration">
           </div>
-          <div class="gallery">
+          <div id="gallery" class="gallery">
             @foreach($product->illustrations as $illustration)
               <img src="{{ url($illustration->imagePath) }}" alt="{{ 'Illustration ' . $count }}">
               @if ($count >= 3)

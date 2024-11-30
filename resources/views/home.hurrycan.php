@@ -58,7 +58,7 @@
     <div class="left-sidebar"></div> <!-- Placeholder for left column -->
     <div class="homepage">
        <div id="banner">
-            <img src="{{ assetsUrl('images/hurrycanlogin.png') }}" alt="placeholder">
+            <img src="{{ assetsUrl('images/Banner.png') }}" alt="Banner">
        </div>
       
        <div id="hotDeals">

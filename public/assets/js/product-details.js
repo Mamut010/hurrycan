@@ -27,6 +27,7 @@ async function fetchQuantityInCart(productId) {
         let response = await sendRequest(fetchCartUrl, { method: 'GET' });
         if (!response.ok) {
             if (response.status === UNAUTHORIZED_STATUS_CODE) {
+                alert('Please login to continue');
                 await redirectToLogin();
                 return undefined;
             }
@@ -115,4 +116,11 @@ document.getElementById('buy-now-button').addEventListener('click', async () => 
         const cartUrl = SERVER_URL + '/carts/user-cart';
         await navigateToUrl(cartUrl);
     }
+});
+
+document.querySelectorAll('#gallery img').forEach(img => {
+    const displayImgElement = document.getElementById('display-img');
+    img.addEventListener('click', () => {
+        displayImgElement.src = img.src;
+    });
 });

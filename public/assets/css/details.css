@@ -27,14 +27,15 @@
     width: 100%;
 }
 
-.gallery{
+.gallery {
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
 }
 
-.gallery img{
+.gallery img {
     width: 20%;
+    cursor: pointer;
 }
 
 .flex-description{
