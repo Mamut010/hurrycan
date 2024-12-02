@@ -203,13 +203,14 @@ async function sendRequest(input, options = undefined) {
     options ??= {};
     const finalOptions = { ...options, credentials: 'include', headers: { ...options.headers }};
 
+    const isNotGetRequest = finalOptions.method !== 'GET';
     const csrfToken = getCsrfToken();
-    if (csrfToken && finalOptions.method !== 'GET') {
+    if (csrfToken && isNotGetRequest) {
         finalOptions.headers[X_XSRF_TOKEN_HEADER] = csrfToken;
     }
 
     const response = await fetch(input, finalOptions);
-    if (response.status === FORBIDDEN_STATUS_CODE && !isHtmlResponse(response)) {
+    if (response.status === FORBIDDEN_STATUS_CODE && isNotGetRequest) {
         alert('You don’t have permission to perform this action.');
     }
     else if (response.status >= 500) {
@@ -227,7 +228,7 @@ async function sendRequest(input, options = undefined) {
         return response;
     }
 
-    if (finalOptions.method !== 'GET') {
+    if (isNotGetRequest) {
         finalOptions.headers[X_XSRF_TOKEN_HEADER] = newCsrfToken;
     }
     return await fetch(input, finalOptions);

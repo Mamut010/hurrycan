@@ -31,8 +31,11 @@ async function fetchQuantityInCart(productId) {
                 await redirectToLogin();
                 return undefined;
             }
-
-            if (response.status === NOT_FOUND_STATUS_CODE) {
+            else if (response.status === FORBIDDEN_STATUS_CODE) {
+                alert('You don’t have permission to perform this action. Contact administrator for more information.')
+                return undefined;
+            }
+            else if (response.status === NOT_FOUND_STATUS_CODE) {
                 const createCartUrl = SERVER_URL + '/carts/user-cart';
                 response = await sendRequest(createCartUrl, { method: 'POST' });
             }
