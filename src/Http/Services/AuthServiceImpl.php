@@ -4,6 +4,7 @@ namespace App\Http\Services;
 use App\Dal\Contracts\RefreshTokenRepo;
 use App\Dal\Input\RefreshTokenCreate;
 use App\Dal\Input\RefreshTokenUpdate;
+use App\Env;
 use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AccessTokenClaims;
 use App\Http\Dtos\AccessTokenDto;
@@ -20,24 +21,27 @@ use App\Support\Csrf\CsrfHandler;
 use App\Support\Jwt\Exceptions\JwtException;
 use App\Support\Jwt\JwtHandler;
 use App\Support\Jwt\JwtOptions;
-use App\Support\Logger\Logger;
+use App\Support\Log\Logger;
 use App\Utils\Converters;
 use App\Utils\Crypto;
 use App\Utils\Uuids;
 
 class AuthServiceImpl implements AuthService
 {
+    private readonly string $accessTokenSecret;
+    private readonly string $refreshTokenSecret;
+
     private const SEQ_MIN = 0;
     private const SEQ_MAX = 2147483647;
 
     public function __construct(
-        private readonly string $accessTokenSecret,
-        private readonly string $refreshTokenSecret,
         private readonly JwtHandler $jwt,
         private readonly CsrfHandler $csrf,
         private readonly RefreshTokenRepo $refreshTokenRepo,
+        private readonly Logger $logger,
     ) {
-        
+        $this->accessTokenSecret = Env::accessTokenSecret();
+        $this->refreshTokenSecret = Env::refreshTokenSecret();
     }
 
     #[\Override]
@@ -181,7 +185,7 @@ class AuthServiceImpl implements AuthService
     }
 
     private function handleAbnormalActivity(RefreshTokenClaims $claims) {
-        Logger::securityWarning("Abnormal activity detected! Potential token misuse of user '$claims->sub'");
+        $this->logger->securityWarning("Abnormal activity detected! Potential token misuse of user '$claims->sub'");
         throw new ForbiddenException();
     }
 

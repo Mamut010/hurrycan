@@ -1,21 +1,25 @@
 <?php
-namespace App\Support\Logger;
+namespace App\Support\Log;
 
-class Logger
+class ConsoleLogger implements Logger
 {
-    public static function error(string $message): void {
+    #[\Override]
+    public function error(string $message): void {
         static::formatPrintlnToStdout(['red'], $message);
     }
 
-    public static function warning(string $message): void {
+    #[\Override]
+    public function warning(string $message): void {
         static::formatPrintlnToStdout(['yellow'], $message);
     }
 
-    public static function debug(string $message): void {
+    #[\Override]
+    public function debug(string $message): void {
         static::formatPrintlnToStdout(['green'], $message);
     }
 
-    public static function securityWarning(string $message): void {
+    #[\Override]
+    public function securityWarning(string $message): void {
         static::formatPrintlnToStdout(['white', 'bold', 'redbg'], $message);
     }
 

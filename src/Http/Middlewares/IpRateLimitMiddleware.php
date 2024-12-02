@@ -7,7 +7,7 @@ use App\Core\Http\Middleware\Middleware;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Response\Response;
 use App\Settings\RateLimit;
-use App\Support\Logger\Logger;
+use App\Support\Log\Logger;
 use App\Support\Rate;
 use App\Support\Throttle\BucketFactory;
 use App\Support\Throttle\Token\TokenConsumedListener;
@@ -21,7 +21,7 @@ class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
 {
     private readonly string $ipAddress;
 
-    public function __construct(private readonly BucketFactory $bucketFactory) {
+    public function __construct(private readonly BucketFactory $bucketFactory, private readonly Logger $logger) {
         
     }
 
@@ -52,7 +52,7 @@ class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
 
         $count = (int) ceil($total);
         $msg = "Too many requests coming from $this->ipAddress ($count). Potentially a DOS attack.";
-        Logger::securityWarning($msg);
+        $this->logger->securityWarning($msg);
     }
 
     private function createTooManyRequestResponse(int|float $waitingTime): Response {

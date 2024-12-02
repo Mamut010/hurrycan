@@ -5,8 +5,10 @@ use App\Configs\ContainerConfig;
 use App\Configs\GlobalMiddlewareConfig;
 use App\Configs\RouteConfig;
 use App\Core\Application;
+use App\Core\Dal\Contracts\DatabaseHandler;
 use App\Core\Dal\Contracts\PlainModelMapper;
 use App\Core\Dal\Contracts\PlainTransformer;
+use App\Core\Dal\DatabaseHandlers\MysqlDatabaseHandler;
 use App\Core\Dal\PlainModelMappers\KeyConvertedPlainModelMapper;
 use App\Core\Dal\PlainTransformers\AttributeBasedPlainTransformer;
 use App\Core\DefaultApplication;
@@ -134,8 +136,8 @@ class AppProvider
                 $container = $ctx->container();
                 $template = new HurrycanTemplateEngine(
                     $container->get(TemplateParser::class),
-                    $container->get(Env::viewPath()),
-                    $container->get(Env::viewExtension())
+                    Env::viewPath(),
+                    Env::viewExtension()
                 );
                 $template->setIgnoreCache(!isProduction());
                 return $template;
@@ -161,6 +163,20 @@ class AppProvider
         $container
             ->bind(ResponseFactory::class)
             ->to(DefaultResponseFactory::class)
+            ->inSingletonScope();
+
+        $container
+            ->bind(DatabaseHandler::class)
+            ->toFactory(function () {
+                $dbHost = Env::dbHost();
+                $dbName = Env::dbName();
+                $dbUser = Env::dbUser();
+                $passwordFilePath = Env::passwordFilePath();
+                // Read the password from the file
+                $password = file_get_contents($passwordFilePath);
+                $password = trim($password);
+                return new MysqlDatabaseHandler($dbHost, $dbName, $dbUser, $password);
+            })
             ->inSingletonScope();
     
         $container
