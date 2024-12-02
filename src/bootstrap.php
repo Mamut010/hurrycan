@@ -96,7 +96,7 @@ class AppProvider
 
         $container
             ->bind(MiddlewareChain::class)
-            ->toFactory(fn () => new MiddlewareArrayChain(DefaultErrorMiddleware::class))
+            ->toFactory(fn() => new MiddlewareArrayChain(DefaultErrorMiddleware::class))
             ->inSingletonScope();
         $container
             ->bind(MiddlewareNamedCollection::class)
@@ -130,12 +130,12 @@ class AppProvider
 
         $container
             ->bind(TemplateEngine::class)
-            ->toFactory(function (InjectionContext $injectionContext) {
-                $container = $injectionContext->container();
+            ->toFactory(function (InjectionContext $ctx) {
+                $container = $ctx->container();
                 $template = new HurrycanTemplateEngine(
                     $container->get(TemplateParser::class),
-                    $container->get('viewPath'),
-                    $container->get('viewExtension')
+                    $container->get(Env::viewPath()),
+                    $container->get(Env::viewExtension())
                 );
                 $template->setIgnoreCache(!isProduction());
                 return $template;
@@ -163,7 +163,6 @@ class AppProvider
             ->to(DefaultResponseFactory::class)
             ->inSingletonScope();
     
-
         $container
             ->bind(PlainModelMapper::class)
             ->to(KeyConvertedPlainModelMapper::class)
@@ -181,13 +180,7 @@ class AppProvider
     }
 
     private static function configApplication(DiContainer $container) {
-        /**
-         * @var MiddlewareChain
-         */
         $middlewares = $container->get(MiddlewareChain::class);
-        /**
-         * @var RouteBuilder
-         */
         $route = $container->get(RouteBuilder::class);
 
         ContainerConfig::register($container);
