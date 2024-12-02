@@ -167,7 +167,7 @@ function storeIntendedUrl(url) {
 
 function removeCredentials() {
     localStorage.removeItem(CSRF_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    //localStorage.removeItem(USER_KEY); Keep user information for displaying
     localStorage.removeItem(ACCESS_TOKEN_CLAIMS);
 }
 
@@ -218,7 +218,7 @@ async function sendRequest(input, options = undefined) {
         alert('A server error occurred. Please try again later.');
     }
 
-    const shouldRefresh = isAccessTokenExpired() && response.status === UNAUTHORIZED_STATUS_CODE;
+    const shouldRefresh = response.status === UNAUTHORIZED_STATUS_CODE && isAccessTokenExpired();
     if (!shouldRefresh) {
         return response;
     }
