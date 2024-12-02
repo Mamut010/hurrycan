@@ -10,8 +10,7 @@ use Closure;
 class BcSetupMiddleware implements Middleware
 {
     #[\Override]
-    public function handle(Request $request, Closure $next): Response
-    {
+    public function handle(Request $request, Closure $next): Response {
         bcscale(BcSetting::SCALE);
         return $next();
     }

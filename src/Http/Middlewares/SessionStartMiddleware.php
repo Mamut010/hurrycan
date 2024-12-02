@@ -11,8 +11,7 @@ use Closure;
 class SessionStartMiddleware implements Middleware
 {
     #[\Override]
-    public function handle(Request $request, Closure $next): Response
-    {
+    public function handle(Request $request, Closure $next): Response {
         if (!Sessions::isStarted()) {
             session_set_cookie_params([
                 'httponly' => true,
