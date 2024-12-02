@@ -111,7 +111,7 @@
             {{ $product->briefDescription ?? 'No available description' }}
           </p>
           <div class="quantity-selection">
-            Quantitiy
+            <span class="quantity-label">Quantitiy</span>
             <div class="quantity-button">
               <div class="minus"><button type="button" id="minus-quantity-button">-</button></div>
               <div class="quantity-number" id="product-quantity">1</div>

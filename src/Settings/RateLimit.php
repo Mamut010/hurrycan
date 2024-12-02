@@ -21,7 +21,7 @@ final class RateLimit
     public const ABNORMAL_CALLS_THRESHOLD = 150;
 
     /**
-     * Maximum number of log entries for the abnormal requests coming from a specific client.
+     * Maximum number of log entries for the abnormal requests coming from a specific IP Address.
      */
     public const ABNORMAL_CALLS_LOG_MAX_COUNT = 3;
 }

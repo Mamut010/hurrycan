@@ -94,7 +94,7 @@ class RefreshTokenRepoImpl implements RefreshTokenRepo
 
     private function rowToDto(array $row) {
         return $this->transformer->transform($row, RefreshTokenDto::class, [
-            RefreshToken::class => fn(string $defaultKey) => 'r_' . $defaultKey,
+            RefreshToken::class => 'r_',
         ]);
     }
 

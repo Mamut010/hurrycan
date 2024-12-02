@@ -14,6 +14,7 @@ async function removeProductFromCart(productId) {
 
         if (!response.ok) {
             if (response.status === UNAUTHORIZED_STATUS_CODE) {
+                alert('Your session has expired. Please login to continue.');
                 await redirectToLogin();
             }
             else {
@@ -43,6 +44,7 @@ async function deleteCart() {
         const response = await sendRequest(deleteCartUrl, { method: 'DELETE' });
         if (!response.ok) {
             if (response.status === UNAUTHORIZED_STATUS_CODE) {
+                alert('Your session has expired. Please login to continue.');
                 await redirectToLogin();
             }
             else {

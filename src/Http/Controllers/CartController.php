@@ -37,13 +37,23 @@ class CartController extends Controller
         return response()->view('checkout', ['cart' => $cart])->statusCode($status);
     }
 
+    public function checkout(AuthUserDto $authUser) {
+        $this->authorize('read-cart', $authUser);
+
+        // Current implementation just simply deletes the cart
+        $success = $this->cartService->deleteUserCart($authUser->id);
+        $msg = $success ? 'Checkout successfully' : "Failed to checkout cart for user '$authUser->id'";
+        $status = $success ? HttpCode::OK : HttpCode::UNPROCESSABLE_CONTENT;
+        return response()->json($msg)->statusCode($status);
+    }
+
     public function store(AuthUserDto $authUser, #[ReqBody] CartCreateRequest $createRequest) {
         $this->authorize('create-cart', $authUser);
 
         $success = $this->cartService->createUserCart($authUser->id, $createRequest);
         $msg = $success ? 'Created successfully' : "Failed to create cart for user '$authUser->id'";
         $status = $success ? HttpCode::CREATED : HttpCode::UNPROCESSABLE_CONTENT;
-        return response()->err($status, $msg);
+        return response()->json($msg)->statusCode($status);
     }
 
     public function update(AuthUserDto $authUser, #[ReqBody] CartUpdateRequest $updateRequest) {
@@ -52,7 +62,7 @@ class CartController extends Controller
         $success = $this->cartService->updateUserCart($authUser->id, $updateRequest);
         $msg = $success ? 'Updated successfully' : "Failed to update cart for user '$authUser->id'";
         $status = $success ? HttpCode::OK : HttpCode::UNPROCESSABLE_CONTENT;
-        return response()->err($status, $msg);
+        return response()->json($msg)->statusCode($status);
     }
 
     public function destroy(AuthUserDto $authUser) {
@@ -61,7 +71,7 @@ class CartController extends Controller
         $success = $this->cartService->deleteUserCart($authUser->id);
         $msg = $success ? 'Deleted successfully' : "Failed to delete cart for user '$authUser->id'";
         $status = $success ? HttpCode::OK : HttpCode::UNPROCESSABLE_CONTENT;
-        return response()->err($status, $msg);
+        return response()->json($msg)->statusCode($status);
     }
 
     private function getCartWithStatus(AuthUserDto $authUser) {

@@ -64,6 +64,7 @@ class RouteConfig
                     $route->get('/json', 'showJson'),
                     $route->get('/checkout', 'showCheckout'),
                     $route->post('/', 'store'),
+                    $route->post('/checkout', 'checkout'),
                     $route->match([HttpMethod::PUT, HttpMethod::PATCH], '/', 'update'),
                     $route->delete('/', 'destroy')
                 ])

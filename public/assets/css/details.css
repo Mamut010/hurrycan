@@ -39,17 +39,22 @@
 }
 
 .flex-description{
+    display: flex;
+    flex-direction: column;
     width: 40%;
-    gap: 15px;
 }
 
 .quantity-selection{
     display: flex;
     flex-direction: row;
     gap: 20%;
-    margin: auto;
+    padding: 2%;
     justify-content: space-evenly;
     align-items: center;
+}
+
+.quantity-label {
+    font-size: large;
 }
 
 .quantity-button{
@@ -77,13 +82,22 @@
     margin: 0;
 }
 
-.detail-button{
+.detail-button {
+    align-self: center;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    align-items: center;
+    align-items: stretch;
     gap: 10px;
+    padding: 5%;
 }
+
+.detail-button > * {
+    width: 100%;
+    white-space: nowrap;
+    font-size: medium;
+    padding: 0.2em 3em; 
+}
+
 /* Tablet Viewport */
 @media screen and (min-width: 630px) { 
 

@@ -80,7 +80,7 @@ abstract class ArraySupportPropertyValidator implements PropertyValidator
         if ($result instanceof ValidationResult) {
             return $result;
         }
-        elseif (is_string($result) || $result instanceof ValidationErrorBag) {
+        elseif ($this->isFailureResult($result)) {
             $result = is_string($result) ? $this->getMessage($result) : $result;
             return ValidationResult::failure($result);
         }

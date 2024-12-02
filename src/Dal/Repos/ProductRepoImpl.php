@@ -236,8 +236,8 @@ class ProductRepoImpl implements ProductRepo
         $productIds = [];
         foreach ($rows as $row) {
             $product = $this->transformer->transform($row, ProductDto::class, [
-                Shop::class => fn(string $defaultKey) => 's_' . $defaultKey,
-                User::class => fn(string $defaultKey) => 'u_' . $defaultKey,
+                Shop::class => 's_',
+                User::class => 'u_',
             ]);
             $products[] = $product;
             $productIds[] = $product->id;

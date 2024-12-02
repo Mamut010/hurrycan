@@ -1,9 +1,10 @@
 async function checkoutCart() {
-    const checkoutCarttUrl = SERVER_URL + '/carts/user-cart';
+    const checkoutCarttUrl = SERVER_URL + '/carts/user-cart/checkout';
     try {
-        const response = await sendRequest(checkoutCarttUrl, { method: 'DELETE' });
+        const response = await sendRequest(checkoutCarttUrl, { method: 'POST' });
         if (!response.ok) {
             if (response.status === UNAUTHORIZED_STATUS_CODE) {
+                alert('Your session has expired. Please login to continue.');
                 await redirectToLogin();
             }
             else {

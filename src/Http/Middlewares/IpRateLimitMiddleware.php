@@ -19,7 +19,7 @@ use Closure;
  */
 class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
 {
-    private readonly Request $request;
+    private readonly string $ipAddress;
 
     public function __construct(private readonly BucketFactory $bucketFactory) {
         
@@ -27,9 +27,9 @@ class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
 
     #[\Override]
     public function handle(Request $request, Closure $next): Response {
-        $this->request = $request;
+        $this->ipAddress = $request->ipAddress();
 
-        $key = $this->request->ipAddress();
+        $key = $this->ipAddress;
         $bucketFillRate = Rate::parse(RateLimit::IP_BUCKET_FILL_RATE);
         $bucket = $this->bucketFactory->token($key, RateLimit::IP_BUCKET_CAPACITY, $bucketFillRate);
         $bucket->setTokenConsumedListener($this);
@@ -50,9 +50,8 @@ class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
             return;
         }
 
-        $ipAddress = $this->request->ipAddress();
         $count = (int) ceil($total);
-        $msg = "Too many requests coming from $ipAddress ($count). Potentially a DOS attack.";
+        $msg = "Too many requests coming from $this->ipAddress ($count). Potentially a DOS attack.";
         Logger::securityWarning($msg);
     }
 

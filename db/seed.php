@@ -244,7 +244,7 @@ $productIds = [];
 $productIdWholePriceLenMap = [];
 $productCount = 10;
 for ($i = 1; $i <= $productCount; $i++) {
-    $wholePriceLen = rand(2, 4);
+    $wholePriceLen = rand(2, 3);
     $randomPrice = randomPrice($wholePriceLen);
     $productIdWholePriceLenMap[$i] = $wholePriceLen;
 

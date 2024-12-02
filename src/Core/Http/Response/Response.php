@@ -34,12 +34,7 @@ interface Response
      * - httponly: bool
      * - samesite: SameSite (None|Lax|Strict)
      */
-    function cookie(
-        string $name,
-        string $value,
-        int $expires,
-        ?CookieOptions $options = null
-    ): self;
+    function cookie(string $name, string $value, int $expires, ?CookieOptions $options = null): self;
 
     /**
      * @param string $name

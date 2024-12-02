@@ -89,7 +89,7 @@ class CustomerRepoImpl implements CustomerRepo
             return false;
         }
         return $this->transformer->transform($rows[0], CustomerDto::class, [
-            Customer::class => fn(string $defaultKey) => 'c_' . $defaultKey,
+            Customer::class => 'c_',
         ]);
     }
 }

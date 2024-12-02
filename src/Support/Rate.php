@@ -87,7 +87,7 @@ class Rate implements \Stringable, \JsonSerializable
      * @return int|float The throughput value
      */
     public function calculateThroughput(int|float $time, TimeUnit $unit = TimeUnit::SECOND): int|float {
-        if ($time < 0) {
+        if ($time <= 0) {
             return 0;
         }
 
@@ -108,6 +108,10 @@ class Rate implements \Stringable, \JsonSerializable
      * @return int|float The amount of time needed to reach the specified throughput
      */
     public function calculateTime(int|float $throughput, ?TimeUnit $unit = null): int|float {
+        if ($throughput <= 0) {
+            return 0;
+        }
+
         $period = $throughput / $this->value;
         if ($unit && $unit !== $this->unit) {
             $ratio = $this->unit->ratio($unit);
