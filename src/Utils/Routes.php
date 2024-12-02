@@ -24,4 +24,8 @@ class Routes
         }
         return implode('', $segments);
     }
+
+    public static function format(string $method, string $path) {
+        return '[' . strtoupper($method) . ' ' . $path . ']';
+    }
 }
