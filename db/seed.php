@@ -48,8 +48,32 @@ function randomString(int $length, ?string $characters = null) {
     return implode('', $randomChar);
 }
 
+/**
+ * @param float $bound
+ * @param float|null $nextBound
+ */
+function randomFloat($bound = 1.0, $nextBound = null): float {
+    if ($nextBound === null) {
+        $min = 0;
+        $max = $bound;
+    }
+    else {
+        $min = $bound;
+        $max = $nextBound;
+    }
+
+    if ($min > $max) {
+        $temp = $min;
+        $min = $max;
+        $max = $temp;
+    }
+
+    $range = $max - $min;
+    return $min + $range * (mt_rand() / mt_getrandmax());
+}
+
 function randomBoolean() {
-    return rand(0,1) === 1;
+    return rand(0, 1) === 1;
 }
 
 function randomPhoneNumber() {
@@ -59,13 +83,13 @@ function randomPhoneNumber() {
 
 function randomPrice(int $len) {
     if ($len <= 0) {
-        return 0;
+        return '0';
     }
 
     global $numbers;
     global $nonZeroNumbers;
 
-    return randomString(1, $nonZeroNumbers) . randomString($len - 1, $numbers). '.' . randomString(3, $numbers);
+    return randomString(1, $nonZeroNumbers) . randomString($len - 1, $numbers). '.' . randomString(2, $numbers);
 }
 
 function randomItem(array $items) {
@@ -239,14 +263,14 @@ $insertShopsQuery .= implode(', ', $shops);
 $products = [];
 $productIds = [];
 /**
- * @var array<int,int>
+ * @var array<int,string>
  */
-$productIdWholePriceLenMap = [];
+$productPrices = [];
 $productCount = 10;
 for ($i = 1; $i <= $productCount; $i++) {
     $wholePriceLen = rand(2, 3);
     $randomPrice = randomPrice($wholePriceLen);
-    $productIdWholePriceLenMap[$i] = $wholePriceLen;
+    $productPrices[$i] = $randomPrice;
 
     $name = valueOrNull("product-$i");
     $originalPrice = valueOrNull($randomPrice);
@@ -282,12 +306,15 @@ $insertIllustrationsQuery .= implode(', ', $illustrations);
 $updateProductPriceQueryFormat = 'UPDATE `product` SET `price` = %s WHERE `id` = %d';
 $updateProductPriceQueries = [];
 foreach ($productIds as $productId) {
-    $discounted = randomBoolean();
-    if (!$discounted) {
+    if (randomBoolean()) {
         continue;
     }
-    $wholePriceLen = $productIdWholePriceLenMap[$productId];
-    $updateProductPriceQueries[] = sprintf($updateProductPriceQueryFormat, randomPrice($wholePriceLen - 1), $productId);
+    
+    $orgPrice = $productPrices[$productId];
+    $discount = round(randomFloat(1, 99), 2);
+    $newPrice = strval($discount * $orgPrice / 100);
+
+    $updateProductPriceQueries[] = sprintf($updateProductPriceQueryFormat, $newPrice, $productId);
 }
 
 // COMBINING QUERIES

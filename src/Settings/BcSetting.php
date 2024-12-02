@@ -3,5 +3,5 @@ namespace App\Settings;
 
 final class BcSetting
 {
-    public const SCALE = 3;
+    public const SCALE = 2;
 }

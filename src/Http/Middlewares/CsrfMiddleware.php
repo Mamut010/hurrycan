@@ -12,11 +12,11 @@ use App\Http\Dtos\AccessTokenClaims;
 use App\Http\Exceptions\ForbiddenException;
 use App\Http\Exceptions\UnauthorizedException;
 use App\Settings\Auth;
-use App\Support\Logger\Logger;
+use App\Support\Log\Logger;
 
 class CsrfMiddleware implements Middleware
 {
-    public function __construct(private readonly AuthService $authService) {
+    public function __construct(private readonly AuthService $authService, private readonly Logger $logger) {
         
     }
     
@@ -29,7 +29,7 @@ class CsrfMiddleware implements Middleware
         $claims = $this->getClaimsFromRequest($request);
         $token = static::getCsrfTokenFromRequest($request);
         if (!$token || !$this->authService->verifyCsrfToken($token, $claims->jti)) {
-            Logger::securityWarning("Potential CSRF attack triggered by user '$claims->sub'");
+            $this->logger->securityWarning("Potential CSRF attack triggered by user '$claims->sub'");
             throw new ForbiddenException();
         }
         
