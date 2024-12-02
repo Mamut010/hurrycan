@@ -59,7 +59,7 @@ class AttributeBasedValidatingExecution
         $this->errorPropNames = [];
         $this->ctx = new ValidationContext(
             $validator,
-            $this->generateDummyModelInstance(), // Dummy instance is used to avoid unintenional changes to the actual instance
+            $this->generateDummyModelInstance(), // Dummy instance is used to avoid changes to the actual instance
             $subject,
             $this->passedPropNames,
             $this->errorPropNames
