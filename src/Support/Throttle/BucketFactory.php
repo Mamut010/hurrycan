@@ -7,7 +7,7 @@ use App\Support\Throttle\Token\TokenBucket;
 interface BucketFactory
 {
     /**
-     * Create a {@see TokenBucket} for associated to a specific key with the given capacity and fill rate.
+     * Create a {@see TokenBucket} associated with a specific key, having the given capacity and fill rate.
      *
      * @param string $key The key associated with the bucket
      * @param int|float $capacity The bucket's capacity
