@@ -69,8 +69,8 @@ class OptionsBase implements ArrayAccess
     }
 
     /**
-     * Return all name of the options defined in the class.
-     * @return string[] Option's names defined in the class.
+     * Return all names of the options defined in the class.
+     * @return string[] Names of the options defined in the class.
      */
     public static function getOptions(): array {
         $props = static::getCorrectSignatureProps();

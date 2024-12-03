@@ -42,7 +42,7 @@ class PairItems
      * @param T1[] $firsts
      * @param T2[] $seconds
      */
-    public function __construct(public readonly array $firsts, public readonly mixed $seconds) {
+    public function __construct(public readonly array $firsts, public readonly array $seconds) {
         
     }
 }
