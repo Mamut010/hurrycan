@@ -6,7 +6,7 @@ use App\Constants\HttpHeader;
 use App\Core\Http\Middleware\Middleware;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Response\Response;
-use App\Settings\RateLimit;
+use App\Settings\RateLimitSetting;
 use App\Support\Log\Logger;
 use App\Support\Rate;
 use App\Support\Throttle\BucketFactory;
@@ -30,8 +30,8 @@ class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
         $this->ipAddress = $request->ipAddress();
 
         $key = $this->ipAddress;
-        $bucketFillRate = Rate::parse(RateLimit::IP_BUCKET_FILL_RATE);
-        $bucket = $this->bucketFactory->token($key, RateLimit::IP_BUCKET_CAPACITY, $bucketFillRate);
+        $bucketFillRate = Rate::parse(RateLimitSetting::IP_BUCKET_FILL_RATE);
+        $bucket = $this->bucketFactory->token($key, RateLimitSetting::IP_BUCKET_CAPACITY, $bucketFillRate);
         $bucket->setTokenConsumedListener($this);
 
         if (!$bucket->consume(1, $waitingTime)) {
@@ -44,8 +44,8 @@ class IpRateLimitMiddleware implements Middleware, TokenConsumedListener
 
     #[\Override]
     public function onTokenConsumed(int|float $tokens, int|float $availableTokens, int|float $total): void {
-        $lowerBound = RateLimit::ABNORMAL_CALLS_THRESHOLD;
-        $upperBound = RateLimit::ABNORMAL_CALLS_THRESHOLD + RateLimit::ABNORMAL_CALLS_LOG_MAX_COUNT;
+        $lowerBound = RateLimitSetting::ABNORMAL_CALLS_THRESHOLD;
+        $upperBound = RateLimitSetting::ABNORMAL_CALLS_THRESHOLD + RateLimitSetting::ABNORMAL_CALLS_LOG_MAX_COUNT;
         if ($total < $lowerBound || $total >= $upperBound) {
             return;
         }

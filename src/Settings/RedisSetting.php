@@ -1,7 +1,7 @@
 <?php
 namespace App\Settings;
 
-final class RedisCaching
+final class RedisSetting
 {
     const CONNECTION_TIMEOUT = 2.5;
     const BACKOFF = [

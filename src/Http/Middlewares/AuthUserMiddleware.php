@@ -9,7 +9,7 @@ use App\Core\Http\Response\Response;
 use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AuthUserDto;
 use App\Http\Exceptions\UnauthorizedException;
-use App\Settings\Auth;
+use App\Settings\AuthSetting;
 use App\Utils\Converters;
 
 class AuthUserMiddleware implements Middleware
@@ -23,7 +23,7 @@ class AuthUserMiddleware implements Middleware
 
     #[\Override]
     public function handle(Request $request, Closure $next): Response {
-        $token = $request->cookie(Auth::ACCESS_TOKEN_KEY);
+        $token = $request->cookie(AuthSetting::ACCESS_TOKEN_KEY);
         if ($token === false) {
             throw new UnauthorizedException();
         }

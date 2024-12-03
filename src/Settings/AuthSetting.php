@@ -1,7 +1,7 @@
 <?php
 namespace App\Settings;
 
-final class Auth
+final class AuthSetting
 {
     const ACCESS_TOKEN_KEY = 'hurrycan$access';
     const REFRESH_TOKEN_KEY = 'hurrycan$refresh';

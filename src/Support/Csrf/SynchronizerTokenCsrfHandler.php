@@ -2,7 +2,7 @@
 namespace App\Support\Csrf;
 
 use App\Core\Http\Session\SessionManager;
-use App\Settings\Auth;
+use App\Settings\AuthSetting;
 use App\Utils\Randoms;
 
 class SynchronizerTokenCsrfHandler implements CsrfHandler
@@ -14,13 +14,13 @@ class SynchronizerTokenCsrfHandler implements CsrfHandler
     #[\Override]
     public function generate(string $data): string {
         $token = Randoms::hexString();
-        $this->session->put(Auth::CSRF_TOKEN_KEY, $token);
+        $this->session->put(AuthSetting::CSRF_TOKEN_KEY, $token);
         return $token;
     }
 
     #[\Override]
     public function validate(string $csrfToken, string $data): bool {
-        $storedToken = $this->session->get(Auth::CSRF_TOKEN_KEY);
+        $storedToken = $this->session->get(AuthSetting::CSRF_TOKEN_KEY);
         return $csrfToken === $storedToken;
     }
 }

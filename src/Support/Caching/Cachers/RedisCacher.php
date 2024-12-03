@@ -1,7 +1,7 @@
 <?php
 namespace App\Support\Caching\Cachers;
 
-use App\Settings\RedisCaching;
+use App\Settings\RedisSetting;
 use App\Support\Caching\Exceptions\CacheException;
 use App\Support\Caching\ExpirySupportCacher;
 
@@ -17,8 +17,8 @@ class RedisCacher implements ExpirySupportCacher
         $this->redis = new \Redis([
             'host' => $redisHost,
             'port' => $redisPort,
-            'connectTimeout' => RedisCaching::CONNECTION_TIMEOUT,
-            'backoff' => RedisCaching::BACKOFF,
+            'connectTimeout' => RedisSetting::CONNECTION_TIMEOUT,
+            'backoff' => RedisSetting::BACKOFF,
         ]);
     }
 

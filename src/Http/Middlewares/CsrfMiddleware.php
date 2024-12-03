@@ -11,7 +11,7 @@ use App\Http\Contracts\AuthService;
 use App\Http\Dtos\AccessTokenClaims;
 use App\Http\Exceptions\ForbiddenException;
 use App\Http\Exceptions\UnauthorizedException;
-use App\Settings\Auth;
+use App\Settings\AuthSetting;
 use App\Support\Log\Logger;
 
 class CsrfMiddleware implements Middleware
@@ -45,7 +45,7 @@ class CsrfMiddleware implements Middleware
     }
 
     private function getClaimsFromRequest(Request $request): AccessTokenClaims {
-        $accessToken = $request->cookie(Auth::ACCESS_TOKEN_KEY);
+        $accessToken = $request->cookie(AuthSetting::ACCESS_TOKEN_KEY);
         if ($accessToken === false) {
             throw new UnauthorizedException();
         }

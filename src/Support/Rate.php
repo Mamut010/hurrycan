@@ -38,6 +38,14 @@ class Rate implements \Stringable, \JsonSerializable
         $this->unit = TimeUnit::from($data['unit']);
     }
 
+    /**
+     * Parse a string rate into a {@see Rate} object.
+     *
+     * @param string $str The string rate
+     * @return Rate The parsed {@see Rate} object
+     *
+     * @throws \InvalidArgumentException If the string is not a valid string rate
+     */
     public static function parse(string $str): Rate {
         $segments = explode(static::SEPARATOR, $str);
         if (empty($segments) || count($segments) > 2) {
@@ -65,7 +73,7 @@ class Rate implements \Stringable, \JsonSerializable
     }
 
     /**
-     * Create a new rate with the specified unit, adjusting the rate value accordingly. Precision is kept the same.
+     * Create a new rate with the specified unit, adjusting the rate value accordingly.
      *
      * @param TimeUnit $unit The time unit to change into
      * @return Rate A new rate with the same configuration but different time unit

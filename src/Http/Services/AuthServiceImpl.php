@@ -16,7 +16,7 @@ use App\Http\Dtos\RefreshTokenPayloadDto;
 use App\Http\Dtos\RefreshTokenVerifyingDto;
 use App\Http\Exceptions\ConflictException;
 use App\Http\Exceptions\ForbiddenException;
-use App\Settings\Auth;
+use App\Settings\AuthSetting;
 use App\Support\Csrf\CsrfHandler;
 use App\Support\Jwt\Exceptions\JwtException;
 use App\Support\Jwt\JwtHandler;
@@ -49,7 +49,7 @@ class AuthServiceImpl implements AuthService
         $payload = Converters::objectToArray($payload);
         $jti = Uuids::uuidv4();
         $now = time();
-        $exp = Auth::ACCESS_TOKEN_TTL + $now;
+        $exp = AuthSetting::ACCESS_TOKEN_TTL + $now;
 
         $claims = new AccessTokenClaims();
         $claims->jti = $jti;
@@ -71,7 +71,7 @@ class AuthServiceImpl implements AuthService
         $jti = Uuids::uuidv4();
         $seq = random_int(static::SEQ_MIN, static::SEQ_MAX);
         $now = time();
-        $exp = Auth::REFRESH_TOKEN_TTL + $now;
+        $exp = AuthSetting::REFRESH_TOKEN_TTL + $now;
 
         $payload = new RefreshTokenPayloadDto();
         $payload->seq = $seq;

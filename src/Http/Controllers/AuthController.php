@@ -14,7 +14,7 @@ use App\Http\Dtos\RefreshTokenClaims;
 use App\Http\Requests\CustomerSignUpRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Utils\Responses;
-use App\Settings\Auth;
+use App\Settings\AuthSetting;
 use App\Utils\Converters;
 
 class AuthController
@@ -66,12 +66,12 @@ class AuthController
         return response()
                     ->make()
                     ->statusCode(HttpCode::NO_CONTENT)
-                    ->withoutCookie(Auth::ACCESS_TOKEN_KEY, static::createAccessCookieOptions())
-                    ->withoutCookie(Auth::REFRESH_TOKEN_KEY, static::createRefreshCookieOptions());
+                    ->withoutCookie(AuthSetting::ACCESS_TOKEN_KEY, static::createAccessCookieOptions())
+                    ->withoutCookie(AuthSetting::REFRESH_TOKEN_KEY, static::createRefreshCookieOptions());
     }
 
     public function reissueTokens(Request $request) {
-        $refreshToken = $request->cookie(Auth::REFRESH_TOKEN_KEY);
+        $refreshToken = $request->cookie(AuthSetting::REFRESH_TOKEN_KEY);
         if ($refreshToken === false) {
             return response()->errJson(HttpCode::UNAUTHORIZED, "Embedded credential not found");
         }
@@ -101,13 +101,13 @@ class AuthController
         return response()
                     ->json($responseData)
                     ->cookie(
-                        Auth::ACCESS_TOKEN_KEY,
+                        AuthSetting::ACCESS_TOKEN_KEY,
                         $accessToken,
                         $accessTokenExp,
                         static::createAccessCookieOptions()
                     )
                     ->cookie(
-                        Auth::REFRESH_TOKEN_KEY,
+                        AuthSetting::REFRESH_TOKEN_KEY,
                         $refreshToken,
                         $refreshTokenExp,
                         static::createRefreshCookieOptions()
@@ -132,7 +132,7 @@ class AuthController
     }
 
     private function removeExistingAuthRecord(Request $request) {
-        $refreshToken = $request->cookie(Auth::REFRESH_TOKEN_KEY);
+        $refreshToken = $request->cookie(AuthSetting::REFRESH_TOKEN_KEY);
         if ($refreshToken) {
             $this->authService->deleteRefreshToken($refreshToken);
         }

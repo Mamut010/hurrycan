@@ -6,7 +6,7 @@ use App\Constants\HttpHeader;
 use App\Core\Http\Middleware\Middleware;
 use App\Core\Http\Request\Request;
 use App\Core\Http\Response\Response;
-use App\Settings\RateLimit;
+use App\Settings\RateLimitSetting;
 use App\Support\Log\Logger;
 use App\Support\Rate;
 use App\Support\Throttle\BucketFactory;
@@ -27,8 +27,8 @@ class ServerRateLimitMiddleware implements Middleware, TokenConsumedListener
     #[\Override]
     public function handle(Request $request, Closure $next): Response {
         $key = $this::class;
-        $bucketFillRate = Rate::parse(RateLimit::SERVER_BUCKET_FILL_RATE);
-        $bucket = $this->bucketFactory->token($key, RateLimit::SERVER_BUCKET_CAPACITY, $bucketFillRate);
+        $bucketFillRate = Rate::parse(RateLimitSetting::SERVER_BUCKET_FILL_RATE);
+        $bucket = $this->bucketFactory->token($key, RateLimitSetting::SERVER_BUCKET_CAPACITY, $bucketFillRate);
         $bucket->setTokenConsumedListener($this);
 
         if (!$bucket->consume(1, $waitingTime)) {
@@ -44,7 +44,7 @@ class ServerRateLimitMiddleware implements Middleware, TokenConsumedListener
         $msg = null;
         $criticalThresholds = [0.75, 0.8, 0.85, 0.9, 0.95, 0.96, 0.97, 0.98, 0.99];
         foreach ($criticalThresholds as $threshold) {
-            $thresholdAvailableTokens = (int) ceil(RateLimit::SERVER_BUCKET_CAPACITY * (1 - $threshold));
+            $thresholdAvailableTokens = (int) ceil(RateLimitSetting::SERVER_BUCKET_CAPACITY * (1 - $threshold));
             if ((int) $availableTokens === $thresholdAvailableTokens) {
                 $percentage = (int) ($threshold * 100);
                 $msg = "Warning: Server under heavy load - $percentage% capacity";

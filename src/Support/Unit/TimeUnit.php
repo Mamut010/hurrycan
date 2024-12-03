@@ -26,6 +26,9 @@ enum TimeUnit: string
         };
     }
 
+    /**
+     * Get the conversion ratio of current time unit to another time unit
+     */
     public function ratio(TimeUnit $other): int|float {
         return $this->nanoScale() / $other->nanoScale();
     }

@@ -13,11 +13,11 @@ interface BucketStorage
     public function retrieve(): string|false;
 
     /**
-     * Store a value into the storage with a given time to live.
+     * Store a value in the storage with a given time to live.
      * @param string $value Value to store
      * @param int $ttl Time to live in milliseconds
      * @return void
      * @throws BucketStorageException
      */
-    public function store(string $value, int $ttl): void;
+    public function store(string $value, int $ttlMs): void;
 }

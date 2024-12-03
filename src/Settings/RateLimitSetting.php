@@ -1,7 +1,7 @@
 <?php
 namespace App\Settings;
 
-final class RateLimit
+final class RateLimitSetting
 {
     /**
      * Maximum number of tokens in a bucket used for the whole server
