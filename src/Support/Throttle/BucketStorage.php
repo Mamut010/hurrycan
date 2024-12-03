@@ -15,7 +15,7 @@ interface BucketStorage
     /**
      * Store a value in the storage with a given time to live.
      * @param string $value Value to store
-     * @param int $ttl Time to live in milliseconds
+     * @param int $ttlMs Time to live in milliseconds
      * @return void
      * @throws BucketStorageException
      */

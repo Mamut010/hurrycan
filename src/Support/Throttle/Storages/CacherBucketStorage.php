@@ -23,9 +23,9 @@ class CacherBucketStorage implements BucketStorage
     }
 
     #[\Override]
-    public function store(string $value, int $ttl): void {
+    public function store(string $value, int $ttlMs): void {
         try {
-            $this->cacher->set($this->key, $value, $ttl);
+            $this->cacher->set($this->key, $value, $ttlMs);
         }
         catch (CacheException $e) {
             throw new BucketStorageException($e->getMessage());
