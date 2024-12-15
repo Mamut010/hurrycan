@@ -167,7 +167,7 @@ function storeIntendedUrl(url) {
 
 function removeCredentials() {
     localStorage.removeItem(CSRF_TOKEN_KEY);
-    //localStorage.removeItem(USER_KEY); Keep user information for displaying
+    localStorage.removeItem(USER_KEY);
     localStorage.removeItem(ACCESS_TOKEN_CLAIMS);
 }
 
