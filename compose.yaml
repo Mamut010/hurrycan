@@ -70,11 +70,14 @@ services:
   redis:
     image: redis
     container_name: redis-server
+    volumes:
+      - redis-data:/data
     ports:
       - "6379:6379"
 
 volumes:
   db-data:
+  redis-data:
 secrets:
   db-password:
     file: ./secrets/password.txt
