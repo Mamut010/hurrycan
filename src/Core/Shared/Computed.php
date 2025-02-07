@@ -7,7 +7,7 @@ use Attribute;
 class Computed extends ComputedBase
 {
     /**
-     * Eager computation of a property by invoke the callback with the provided instance,
+     * Eager computation of a property by invoking the callback with the provided instance,
      * a supplied value and property.
      *
      * @param object $instance The instance on which to execute the callback

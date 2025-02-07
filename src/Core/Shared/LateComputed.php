@@ -7,7 +7,7 @@ use Attribute;
 class LateComputed extends ComputedBase
 {
     /**
-     * Late computation of a property by invoke the callback with the provided instance and property.
+     * Late computation of a property by invoking the callback with the provided instance and property.
      *
      * @param object $instance The instance on which to execute the callback
      * @param \ReflectionProperty $prop The computed property

@@ -10,7 +10,7 @@ final class RateLimitSetting
     public const SERVER_BUCKET_FILL_RATE = '50/s';
 
     /**
-     * Maximum number of tokens in a bucket used for request IP
+     * Maximum number of tokens in a bucket for a specific request IP
      */
     public const IP_BUCKET_CAPACITY = 50;
     public const IP_BUCKET_FILL_RATE = '0.5/s'; // 1 token per 2 seconds
