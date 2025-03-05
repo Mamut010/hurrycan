@@ -1,8 +1,8 @@
 <?php
 namespace App\Configs;
 
+use App\Constants\Middlewares;
 use App\Core\Http\Middleware\MiddlewareChain;
-use App\Http\Middlewares\ViewErrorMiddleware;
 
 class GlobalMiddlewareConfig
 {
@@ -17,25 +17,25 @@ class GlobalMiddlewareConfig
 
     private static function assignNames(MiddlewareChain $middlewares) {
         $middlewares
-            ->assignName('csrf', \App\Http\Middlewares\CsrfMiddleware::class)
-            ->assignName('auth', [
+            ->assignName(Middlewares::CSRF, \App\Http\Middlewares\CsrfMiddleware::class)
+            ->assignName(Middlewares::AUTH, [
                 \App\Http\Middlewares\AuthUserMiddleware::class,
-                'csrf',
+                Middlewares::CSRF,
             ])
-            ->assignName('rate-limit:server', \App\Http\Middlewares\ServerRateLimitMiddleware::class)
-            ->assignName('rate-limit:ip', \App\Http\Middlewares\IpRateLimitMiddleware::class);
+            ->assignName(Middlewares::RATE_LIMIT_SERVER, \App\Http\Middlewares\ServerRateLimitMiddleware::class)
+            ->assignName(Middlewares::RATE_LIMIT_IP, \App\Http\Middlewares\IpRateLimitMiddleware::class);
     }
 
     private static function globalMiddlewares() {
         return [
-            'cors' => \App\Http\Middlewares\CorsMiddleware::class,
-            'rate-limit' => ['rate-limit:server', 'rate-limit:ip'],
-            'session' => \App\Http\Middlewares\SessionStartMiddleware::class,
-            'bc' => \App\Http\Middlewares\BcSetupMiddleware::class,
+            Middlewares::CORS => \App\Http\Middlewares\CorsMiddleware::class,
+            Middlewares::RATE_LIMIT => [Middlewares::RATE_LIMIT_SERVER, Middlewares::RATE_LIMIT_IP],
+            Middlewares::SESSION => \App\Http\Middlewares\SessionStartMiddleware::class,
+            Middlewares::BC => \App\Http\Middlewares\BcSetupMiddleware::class,
         ];
     }
 
     private static function getErrorMiddleware() {
-        return ViewErrorMiddleware::class;
+        return \App\Http\Middlewares\ViewErrorMiddleware::class;
     }
 }

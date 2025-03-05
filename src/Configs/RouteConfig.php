@@ -3,6 +3,7 @@ namespace App\Configs;
 
 use App\Constants\HttpCode;
 use App\Constants\HttpMethod;
+use App\Constants\Middlewares;
 use App\Core\Routing\Contracts\RouteBuilder;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
@@ -30,7 +31,7 @@ class RouteConfig
                 $route->post('/sign-up', 'customerSignUp'),
                 $route->get('/login', 'showLogin'),
                 $route->post('/login', 'login'),
-                $route->delete('/logout', 'logout')->middleware('auth'),
+                $route->delete('/logout', 'logout')->middleware(Middlewares::AUTH),
                 $route->post('/token', 'reissueTokens'),
             ]);
 
@@ -42,7 +43,7 @@ class RouteConfig
                 $route->get('/shops/{shopId}/products', 'indexByShopId')->whereNumber('shopId'),
             ]);
 
-        $route->middleware('auth')->group(static::registerProtectedRoutes($route));
+        $route->middleware(Middlewares::AUTH)->group(static::registerProtectedRoutes($route));
 
         $route->any('*', fn() => response()->errView(HttpCode::NOT_FOUND, 'not-found'));
     }
@@ -65,7 +66,7 @@ class RouteConfig
                     $route->get('/checkout', 'showCheckout'),
                     $route->post('/', 'store'),
                     $route->post('/checkout', 'checkout'),
-                    $route->match([HttpMethod::PUT, HttpMethod::PATCH], '/', 'update'),
+                    $route->match(HttpMethod::PUT_PATCH, '/', 'update'),
                     $route->delete('/', 'destroy')
                 ])
         ];
