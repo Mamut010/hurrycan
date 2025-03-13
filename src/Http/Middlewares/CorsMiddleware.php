@@ -32,7 +32,8 @@ class CorsMiddleware implements Middleware
         // Preflight requests are standalone and should stop the chain as some other
         // middlewares may not handle Preflight requests correctly
         if ($isPreflight && !CorsSetting::preflightContinue()) {
-            $response = response()->make()->statusCode(HttpCode::NO_CONTENT);
+            $sucessStatus = CorsSetting::optionsSuccessStatus();
+            $response = response()->make()->statusCode($sucessStatus);
         }
         else {
             $response = $next();
