@@ -10,7 +10,6 @@ use App\Core\Http\Request\Request;
 use App\Core\Http\Response\ResponseFactory;
 use App\Core\Template\Contracts\TemplateEngine;
 use App\Core\Template\Contracts\View;
-use App\Utils\Arrays;
 use App\Utils\MimeTypes;
 use App\Utils\Strings;
 
@@ -136,9 +135,6 @@ if (!function_exists('cookie')) {
 
 if (!function_exists('view')) {
     function view(string $viewName, ?array $context = null): View {
-        /**
-         * @var \App\Core\Template\Contracts\TemplateEngine
-         */
         $template = AppProvider::get()->container()->get(TemplateEngine::class);
         return $template->view($viewName, $context);
     }
